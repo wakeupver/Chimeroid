@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13.2)
 
 # ARM64-only build: aggressive optimizations for AArch64/NEON
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -DNDEBUG -fno-exceptions -fno-rtti")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -DNDEBUG")
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -DNDEBUG")
 
 # Release flags:
