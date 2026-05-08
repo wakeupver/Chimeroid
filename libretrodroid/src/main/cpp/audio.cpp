@@ -111,9 +111,12 @@ void Audio::write(const int16_t *data, size_t frames) {
     // audio artifacts (clicks/pops) when a core produces audio faster than Oboe
     // consumes it (e.g. during fast-forward or the first few frames of emulation).
     int32_t samples = static_cast<int32_t>(frames * 2);
-    int32_t freeFrames = fifoBuffer->getFreeFramesAvailable();
+    int32_t capacity = static_cast<int32_t>(fifoBuffer->getBufferCapacityInFrames());
+    int32_t full     = static_cast<int32_t>(fifoBuffer->getFullFramesAvailable());
+    int32_t freeFrames = capacity - full;
     if (samples > freeFrames) {
-        int32_t toDrop = std::min(samples - freeFrames, fifoBuffer->getFullFramesAvailable());
+        int32_t toDrop = samples - freeFrames;
+        if (toDrop > full) toDrop = full; // clamp to what's actually readable
         if (toDrop > 0) {
             fifoBuffer->readNow(temporaryAudioBuffer.get(), toDrop);
         }
