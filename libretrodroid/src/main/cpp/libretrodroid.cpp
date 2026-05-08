@@ -267,6 +267,12 @@ void LibretroDroid::onSurfaceCreated() {
 
     video = std::unique_ptr<Video>(newVideo);
 
+    // Re-apply the stored aspect ratio override to the newly created Video object.
+    // The Video constructor initialises VideoLayout with aspectRatio=1.0 (default).
+    // Without this call, changing Android display resolution triggers onSurfaceCreated,
+    // which creates a new Video with the wrong AR → game appears clipped until restart.
+    refreshAspectRatio();
+
     if (Environment::getInstance().getHwContextReset() != nullptr) {
         Environment::getInstance().getHwContextReset()();
     }
