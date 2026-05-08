@@ -120,9 +120,14 @@ void FPSSync::wait() {
     std::this_thread::sleep_until(sleepUntil);
     // Busy-spin the last ~800 µs for precise wakeup
     while (std::chrono::steady_clock::now() < deadline) {
-        // __builtin_arm_yield() hints the CPU to yield in a spin-wait loop,
-        // reducing power consumption and contention on hyperthreaded cores.
+        // Yield hint: reduces power and memory-bus pressure in a tight spin loop.
+        // Use the ARM YIELD hint on ARM/AArch64 (where it's a real instruction),
+        // fall back to C++ yield on other architectures.
+#if defined(__arm__) || defined(__aarch64__)
         __builtin_arm_yield();
+#else
+        std::this_thread::yield();
+#endif
     }
 }
 

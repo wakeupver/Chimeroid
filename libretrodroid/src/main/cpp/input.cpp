@@ -31,6 +31,40 @@ int16_t Input::getInputState(unsigned port, unsigned device, unsigned index, uns
 
     switch (device) {
         case RETRO_DEVICE_JOYPAD: {
+            // RETRO_DEVICE_ID_JOYPAD_MASK (256): return all button states packed into
+            // a bitmask.  Cores that use this path make a single input_state_cb() call
+            // instead of 16 individual ones — significantly reduces per-frame overhead
+            // (each call crosses the C→JNI boundary).  We advertised bitmask support
+            // via RETRO_ENVIRONMENT_GET_INPUT_BITMASKS returning true.
+            if (id == RETRO_DEVICE_ID_JOYPAD_MASK) {
+                int16_t mask = 0;
+                // Standard digital buttons
+                static const unsigned buttons[] = {
+                    RETRO_DEVICE_ID_JOYPAD_B, RETRO_DEVICE_ID_JOYPAD_Y,
+                    RETRO_DEVICE_ID_JOYPAD_SELECT, RETRO_DEVICE_ID_JOYPAD_START,
+                    RETRO_DEVICE_ID_JOYPAD_A, RETRO_DEVICE_ID_JOYPAD_X,
+                    RETRO_DEVICE_ID_JOYPAD_L, RETRO_DEVICE_ID_JOYPAD_R,
+                    RETRO_DEVICE_ID_JOYPAD_L2, RETRO_DEVICE_ID_JOYPAD_R2,
+                    RETRO_DEVICE_ID_JOYPAD_L3, RETRO_DEVICE_ID_JOYPAD_R3,
+                };
+                for (unsigned btn : buttons) {
+                    if (anyPressed(port, btn)) mask |= (1 << btn);
+                }
+                // D-pad with axis support
+                if (pads[port].dpadXAxis == -1 || anyPressed(port, RETRO_DEVICE_ID_JOYPAD_LEFT,
+                        Input::RETRO_DEVICE_ID_JOYPAD_DOWN_LEFT, Input::RETRO_DEVICE_ID_JOYPAD_UP_LEFT))
+                    mask |= (1 << RETRO_DEVICE_ID_JOYPAD_LEFT);
+                if (pads[port].dpadXAxis == 1 || anyPressed(port, RETRO_DEVICE_ID_JOYPAD_RIGHT,
+                        Input::RETRO_DEVICE_ID_JOYPAD_UP_RIGHT, Input::RETRO_DEVICE_ID_JOYPAD_DOWN_RIGHT))
+                    mask |= (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT);
+                if (pads[port].dpadYAxis == -1 || anyPressed(port, RETRO_DEVICE_ID_JOYPAD_UP,
+                        Input::RETRO_DEVICE_ID_JOYPAD_UP_LEFT, Input::RETRO_DEVICE_ID_JOYPAD_UP_RIGHT))
+                    mask |= (1 << RETRO_DEVICE_ID_JOYPAD_UP);
+                if (pads[port].dpadYAxis == 1 || anyPressed(port, RETRO_DEVICE_ID_JOYPAD_DOWN,
+                        Input::RETRO_DEVICE_ID_JOYPAD_DOWN_LEFT, Input::RETRO_DEVICE_ID_JOYPAD_DOWN_RIGHT))
+                    mask |= (1 << RETRO_DEVICE_ID_JOYPAD_DOWN);
+                return mask;
+            }
             switch (id) {
                 case RETRO_DEVICE_ID_JOYPAD_LEFT: {
                     bool axis = pads[port].dpadXAxis == -1;

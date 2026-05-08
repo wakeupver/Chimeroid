@@ -571,6 +571,13 @@ void LibretroDroid::step() {
         // Re-apply EGL swap interval since the core rate changed.
         applyEGLSwapInterval();
 
+        // Stop the old Oboe stream before destroying the Audio object.
+        // Oboe's data callback runs on a separate high-priority thread; destroying
+        // the Audio object while the callback is still running causes a use-after-free
+        // on the resampler and FIFO buffer.  Calling stop() first ensures Oboe drains
+        // and stops the callback thread before the destructor runs.
+        if (audio) audio->stop();
+
         double inputSampleRate = newSampleRate * fpsSync->getTimeStretchFactor();
         audio = std::make_unique<Audio>(
             (int32_t) std::lround(inputSampleRate),
