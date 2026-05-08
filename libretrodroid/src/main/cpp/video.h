@@ -127,6 +127,11 @@ private:
     unsigned fboAllocatedWidth  = 0;
     unsigned fboAllocatedHeight = 0;
 
+    // Cached uniform values — skip redundant glUniform* calls when unchanged.
+    float cachedTextureWidth   = -1.0f;
+    float cachedTextureHeight  = -1.0f;
+    float cachedScreenDensity  = -1.0f;
+
 };
 
 }
