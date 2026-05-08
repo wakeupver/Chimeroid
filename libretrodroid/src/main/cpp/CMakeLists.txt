@@ -6,24 +6,20 @@ set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -DNDEBUG")
 
 # Release flags:
 #  -march=armv8.2-a+simd+crypto  – enables fp16/dotprod on A75/A76/A55 gen2+
-#  -mtune=cortex-a76             – tune for performance cluster (big core)
+#  -mtune=cortex-a55             – size-optimise for efficiency cluster
 #  -fno-strict-aliasing          – safe with NEON pointer casts
 #  -falign-functions=64          – hot functions start on cache-line boundaries
 #  -fno-math-errno               – remove math-error-check overhead (safe with -ffast-math)
-#  -fno-exceptions/-fno-rtti     – eliminate C++ exception tables and type-info overhead
-#  -fmerge-all-constants         – deduplicate floating-point/string constants across TUs
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=armv8.2-a+simd+crypto -mtune=cortex-a76 \
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=armv8.2-a+simd+crypto -mtune=cortex-a55 \
     -ffast-math -fno-math-errno -fno-strict-aliasing \
     -fomit-frame-pointer -funroll-loops \
     -falign-functions=64 \
-    -fmerge-all-constants \
     -fvisibility=hidden -flto=thin \
     -ffunction-sections -fdata-sections")
-set(CMAKE_C_FLAGS_RELEASE   "-O3 -march=armv8.2-a+simd+crypto -mtune=cortex-a76 \
+set(CMAKE_C_FLAGS_RELEASE   "-O3 -march=armv8.2-a+simd+crypto -mtune=cortex-a55 \
     -ffast-math -fno-math-errno -fno-strict-aliasing \
     -fomit-frame-pointer -funroll-loops \
     -falign-functions=64 \
-    -fmerge-all-constants \
     -fvisibility=hidden -flto=thin \
     -ffunction-sections -fdata-sections")
 set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} \
