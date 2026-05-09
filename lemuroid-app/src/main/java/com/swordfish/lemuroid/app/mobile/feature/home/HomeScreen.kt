@@ -6,16 +6,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -36,10 +33,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Sort
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
@@ -51,14 +48,16 @@ import androidx.compose.material.icons.rounded.ViewModule
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -70,28 +69,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import com.swordfish.lemuroid.R
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.GradientEnd
-import com.swordfish.lemuroid.app.mobile.shared.compose.ui.GradientMid
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.GradientStart
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.LemuroidGameCard
-import com.swordfish.lemuroid.app.mobile.shared.compose.ui.NeonCyan
-import com.swordfish.lemuroid.app.mobile.shared.compose.ui.NeonOrange
 import com.swordfish.lemuroid.app.utils.android.ComposableLifecycle
 import com.swordfish.lemuroid.common.displayDetailsSettingsScreen
 import com.swordfish.lemuroid.lib.library.db.entity.Game
 import kotlinx.coroutines.launch
 
-private val Pad = 16.dp
+private val ScreenPadding = 16.dp
 
 // ─── Public entry point ───────────────────────────────────────────────────────
 
@@ -117,17 +111,17 @@ fun HomeScreen(
     val state = viewModel.getViewStates().collectAsState(HomeViewModel.UIState())
 
     HomeScreenContent(
-        modifier                     = modifier,
-        state                        = state.value,
-        onGameClicked                = onGameClick,
-        onGameLongClick              = onGameLongClick,
-        onOpenCoreSelection          = onOpenCoreSelection,
+        modifier                    = modifier,
+        state                       = state.value,
+        onGameClicked               = onGameClick,
+        onGameLongClick             = onGameLongClick,
+        onOpenCoreSelection         = onOpenCoreSelection,
         onEnableNotificationsClicked = {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
                 permissionsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         },
-        onEnableMicrophoneClicked    = { permissionsLauncher.launch(Manifest.permission.RECORD_AUDIO) },
-        onSetDirectoryClicked        = { viewModel.changeLocalStorageFolder(context) },
+        onEnableMicrophoneClicked   = { permissionsLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+        onSetDirectoryClicked       = { viewModel.changeLocalStorageFolder(context) },
         onSelectStorageLocationClicked = { viewModel.selectStorageLocation(context) },
     )
 }
@@ -146,11 +140,11 @@ private fun HomeScreenContent(
     onSetDirectoryClicked: () -> Unit,
     onSelectStorageLocationClicked: () -> Unit,
 ) {
-    var isListView   by remember { mutableStateOf(false) }
-    var searchQuery  by remember { mutableStateOf("") }
-    var showSortMenu by remember { mutableStateOf(false) }
-    val gridState    = rememberLazyGridState()
-    val scope        = rememberCoroutineScope()
+    var isListView    by remember { mutableStateOf(false) }
+    var searchQuery   by remember { mutableStateOf("") }
+    var showSortMenu  by remember { mutableStateOf(false) }
+    val gridState     = rememberLazyGridState()
+    val scope         = rememberCoroutineScope()
     val showScrollTop = gridState.firstVisibleItemIndex > 2
 
     Box(
@@ -159,25 +153,24 @@ private fun HomeScreenContent(
             .background(MaterialTheme.colorScheme.background),
     ) {
         LazyVerticalGrid(
-            columns               = if (isListView) GridCells.Fixed(1) else GridCells.Adaptive(104.dp),
-            state                 = gridState,
-            modifier              = Modifier.fillMaxSize(),
-            contentPadding        = PaddingValues(top = 0.dp, bottom = 88.dp),
+            columns             = if (isListView) GridCells.Fixed(1) else GridCells.Adaptive(102.dp),
+            state               = gridState,
+            modifier            = Modifier.fillMaxSize(),
+            contentPadding      = PaddingValues(top = 4.dp, bottom = 80.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement   = Arrangement.spacedBy(10.dp),
         ) {
-
-            // ── Banner header ────────────────────────────────────────────────
+            // ── Header ──────────────────────────────────────────────────────
             item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                HomeBanner(
-                    isListView   = isListView,
-                    isRefreshing = false,
-                    onToggleView = { isListView = !isListView },
-                    onRefresh    = { },
+                HomeHeader(
+                    isListView     = isListView,
+                    isRefreshing   = false,
+                    onToggleView   = { isListView = !isListView },
+                    onRefresh      = { /* viewModel.refresh */ },
                 )
             }
 
-            // ── Search ───────────────────────────────────────────────────────
+            // ── Search bar ──────────────────────────────────────────────────
             item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                 HomeSearchBar(
                     query         = searchQuery,
@@ -187,12 +180,12 @@ private fun HomeScreenContent(
                 )
             }
 
-            // ── Notification cards ───────────────────────────────────────────
+            // ── Notification cards ──────────────────────────────────────────
             item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     AnimatedVisibility(state.showStorageLocationCard) {
                         HomeNotification(
-                            titleId   = R.string.home_storage_location_title,
+                            titleId  = R.string.home_storage_location_title,
                             messageId = R.string.home_storage_location_message,
                             actionId  = R.string.home_storage_location_action,
                             onAction  = onSelectStorageLocationClicked,
@@ -200,7 +193,7 @@ private fun HomeScreenContent(
                     }
                     AnimatedVisibility(state.showNoNotificationPermissionCard) {
                         HomeNotification(
-                            titleId   = R.string.home_notification_title,
+                            titleId  = R.string.home_notification_title,
                             messageId = R.string.home_notification_message,
                             actionId  = R.string.home_notification_action,
                             onAction  = onEnableNotificationsClicked,
@@ -208,7 +201,7 @@ private fun HomeScreenContent(
                     }
                     AnimatedVisibility(state.showNoGamesCard) {
                         HomeNotification(
-                            titleId   = R.string.home_empty_title,
+                            titleId  = R.string.home_empty_title,
                             messageId = R.string.home_empty_message,
                             actionId  = R.string.home_empty_action,
                             onAction  = onSetDirectoryClicked,
@@ -217,7 +210,7 @@ private fun HomeScreenContent(
                     }
                     AnimatedVisibility(state.showNoMicrophonePermissionCard) {
                         HomeNotification(
-                            titleId   = R.string.home_microphone_title,
+                            titleId  = R.string.home_microphone_title,
                             messageId = R.string.home_microphone_message,
                             actionId  = R.string.home_microphone_action,
                             onAction  = onEnableMicrophoneClicked,
@@ -225,7 +218,7 @@ private fun HomeScreenContent(
                     }
                     AnimatedVisibility(state.showDesmumeDeprecatedCard) {
                         HomeNotification(
-                            titleId   = R.string.home_notification_desmume_deprecated_title,
+                            titleId  = R.string.home_notification_desmume_deprecated_title,
                             messageId = R.string.home_notification_desmume_deprecated_message,
                             actionId  = R.string.home_notification_desmume_deprecated_action,
                             onAction  = onOpenCoreSelection,
@@ -234,60 +227,62 @@ private fun HomeScreenContent(
                 }
             }
 
-            // ── Recent games ─────────────────────────────────────────────────
+            // ── Recent games row ────────────────────────────────────────────
             if (state.recentGames.isNotEmpty()) {
                 item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                     HomeGameRow(
-                        title           = stringResource(R.string.recent),
-                        games           = state.recentGames,
-                        onGameClick     = onGameClicked,
+                        title        = stringResource(R.string.recent),
+                        games        = state.recentGames,
+                        onGameClick  = onGameClicked,
                         onGameLongClick = onGameLongClick,
                     )
                 }
             }
 
-            // ── Favorites ────────────────────────────────────────────────────
+            // ── Favorites row ───────────────────────────────────────────────
             if (state.favoritesGames.isNotEmpty()) {
                 item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                     HomeGameRow(
-                        title           = stringResource(R.string.favorites),
-                        games           = state.favoritesGames,
-                        onGameClick     = onGameClicked,
+                        title        = stringResource(R.string.favorites),
+                        games        = state.favoritesGames,
+                        onGameClick  = onGameClicked,
                         onGameLongClick = onGameLongClick,
-                        accentColor     = GradientEnd,  // cyan for favorites
                     )
                 }
             }
 
-            // ── Discovery section ─────────────────────────────────────────────
+            // ── Discovery section label ─────────────────────────────────────
             if (state.discoveryGames.isNotEmpty()) {
                 item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                    HomeSectionHeader(
-                        text     = stringResource(R.string.discover),
-                        modifier = Modifier.padding(start = Pad, end = Pad, top = 4.dp, bottom = 0.dp),
+                    HomeSectionLabel(
+                        text    = stringResource(R.string.discover),
+                        modifier = Modifier.padding(horizontal = ScreenPadding, vertical = 4.dp),
                     )
                 }
 
+                // ── Discovery grid items ────────────────────────────────────
                 val filtered = state.discoveryGames.filter {
                     searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true)
                 }
                 items(filtered.size, key = { filtered[it].id }) { index ->
                     val game = filtered[index]
                     val cardModifier = if (isListView) {
-                        Modifier.fillMaxWidth().padding(horizontal = Pad)
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = ScreenPadding)
                     } else {
-                        Modifier.widthIn(0.dp, 148.dp)
+                        Modifier.widthIn(0.dp, 144.dp)
                     }
                     LemuroidGameCard(
-                        modifier    = cardModifier,
-                        game        = game,
-                        onClick     = { onGameClicked(game) },
-                        onLongClick = { onGameLongClick(game) },
+                        modifier     = cardModifier,
+                        game         = game,
+                        onClick      = { onGameClicked(game) },
+                        onLongClick  = { onGameLongClick(game) },
                     )
                 }
             }
 
-            // ── Empty state ──────────────────────────────────────────────────
+            // ── Empty state ─────────────────────────────────────────────────
             if (state.recentGames.isEmpty() && state.favoritesGames.isEmpty() &&
                 state.discoveryGames.isEmpty() && !state.showNoGamesCard
             ) {
@@ -297,32 +292,31 @@ private fun HomeScreenContent(
             }
         }
 
-        // ── Scroll-to-top FAB ─────────────────────────────────────────────────
+        // ── Scroll-to-top button ────────────────────────────────────────────
         AnimatedVisibility(
             visible  = showScrollTop,
             enter    = fadeIn(tween(180)) + scaleIn(tween(180)),
             exit     = fadeOut(tween(140)) + scaleOut(tween(140)),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = 28.dp),
+                .padding(end = 16.dp, bottom = 24.dp),
         ) {
+            val shape = RoundedCornerShape(18.dp)
             Box(
                 modifier = Modifier
-                    .size(46.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(listOf(GradientStart, GradientMid)),
-                    )
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication        = null,
-                    ) { scope.launch { gridState.animateScrollToItem(0) } },
+                    ) { scope.launch { gridState.animateScrollToItem(0) } }
+                    .padding(horizontal = 14.dp, vertical = 14.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector        = Icons.Rounded.KeyboardArrowUp,
                     contentDescription = stringResource(R.string.back),
-                    tint               = Color.White,
+                    tint               = MaterialTheme.colorScheme.onSurface,
                     modifier           = Modifier.size(22.dp),
                 )
             }
@@ -330,80 +324,45 @@ private fun HomeScreenContent(
     }
 }
 
-// ─── Banner / Header ──────────────────────────────────────────────────────────
+// ─── Header ───────────────────────────────────────────────────────────────────
 
 @Composable
-private fun HomeBanner(
+private fun HomeHeader(
     isListView: Boolean,
     isRefreshing: Boolean,
     onToggleView: () -> Unit,
     onRefresh: () -> Unit,
 ) {
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp)
-            .background(
-                Brush.verticalGradient(
-                    colors        = listOf(
-                        GradientStart.copy(alpha = 0.30f),
-                        MaterialTheme.colorScheme.background,
-                    ),
-                ),
-            )
-            .padding(horizontal = Pad),
+            .padding(start = ScreenPadding, end = ScreenPadding, top = 16.dp, bottom = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment     = Alignment.CenterVertically,
     ) {
-        // Decorative orb top-right
-        Box(
-            modifier = Modifier
-                .size(160.dp)
-                .align(Alignment.TopEnd)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(GradientEnd.copy(alpha = 0.18f), Color.Transparent),
-                    ),
-                    CircleShape,
-                ),
-        )
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(top = 24.dp),
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text  = "CHIMEROID",
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight    = FontWeight.Black,
-                    letterSpacing = 3.sp,
-                ),
-                color = GradientStart,
-            )
-            Text(
-                text  = stringResource(R.string.title_home),
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onBackground,
+                text     = stringResource(R.string.title_home),
+                style    = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                color    = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
 
-        // Icon row — top right
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(0.dp),
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             IconButton(onClick = onRefresh, enabled = !isRefreshing) {
                 if (isRefreshing) {
                     CircularProgressIndicator(
                         modifier    = Modifier.size(20.dp),
                         strokeWidth = 2.dp,
-                        color       = MaterialTheme.colorScheme.primary,
+                        color       = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 } else {
                     Icon(
-                        Icons.Rounded.Refresh, null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        imageVector        = Icons.Rounded.Refresh,
+                        contentDescription = null,
+                        tint               = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -427,108 +386,80 @@ private fun HomeSearchBar(
     onQueryChange: (String) -> Unit,
     onSortToggle: (Boolean) -> Unit,
 ) {
-    val focused = query.isNotEmpty()
-    val borderBrush = if (focused) {
-        Brush.linearGradient(listOf(GradientStart, GradientEnd))
-    } else {
-        Brush.linearGradient(listOf(
-            MaterialTheme.colorScheme.outline,
-            MaterialTheme.colorScheme.outline,
-        ))
-    }
-
-    Box(
-        modifier = Modifier
+    OutlinedTextField(
+        value         = query,
+        onValueChange = onQueryChange,
+        modifier      = Modifier
             .fillMaxWidth()
-            .padding(horizontal = Pad, vertical = 4.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .border(
-                width = if (focused) 1.5.dp else 1.dp,
-                brush = borderBrush,
-                shape = RoundedCornerShape(14.dp),
-            ),
-    ) {
-        TextField(
-            value         = query,
-            onValueChange = onQueryChange,
-            modifier      = Modifier.fillMaxWidth(),
-            placeholder   = {
-                Text(
-                    text  = stringResource(R.string.title_search),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-                )
-            },
-            leadingIcon = {
-                Icon(
-                    Icons.Rounded.Search, null,
-                    tint     = if (focused) MaterialTheme.colorScheme.primary
-                               else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-                    modifier = Modifier.size(20.dp),
-                )
-            },
-            trailingIcon = {
-                Row {
-                    if (query.isNotBlank()) {
-                        IconButton(onClick = { onQueryChange("") }) {
-                            Icon(Icons.Rounded.Close, null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    Box {
-                        IconButton(onClick = { onSortToggle(true) }) {
-                            Icon(Icons.AutoMirrored.Rounded.Sort, null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        DropdownMenu(expanded = showSortMenu, onDismissRequest = { onSortToggle(false) }) {
-                            DropdownMenuItem(
-                                text    = { Text(stringResource(R.string.title_home)) },
-                                onClick = { onSortToggle(false) },
-                            )
-                        }
+            .padding(horizontal = ScreenPadding, vertical = 4.dp),
+        placeholder   = {
+            Text(
+                text  = stringResource(R.string.title_search),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            )
+        },
+        leadingIcon   = {
+            Icon(
+                imageVector        = Icons.Rounded.Search,
+                contentDescription = null,
+                tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            )
+        },
+        trailingIcon  = {
+            Row {
+                if (query.isNotBlank()) {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(
+                            imageVector        = Icons.Rounded.Close,
+                            contentDescription = null,
+                            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
-            },
-            singleLine = true,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor   = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedIndicatorColor   = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor  = Color.Transparent,
-            ),
-        )
-    }
+                Box {
+                    IconButton(onClick = { onSortToggle(true) }) {
+                        Icon(
+                            imageVector        = Icons.AutoMirrored.Rounded.Sort,
+                            contentDescription = null,
+                            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    DropdownMenu(
+                        expanded          = showSortMenu,
+                        onDismissRequest  = { onSortToggle(false) },
+                    ) {
+                        DropdownMenuItem(
+                            text    = { Text(stringResource(R.string.title_home)) },
+                            onClick = { onSortToggle(false) },
+                        )
+                    }
+                }
+            }
+        },
+        singleLine = true,
+        shape      = RoundedCornerShape(20.dp),
+        colors     = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor   = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            focusedContainerColor   = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+        ),
+    )
 }
 
-// ─── Section header with accent line ─────────────────────────────────────────
+// ─── Section label ────────────────────────────────────────────────────────────
 
 @Composable
-private fun HomeSectionHeader(text: String, modifier: Modifier = Modifier) {
-    Row(
-        modifier          = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .width(3.dp)
-                .height(18.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(Brush.verticalGradient(listOf(GradientStart, GradientEnd))),
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text  = text.uppercase(),
-            style = MaterialTheme.typography.labelLarge.copy(
-                fontWeight    = FontWeight.ExtraBold,
-                letterSpacing = 1.5.sp,
-            ),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
+private fun HomeSectionLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text     = text,
+        style    = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+        color    = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier,
+    )
 }
 
-// ─── Horizontal game row ──────────────────────────────────────────────────────
+// ─── Horizontal game row (Recent / Favorites) ─────────────────────────────────
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -537,39 +468,23 @@ private fun HomeGameRow(
     games: List<Game>,
     onGameClick: (Game) -> Unit,
     onGameLongClick: (Game) -> Unit,
-    accentColor: Color = GradientStart,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier          = Modifier.padding(start = Pad, end = Pad, bottom = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .height(16.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(accentColor),
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text  = title.uppercase(),
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight    = FontWeight.ExtraBold,
-                    letterSpacing = 1.5.sp,
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+        HomeSectionLabel(
+            text     = title,
+            modifier = Modifier.padding(start = ScreenPadding, end = ScreenPadding, bottom = 6.dp),
+        )
         LazyRow(
             modifier              = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            contentPadding        = PaddingValues(horizontal = Pad),
+            contentPadding        = PaddingValues(horizontal = ScreenPadding),
         ) {
             items(games.size, key = { games[it].id }) { index ->
                 val game = games[index]
                 LemuroidGameCard(
-                    modifier    = Modifier.width(112.dp).animateItem(),
+                    modifier    = Modifier
+                        .width(108.dp)
+                        .animateItem(),
                     game        = game,
                     onClick     = { onGameClick(game) },
                     onLongClick = { onGameLongClick(game) },
@@ -589,53 +504,25 @@ private fun HomeNotification(
     enabled: Boolean = true,
     onAction: () -> Unit = {},
 ) {
-    Row(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = Pad)
-            .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(
-                width = 1.dp,
-                brush = Brush.linearGradient(listOf(NeonOrange, NeonCyan)),
-                shape = RoundedCornerShape(14.dp),
-            )
-            .padding(14.dp),
-        verticalAlignment = Alignment.Top,
+            .padding(horizontal = ScreenPadding),
+        shape    = RoundedCornerShape(16.dp),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text  = stringResource(titleId),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text  = stringResource(messageId),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(Modifier.width(12.dp))
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(10.dp))
-                .background(
-                    if (enabled) Brush.linearGradient(listOf(GradientStart, GradientMid))
-                    else Brush.linearGradient(listOf(
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(0.3f),
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(0.3f),
-                    )),
-                )
-                .clickable(enabled = enabled) { onAction() }
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center,
+        Column(
+            modifier  = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text  = stringResource(actionId),
-                style = MaterialTheme.typography.labelLarge,
-                color = Color.White,
-            )
+            Text(text = stringResource(titleId), style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(messageId), style = MaterialTheme.typography.bodyMedium)
+            OutlinedButton(
+                modifier = Modifier.align(Alignment.End),
+                onClick  = onAction,
+                enabled  = enabled,
+            ) { Text(stringResource(actionId)) }
         }
     }
 }
@@ -647,25 +534,22 @@ private fun HomeEmptyGames() {
     Column(
         modifier              = Modifier
             .fillMaxWidth()
-            .height(380.dp)
-            .padding(Pad),
+            .height(360.dp)
+            .padding(ScreenPadding),
         horizontalAlignment   = Alignment.CenterHorizontally,
         verticalArrangement   = Arrangement.Center,
     ) {
-        // Gradient orb with icon
         Box(
             modifier = Modifier
-                .size(100.dp)
-                .clip(CircleShape)
+                .size(96.dp)
+                .clip(RoundedCornerShape(28.dp))
                 .background(
                     Brush.linearGradient(
-                        listOf(GradientStart.copy(0.20f), GradientEnd.copy(0.20f)),
+                        colors = listOf(
+                            GradientStart.copy(alpha = 0.15f),
+                            GradientEnd.copy(alpha = 0.15f),
+                        ),
                     ),
-                )
-                .border(
-                    width = 1.5.dp,
-                    brush = Brush.linearGradient(listOf(GradientStart, GradientEnd)),
-                    shape = CircleShape,
                 ),
             contentAlignment = Alignment.Center,
         ) {
@@ -676,10 +560,10 @@ private fun HomeEmptyGames() {
                 tint               = MaterialTheme.colorScheme.primary,
             )
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(20.dp))
         Text(
             text      = stringResource(R.string.home_empty_title),
-            style     = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+            style     = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color     = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
         )
@@ -690,33 +574,16 @@ private fun HomeEmptyGames() {
             color     = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(28.dp))
-        // Gradient CTA button
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(14.dp))
-                .background(Brush.linearGradient(listOf(GradientStart, GradientMid, GradientEnd)))
-                .clickable { }
-                .padding(horizontal = 28.dp, vertical = 13.dp),
-            contentAlignment = Alignment.Center,
+        Spacer(Modifier.height(24.dp))
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(
-                verticalAlignment      = Alignment.CenterVertically,
-                horizontalArrangement  = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(
-                    Icons.Rounded.FolderOpen, null,
-                    tint     = Color.White,
-                    modifier = Modifier.size(18.dp),
-                )
-                Text(
-                    text  = stringResource(R.string.home_empty_action),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.White,
-                )
+            FilledTonalButton(onClick = {}, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.home_empty_action))
             }
         }
     }
 }
-
-
