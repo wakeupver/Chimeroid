@@ -56,17 +56,12 @@ private:
     unsigned int bytesPerPixel = 1;
     bool swapRedAndBlueChannels = false;
     unsigned int glType = 0;
-    // Sized internal format required by glTexStorage2D (e.g. GL_RGBA8, GL_RGB565).
-    unsigned int glInternalFormatSized = 0;
+    unsigned int glInternalFormat = 0;
     unsigned int glFormat = 0;
 
     bool isDirty = true;
 
     unsigned int currentTexture = 0;
-    // Track last allocated texture dimensions; used to decide whether to
-    // recreate the immutable texture storage on size change.
-    unsigned int lastAllocatedWidth  = 0;
-    unsigned int lastAllocatedHeight = 0;
 
     ShaderManager::Chain shaders;
     std::unique_ptr<ES3Utils::Framebuffers> framebuffers = std::make_unique<ES3Utils::Framebuffers>();
