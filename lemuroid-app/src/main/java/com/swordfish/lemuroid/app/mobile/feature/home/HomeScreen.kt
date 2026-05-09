@@ -342,7 +342,7 @@ private fun HomeHeader(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text     = stringResource(R.string.app_name),
+                text     = stringResource(R.string.title_home),
                 style    = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color    = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
@@ -361,7 +361,7 @@ private fun HomeHeader(
                 } else {
                     Icon(
                         imageVector        = Icons.Rounded.Refresh,
-                        contentDescription = stringResource(R.string.home_refresh),
+                        contentDescription = null,
                         tint               = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
