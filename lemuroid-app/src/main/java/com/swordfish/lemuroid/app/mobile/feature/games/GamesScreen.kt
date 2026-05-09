@@ -1,10 +1,13 @@
 package com.swordfish.lemuroid.app.mobile.feature.games
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.LemuroidEmptyView
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.LemuroidGameListRow
@@ -26,15 +29,19 @@ fun GamesScreen(
         return
     }
 
-    LazyColumn(modifier = modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier            = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         items(games.itemCount, key = { games[it]?.id ?: it }) { index ->
             val game = games[index] ?: return@items
-
             LemuroidGameListRow(
-                modifier = Modifier.animateItem(),
-                game = game,
-                onClick = { onGameClick(game) },
-                onLongClick = { onGameLongClick(game) },
+                modifier         = Modifier.animateItem(),
+                game             = game,
+                onClick          = { onGameClick(game) },
+                onLongClick      = { onGameLongClick(game) },
                 onFavoriteToggle = { isFavorite -> onGameFavoriteToggle(game, isFavorite) },
             )
         }
