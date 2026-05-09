@@ -76,4 +76,13 @@ val md_theme_light_scrim  = Color(0x99000000)
 
 // Gradient accent
 val GradientStart = Color(0xFF2F66BE)
+val GradientMid   = Color(0xFFE040C0)
 val GradientEnd   = Color(0xFFA07BFF)
+
+// Card cover overlay
+val CoverGradientTop    = Color(0x00000000)
+val CoverGradientBottom = Color(0xEE000000)
+
+// Neon glow tints
+val NeonOrange = Color(0x40FF6B2B)
+val NeonCyan   = Color(0x3000D4FF)
