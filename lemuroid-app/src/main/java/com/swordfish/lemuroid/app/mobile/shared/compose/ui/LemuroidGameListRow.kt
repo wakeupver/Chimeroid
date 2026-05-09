@@ -51,8 +51,9 @@ fun LemuroidGameListRow(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (isPressed) 0.985f else 1f, animationSpec = tween(100), label = "row_scale")
+    val context = LocalContext.current
     val fallbackPainter = rememberDrawablePainter(remember(game) { CoverUtils.getFallbackDrawable(game) })
-    val subtitle = remember(game.id) { GameUtils.getGameSubtitle(LocalContext.current, game) }
+    val subtitle = remember(game.id) { GameUtils.getGameSubtitle(context, game) }
 
     Surface(
         modifier = modifier.fillMaxWidth().graphicsLayer(scaleX = scale, scaleY = scale)
