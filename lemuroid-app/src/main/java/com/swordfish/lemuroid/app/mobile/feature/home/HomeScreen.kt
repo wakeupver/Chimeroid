@@ -496,19 +496,62 @@ private fun SpeedDialCard(game: Game, modifier: Modifier, onClick: () -> Unit, o
 @Composable
 private fun DiscoverSection(games: List<Game>, onShuffle: () -> Unit, onGameClick: (Game) -> Unit, onLongClick: (Game) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = P, vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.discover),
+        Row(
+            modifier              = Modifier.fillMaxWidth().padding(horizontal = P, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment     = Alignment.CenterVertically,
+        ) {
+            Text(
+                text  = stringResource(R.string.discover),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground)
+                color = MaterialTheme.colorScheme.onBackground,
+            )
             SectionActionButton(Icons.Rounded.Shuffle, "Shuffle", onShuffle)
         }
-        LazyRow(modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = P),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(games, key = { it.id }) { game ->
-                DiscoverCard(game, { onGameClick(game) }, { onLongClick(game) })
+
+        // LazyRow wrapped in Box so we can overlay fade on edges
+        Box(modifier = Modifier.fillMaxWidth()) {
+            LazyRow(
+                modifier              = Modifier.fillMaxWidth(),
+                contentPadding        = PaddingValues(horizontal = P, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(games, key = { it.id }) { game ->
+                    DiscoverCard(game, { onGameClick(game) }, { onLongClick(game) })
+                }
             }
+
+            // Left fade
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .width(P)
+                    .height(180.dp)  // matches card height (148dp wide + title)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors  = listOf(
+                                MaterialTheme.colorScheme.background,
+                                MaterialTheme.colorScheme.background.copy(alpha = 0f),
+                            ),
+                        ),
+                    ),
+            )
+
+            // Right fade
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .width(P)
+                    .height(180.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors  = listOf(
+                                MaterialTheme.colorScheme.background.copy(alpha = 0f),
+                                MaterialTheme.colorScheme.background,
+                            ),
+                        ),
+                    ),
+            )
         }
     }
 }
