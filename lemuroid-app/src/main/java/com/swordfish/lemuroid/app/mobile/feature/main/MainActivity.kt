@@ -163,7 +163,6 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                         onUpdateQueryString = { mainViewModel.changeQueryString(it) },
                     )
                 },
-                bottomBar = { MainNavigationBar(currentRoute, navController) },
             ) { padding ->
                 NavHost(
                     modifier         = Modifier.fillMaxSize(),

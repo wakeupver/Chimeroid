@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.CloudSync
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -48,7 +48,6 @@ import com.swordfish.lemuroid.R
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.GradientEnd
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.GradientStart
 import com.swordfish.lemuroid.app.shared.savesync.SaveSyncWork
-import androidx.compose.foundation.layout.Column
 
 @Composable
 fun MainTopBar(
@@ -63,7 +62,6 @@ fun MainTopBar(
             route               = currentRoute,
             navController       = navController,
             mainUIState         = mainUIState,
-            onHelpPressed       = onHelpPressed,
             onUpdateQueryString = onUpdateQueryString,
         )
         AnimatedVisibility(mainUIState.operationInProgress) {
@@ -81,28 +79,20 @@ fun LemuroidTopAppBar(
     route: MainRoute,
     navController: NavController,
     mainUIState: MainViewModel.UiState,
-    onHelpPressed: () -> Unit,
     onUpdateQueryString: (String) -> Unit,
 ) {
     val context = LocalContext.current
 
     TopAppBar(
         title = {
-            if (route == MainRoute.SEARCH) {
-                LemuroidSearchView(
-                    mainUIState         = mainUIState,
-                    onUpdateQueryString = onUpdateQueryString,
+            when {
+                route == MainRoute.SEARCH -> LemuroidSearchView(mainUIState, onUpdateQueryString)
+                route.parent == null      -> GradientTitle(stringResource(route.titleId))
+                else                      -> Text(
+                    text  = stringResource(route.titleId),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
-            } else {
-                if (route.parent == null) {
-                    GradientTitle(text = stringResource(route.titleId))
-                } else {
-                    Text(
-                        text  = stringResource(route.titleId),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -110,11 +100,7 @@ fun LemuroidTopAppBar(
             scrolledContainerColor = MaterialTheme.colorScheme.surface,
         ),
         navigationIcon = {
-            AnimatedVisibility(
-                visible = route.parent != null,
-                enter   = fadeIn(),
-                exit    = fadeOut(),
-            ) {
+            AnimatedVisibility(visible = route.parent != null, enter = fadeIn(), exit = fadeOut()) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
                         imageVector        = Icons.AutoMirrored.Filled.ArrowBack,
@@ -125,14 +111,32 @@ fun LemuroidTopAppBar(
             }
         },
         actions = {
-            LemuroidTopBarActions(
-                route                = route,
-                navController        = navController,
-                context              = context,
-                saveSyncEnabled      = mainUIState.saveSyncEnabled,
-                operationsInProgress = mainUIState.operationInProgress,
-                onHelpPressed        = onHelpPressed,
-            )
+            Row {
+                // Save sync
+                if (mainUIState.saveSyncEnabled) {
+                    IconButton(
+                        onClick  = { SaveSyncWork.enqueueManualWork(context.applicationContext) },
+                        enabled  = !mainUIState.operationInProgress,
+                    ) {
+                        Icon(Icons.Outlined.CloudSync, null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                // Search — always visible on root screens (except SEARCH itself)
+                if (route.showBottomNavigation && route != MainRoute.SEARCH) {
+                    IconButton(onClick = { navController.navigate(MainRoute.SEARCH.route) }) {
+                        Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.title_search),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                // Settings — always visible on root screens
+                if (route.showBottomNavigation) {
+                    IconButton(onClick = { navController.navigate(MainRoute.SETTINGS.route) }) {
+                        Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
         },
     )
 }
@@ -150,83 +154,25 @@ fun GradientTitle(text: String) {
 }
 
 @Composable
-fun LemuroidTopBarActions(
-    route: MainRoute,
-    navController: NavController,
-    context: Context,
-    saveSyncEnabled: Boolean,
-    operationsInProgress: Boolean,
-    onHelpPressed: () -> Unit,
-) {
-    Row {
-        IconButton(onClick = onHelpPressed) {
-            Icon(
-                Icons.Outlined.Info,
-                contentDescription = stringResource(R.string.mobile_settings_help),
-                tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        if (saveSyncEnabled) {
-            IconButton(
-                onClick  = { SaveSyncWork.enqueueManualWork(context.applicationContext) },
-                enabled  = !operationsInProgress,
-            ) {
-                Icon(
-                    Icons.Outlined.CloudSync,
-                    contentDescription = stringResource(R.string.save_sync),
-                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        // Settings icon always visible on root screens
-        if (route.showBottomNavigation) {
-            IconButton(onClick = { navController.navigate(MainRoute.SETTINGS.route) }) {
-                Icon(
-                    Icons.Outlined.Settings,
-                    contentDescription = stringResource(R.string.settings),
-                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun LemuroidSearchView(
-    mainUIState: MainViewModel.UiState,
-    onUpdateQueryString: (String) -> Unit,
-) {
+private fun LemuroidSearchView(mainUIState: MainViewModel.UiState, onUpdateQueryString: (String) -> Unit) {
     val focusRequester = remember { FocusRequester() }
     val focusManager   = LocalFocusManager.current
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
-    ) {
+    Box(modifier = Modifier.fillMaxWidth().height(56.dp)) {
         Surface(
-            modifier       = Modifier
-                .fillMaxSize()
-                .padding(top = 8.dp, bottom = 8.dp, end = 8.dp),
+            modifier       = Modifier.fillMaxSize().padding(top = 8.dp, bottom = 8.dp, end = 8.dp),
             shape          = RoundedCornerShape(100),
             tonalElevation = 4.dp,
             color          = MaterialTheme.colorScheme.surface,
         ) {}
-
         TextField(
             value         = mainUIState.searchQuery,
-            modifier      = Modifier
-                .fillMaxSize()
-                .focusRequester(focusRequester),
+            modifier      = Modifier.fillMaxSize().focusRequester(focusRequester),
             textStyle     = MaterialTheme.typography.bodyMedium,
             leadingIcon   = {
-                Icon(
-                    Icons.Default.Search,
-                    contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             },
             onValueChange = onUpdateQueryString,
             singleLine    = true,

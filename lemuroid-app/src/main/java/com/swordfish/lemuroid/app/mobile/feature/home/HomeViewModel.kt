@@ -203,7 +203,7 @@ class HomeViewModel(
         PendingOperationsMonitor(appContext).anyLibraryOperationInProgress()
 
     private fun recentGames(retrogradeDb: RetrogradeDatabase) =
-        retrogradeDb.gameDao().selectFirstUnfavoriteRecents(CAROUSEL_MAX_ITEMS)
+        retrogradeDb.gameDao().selectFirstUnfavoriteRecents(4)
 
     private fun favoritesGames(retrogradeDb: RetrogradeDatabase) =
         retrogradeDb.gameDao().selectFirstFavorites(CAROUSEL_MAX_ITEMS)
