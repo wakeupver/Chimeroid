@@ -509,8 +509,12 @@ private fun DiscoverSection(games: List<Game>, onShuffle: () -> Unit, onGameClic
             SectionActionButton(Icons.Rounded.Shuffle, "Shuffle", onShuffle)
         }
 
-        // LazyRow wrapped in Box so we can overlay fade on edges
-        Box(modifier = Modifier.fillMaxWidth()) {
+        // LazyRow clipped with rounded corners matching card radius
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp)),
+        ) {
             LazyRow(
                 modifier              = Modifier.fillMaxWidth(),
                 contentPadding        = PaddingValues(horizontal = P, vertical = 4.dp),
@@ -520,38 +524,6 @@ private fun DiscoverSection(games: List<Game>, onShuffle: () -> Unit, onGameClic
                     DiscoverCard(game, { onGameClick(game) }, { onLongClick(game) })
                 }
             }
-
-            // Left fade — wider, multi-stop
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .width(40.dp)
-                    .height(180.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            0.0f to MaterialTheme.colorScheme.background,
-                            0.4f to MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
-                            0.75f to MaterialTheme.colorScheme.background.copy(alpha = 0.3f),
-                            1.0f to MaterialTheme.colorScheme.background.copy(alpha = 0f),
-                        ),
-                    ),
-            )
-
-            // Right fade — wider, multi-stop
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .width(40.dp)
-                    .height(180.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            0.0f to MaterialTheme.colorScheme.background.copy(alpha = 0f),
-                            0.25f to MaterialTheme.colorScheme.background.copy(alpha = 0.3f),
-                            0.6f to MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
-                            1.0f to MaterialTheme.colorScheme.background,
-                        ),
-                    ),
-            )
         }
     }
 }
