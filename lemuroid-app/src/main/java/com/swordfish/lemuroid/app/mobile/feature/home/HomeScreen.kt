@@ -75,7 +75,6 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.swordfish.lemuroid.R
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.GradientEnd
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.GradientStart
-import com.swordfish.lemuroid.app.mobile.shared.compose.ui.LemuroidGameCard
 import com.swordfish.lemuroid.app.shared.covers.CoverUtils
 import com.swordfish.lemuroid.app.utils.android.ComposableLifecycle
 import com.swordfish.lemuroid.app.utils.games.GameUtils
@@ -84,7 +83,10 @@ import com.swordfish.lemuroid.lib.library.db.entity.Game
 import kotlinx.coroutines.launch
 
 private val ScreenPadding = 16.dp
-private val genreChips = listOf("All", "Action", "RPG", "Racing", "Sports", "Arcade", "Puzzle", "Shooter")
+private val systemChips = listOf(
+    "All", "PSP", "Dreamcast", "PSX", "GBA", "NDS", "N64",
+    "SNES", "NES", "Genesis", "3DS", "PC Engine", "Atari",
+)
 
 // ─── Public entry point ───────────────────────────────────────────────────────
 
@@ -157,7 +159,7 @@ private fun HomeScreenContent(
             // Genre / mood chips
             item {
                 GenreChipsRow(
-                    chips          = genreChips,
+                    chips          = systemChips,
                     selectedIndex  = selectedChip,
                     onChipSelected = { selectedChip = it },
                 )
@@ -426,27 +428,73 @@ private fun SpeedDialCard(game: Game, modifier: Modifier, onClick: () -> Unit, o
 
 // ─── Discover ─────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DiscoverSection(games: List<Game>, onGameClick: (Game) -> Unit, onLongClick: (Game) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.discover),
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = ScreenPadding, vertical = 4.dp))
-        val cols  = 2
-        val shown = games.take(8)
-        val rows  = (shown.size + cols - 1) / cols
-        Column(modifier = Modifier.padding(horizontal = ScreenPadding), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            for (row in 0 until rows) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    for (col in 0 until cols) {
-                        val game = shown.getOrNull(row * cols + col)
-                        if (game != null) {
-                            LemuroidGameCard(modifier = Modifier.weight(1f), game = game,
-                                onClick = { onGameClick(game) }, onLongClick = { onLongClick(game) })
-                        } else { Spacer(Modifier.weight(1f)) }
-                    }
-                }
+        Text(
+            stringResource(R.string.discover),
+            style    = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            color    = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(horizontal = ScreenPadding, vertical = 4.dp),
+        )
+        LazyRow(
+            modifier              = Modifier.fillMaxWidth(),
+            contentPadding        = PaddingValues(horizontal = ScreenPadding),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            items(games.size, key = { games[it].id }) { index ->
+                val game = games[index]
+                DiscoverCoverCard(
+                    game        = game,
+                    onClick     = { onGameClick(game) },
+                    onLongClick = { onLongClick(game) },
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun DiscoverCoverCard(game: Game, onClick: () -> Unit, onLongClick: () -> Unit) {
+    val context         = LocalContext.current
+    val fallbackPainter = rememberDrawablePainter(remember(game) { CoverUtils.getFallbackDrawable(game) })
+
+    Surface(
+        modifier        = Modifier
+            .width(148.dp)
+            .clip(RoundedCornerShape(12.dp)),
+        shape           = RoundedCornerShape(12.dp),
+        color           = MaterialTheme.colorScheme.surfaceVariant,
+        onClick         = onClick,
+    ) {
+        Column {
+            // 1:1 cover art
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                AsyncImage(
+                    model              = ImageRequest.Builder(context).data(game.coverFrontUrl).build(),
+                    contentDescription = game.title,
+                    modifier           = Modifier.fillMaxSize(),
+                    fallback           = fallbackPainter,
+                    error              = fallbackPainter,
+                    contentScale       = ContentScale.Crop,
+                )
+            }
+            // Title below art
+            Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
+                Text(
+                    text     = game.title,
+                    style    = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color    = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
