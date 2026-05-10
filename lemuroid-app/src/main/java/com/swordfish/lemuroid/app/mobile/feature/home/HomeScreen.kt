@@ -521,34 +521,34 @@ private fun DiscoverSection(games: List<Game>, onShuffle: () -> Unit, onGameClic
                 }
             }
 
-            // Left fade
+            // Left fade — wider, multi-stop
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .width(P)
-                    .height(180.dp)  // matches card height (148dp wide + title)
+                    .width(40.dp)
+                    .height(180.dp)
                     .background(
                         Brush.horizontalGradient(
-                            colors  = listOf(
-                                MaterialTheme.colorScheme.background,
-                                MaterialTheme.colorScheme.background.copy(alpha = 0f),
-                            ),
+                            0.0f to MaterialTheme.colorScheme.background,
+                            0.4f to MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
+                            0.75f to MaterialTheme.colorScheme.background.copy(alpha = 0.3f),
+                            1.0f to MaterialTheme.colorScheme.background.copy(alpha = 0f),
                         ),
                     ),
             )
 
-            // Right fade
+            // Right fade — wider, multi-stop
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .width(P)
+                    .width(40.dp)
                     .height(180.dp)
                     .background(
                         Brush.horizontalGradient(
-                            colors  = listOf(
-                                MaterialTheme.colorScheme.background.copy(alpha = 0f),
-                                MaterialTheme.colorScheme.background,
-                            ),
+                            0.0f to MaterialTheme.colorScheme.background.copy(alpha = 0f),
+                            0.25f to MaterialTheme.colorScheme.background.copy(alpha = 0.3f),
+                            0.6f to MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
+                            1.0f to MaterialTheme.colorScheme.background,
                         ),
                     ),
             )
