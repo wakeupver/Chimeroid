@@ -32,7 +32,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class HomeViewModel(
     appContext: Context,
     retrogradeDb: RetrogradeDatabase,
@@ -148,7 +148,6 @@ class HomeViewModel(
         )
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     init {
         viewModelScope.launch {
             // Discover: ALL games shuffled by seed (independent of chip selection)
@@ -223,7 +222,6 @@ class HomeViewModel(
             .map { systems -> systems.firstOrNull { it.systemId == SystemID.NDS.dbname }?.count ?: 0 }
             .distinctUntilChanged()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun microphoneNotification(db: RetrogradeDatabase): Flow<Boolean> =
         microphonePermissionEnabledState.flatMapLatest { isMicrophoneEnabled ->
             if (isMicrophoneEnabled) flowOf(false)
