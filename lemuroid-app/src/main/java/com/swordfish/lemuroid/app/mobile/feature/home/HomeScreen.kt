@@ -325,11 +325,11 @@ private fun HomeScreenContent(
             }
 
             // Scroll-to-top FAB
+            Column(modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp)) {
             AnimatedVisibility(
-                visible  = showScrollTop,
-                enter    = fadeIn(tween(180)) + scaleIn(tween(180)),
-                exit     = fadeOut(tween(140)) + scaleOut(tween(140)),
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+                visible = showScrollTop,
+                enter   = fadeIn(tween(180)) + scaleIn(tween(180)),
+                exit    = fadeOut(tween(140)) + scaleOut(tween(140)),
             ) {
                 Surface(
                     shape           = RoundedCornerShape(18.dp),
@@ -349,6 +349,7 @@ private fun HomeScreenContent(
                     }
                 }
             }
+            } // end Column FAB wrapper
         }
     }
 }
@@ -477,9 +478,14 @@ private fun SpeedDialCard(game: Game, modifier: Modifier, onClick: () -> Unit, o
                 game.title, Modifier.fillMaxSize(), fallback = fb, error = fb, contentScale = ContentScale.Crop)
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
                 listOf(MaterialTheme.colorScheme.background.copy(0f), MaterialTheme.colorScheme.background.copy(.75f)), startY = 80f)))
-            Text(game.title, MaterialTheme.typography.labelSmall.copy(FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.align(Alignment.BottomStart).padding(6.dp))
+            Text(
+                text     = game.title,
+                style    = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                color    = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.BottomStart).padding(6.dp),
+            )
         }
     }
 }
@@ -518,9 +524,14 @@ private fun DiscoverCard(game: Game, onClick: () -> Unit, onLongClick: () -> Uni
                 AsyncImage(ImageRequest.Builder(context).data(game.coverFrontUrl).build(),
                     game.title, Modifier.fillMaxSize(), fallback = fb, error = fb, contentScale = ContentScale.Crop)
             }
-            Text(game.title, MaterialTheme.typography.labelMedium.copy(FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp))
+            Text(
+                text     = game.title,
+                style    = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                color    = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            )
         }
     }
 }
@@ -556,11 +567,21 @@ private fun GameListRow(game: Game, onClick: () -> Unit, onMoreClick: () -> Unit
                 game.title, Modifier.fillMaxSize(), fallback = fb, error = fb, contentScale = ContentScale.Crop)
         }
         Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
-            Text(game.title, MaterialTheme.typography.bodyLarge.copy(FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                text     = game.title,
+                style    = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color    = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             if (subtitle.isNotBlank())
-                Text(subtitle, MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    text     = subtitle,
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
         }
         IconButton(onClick = onMoreClick, modifier = Modifier.size(36.dp)) {
             Icon(Icons.Rounded.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
@@ -591,12 +612,19 @@ private fun HomeEmptyGames() {
             Icon(Icons.Rounded.SportsEsports, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
         }
         Spacer(Modifier.height(20.dp))
-        Text(stringResource(R.string.home_empty_title),
-            MaterialTheme.typography.headlineSmall.copy(FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center)
+        Text(
+            text      = stringResource(R.string.home_empty_title),
+            style     = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color     = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+        )
         Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.home_empty_message), MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+        Text(
+            text      = stringResource(R.string.home_empty_message),
+            style     = MaterialTheme.typography.bodyMedium,
+            color     = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
         Spacer(Modifier.height(24.dp))
         FilledTonalButton(onClick = {}) {
             Icon(Icons.Rounded.FolderOpen, null, Modifier.size(18.dp))
