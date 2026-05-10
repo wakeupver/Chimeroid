@@ -60,6 +60,7 @@ class HomeViewModel(
         val favoritesGames: List<Game> = emptyList(),
         val recentGames: List<Game> = emptyList(),
         val discoveryGames: List<Game> = emptyList(),
+        val availableSystems: List<SystemID> = emptyList(),
         val indexInProgress: Boolean = true,
         val showNoNotificationPermissionCard: Boolean = false,
         val showNoMicrophonePermissionCard: Boolean = false,
@@ -72,6 +73,13 @@ class HomeViewModel(
     private val notificationsPermissionEnabledState = MutableStateFlow(true)
     private val storageLocationSetState = MutableStateFlow(directoriesManager.isBaseDirSet())
     private val uiStates = MutableStateFlow(UIState())
+
+    // null = "All" (no filter)
+    val selectedSystemId = MutableStateFlow<String?>(null)
+
+    fun selectSystem(systemId: String?) {
+        selectedSystemId.value = systemId
+    }
 
     fun getViewStates(): Flow<UIState> = uiStates
 
@@ -109,6 +117,7 @@ class HomeViewModel(
         favoritesGames: List<Game>,
         recentGames: List<Game>,
         discoveryGames: List<Game>,
+        availableSystems: List<SystemID>,
         indexInProgress: Boolean,
         notificationsPermissionEnabled: Boolean,
         showMicrophoneCard: Boolean,
@@ -120,6 +129,7 @@ class HomeViewModel(
             favoritesGames = favoritesGames,
             recentGames = recentGames,
             discoveryGames = discoveryGames,
+            availableSystems = availableSystems,
             indexInProgress = indexInProgress,
             showNoNotificationPermissionCard = !notificationsPermissionEnabled,
             showNoMicrophonePermissionCard = showMicrophoneCard,
@@ -131,18 +141,39 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
+            val filteredDiscoveryGames = selectedSystemId.flatMapLatest { sysId ->
+                if (sysId == null) {
+                    discoveryGames(retrogradeDb)
+                } else {
+                    retrogradeDb.gameDao().selectFirstBySystem(sysId, CAROUSEL_MAX_ITEMS)
+                }
+            }
+
             val uiStatesFlow =
                 combine(
                     favoritesGames(retrogradeDb),
                     recentGames(retrogradeDb),
-                    discoveryGames(retrogradeDb),
+                    filteredDiscoveryGames,
+                    availableSystems(retrogradeDb),
                     indexingInProgress(appContext),
                     notificationsPermissionEnabledState,
                     microphoneNotification(retrogradeDb),
                     desmumeWarningNotification(),
                     storageLocationSetState,
-                    ::buildViewState,
-                )
+                ) { args ->
+                    @Suppress("UNCHECKED_CAST")
+                    buildViewState(
+                        favoritesGames               = args[0] as List<Game>,
+                        recentGames                  = args[1] as List<Game>,
+                        discoveryGames               = args[2] as List<Game>,
+                        availableSystems             = args[3] as List<SystemID>,
+                        indexInProgress              = args[4] as Boolean,
+                        notificationsPermissionEnabled = args[5] as Boolean,
+                        showMicrophoneCard           = args[6] as Boolean,
+                        showDesmumeWarning           = args[7] as Boolean,
+                        storageLocationSet           = args[8] as Boolean,
+                    )
+                }
 
             uiStatesFlow
                 .debounce(DEBOUNCE_TIME)
@@ -162,6 +193,15 @@ class HomeViewModel(
 
     private fun favoritesGames(retrogradeDb: RetrogradeDatabase) =
         retrogradeDb.gameDao().selectFirstFavorites(CAROUSEL_MAX_ITEMS)
+
+    private fun availableSystems(retrogradeDb: RetrogradeDatabase): Flow<List<SystemID>> =
+        retrogradeDb.gameDao().selectSystemsWithCount()
+            .map { systemCounts ->
+                systemCounts
+                    .mapNotNull { sc -> SystemID.values().firstOrNull { it.dbname == sc.systemId } }
+                    .sortedBy { it.dbname }
+            }
+            .distinctUntilChanged()
 
     private fun dsGamesCount(retrogradeDb: RetrogradeDatabase): Flow<Int> {
         return retrogradeDb.gameDao().selectSystemsWithCount()

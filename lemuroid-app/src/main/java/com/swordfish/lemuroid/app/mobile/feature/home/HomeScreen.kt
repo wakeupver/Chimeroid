@@ -52,11 +52,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,14 +76,11 @@ import com.swordfish.lemuroid.app.shared.covers.CoverUtils
 import com.swordfish.lemuroid.app.utils.android.ComposableLifecycle
 import com.swordfish.lemuroid.app.utils.games.GameUtils
 import com.swordfish.lemuroid.common.displayDetailsSettingsScreen
+import com.swordfish.lemuroid.lib.library.SystemID
 import com.swordfish.lemuroid.lib.library.db.entity.Game
 import kotlinx.coroutines.launch
 
 private val ScreenPadding = 16.dp
-private val systemChips = listOf(
-    "All", "PSP", "Dreamcast", "PSX", "GBA", "NDS", "N64",
-    "SNES", "NES", "Genesis", "3DS", "PC Engine", "Atari",
-)
 
 // ─── Public entry point ───────────────────────────────────────────────────────
 
@@ -109,11 +103,14 @@ fun HomeScreen(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (!granted) context.displayDetailsSettingsScreen() }
 
-    val state = viewModel.getViewStates().collectAsState(HomeViewModel.UIState())
+    val state           = viewModel.getViewStates().collectAsState(HomeViewModel.UIState())
+    val selectedSystem  by viewModel.selectedSystemId.collectAsState()
 
     HomeScreenContent(
         modifier                       = modifier,
         state                          = state.value,
+        selectedSystemId               = selectedSystem,
+        onSystemSelected               = { viewModel.selectSystem(it) },
         onGameClicked                  = onGameClick,
         onGameLongClick                = onGameLongClick,
         onOpenCoreSelection            = onOpenCoreSelection,
@@ -133,6 +130,8 @@ fun HomeScreen(
 private fun HomeScreenContent(
     modifier: Modifier = Modifier,
     state: HomeViewModel.UIState,
+    selectedSystemId: String?,
+    onSystemSelected: (String?) -> Unit,
     onGameClicked: (Game) -> Unit,
     onGameLongClick: (Game) -> Unit,
     onOpenCoreSelection: () -> Unit,
@@ -141,7 +140,6 @@ private fun HomeScreenContent(
     onSetDirectoryClicked: () -> Unit,
     onSelectStorageLocationClicked: () -> Unit,
 ) {
-    var selectedChip  by remember { mutableIntStateOf(0) }
     val listState     = rememberLazyListState()
     val scope         = rememberCoroutineScope()
     val showScrollTop = listState.firstVisibleItemIndex > 2
@@ -156,12 +154,12 @@ private fun HomeScreenContent(
             modifier       = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 24.dp),
         ) {
-            // Genre / mood chips
+            // System chips — dynamic from scanned library
             item {
-                GenreChipsRow(
-                    chips          = systemChips,
-                    selectedIndex  = selectedChip,
-                    onChipSelected = { selectedChip = it },
+                SystemChipsRow(
+                    systems          = state.availableSystems,
+                    selectedSystemId = selectedSystemId,
+                    onSelected       = onSystemSelected,
                 )
             }
 
@@ -265,22 +263,88 @@ private fun HomeScreenContent(
     }
 }
 
-// ─── Genre chips ──────────────────────────────────────────────────────────────
+// ─── System chips ─────────────────────────────────────────────────────────────
+
+// Human-readable display names for each SystemID
+private fun SystemID.displayName(): String = when (this) {
+    SystemID.NES          -> "NES"
+    SystemID.SNES         -> "SNES"
+    SystemID.GENESIS      -> "Genesis"
+    SystemID.GB           -> "Game Boy"
+    SystemID.GBC          -> "GBC"
+    SystemID.GBA          -> "GBA"
+    SystemID.N64          -> "N64"
+    SystemID.SMS          -> "Master System"
+    SystemID.NDS          -> "NDS"
+    SystemID.GG           -> "Game Gear"
+    SystemID.ATARI2600    -> "Atari 2600"
+    SystemID.FBNEO        -> "FBNeo"
+    SystemID.MAME2003PLUS -> "MAME"
+    SystemID.PC_ENGINE    -> "PC Engine"
+    SystemID.LYNX         -> "Lynx"
+    SystemID.ATARI7800    -> "Atari 7800"
+    SystemID.SEGACD       -> "Sega CD"
+    SystemID.NGP          -> "Neo Geo Pocket"
+    SystemID.NGC          -> "Neo Geo Color"
+    SystemID.WS           -> "WonderSwan"
+    SystemID.WSC          -> "WonderSwan Color"
+    SystemID.DOS          -> "DOS"
+    SystemID.NINTENDO_3DS -> "3DS"
+    SystemID.DREAMCAST    -> "Dreamcast"
+    SystemID.PSX          -> "PlayStation"
+    SystemID.PSP          -> "PSP"
+}
 
 @Composable
-private fun GenreChipsRow(chips: List<String>, selectedIndex: Int, onChipSelected: (Int) -> Unit) {
+private fun SystemChipsRow(
+    systems: List<SystemID>,
+    selectedSystemId: String?,
+    onSelected: (String?) -> Unit,
+) {
+    // Only show if there are any systems scanned
+    if (systems.isEmpty()) return
+
     LazyRow(
         modifier              = Modifier.fillMaxWidth(),
         contentPadding        = PaddingValues(horizontal = ScreenPadding, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(chips.size) { i ->
-            val selected = i == selectedIndex
+        // "All" chip
+        item {
+            val allSelected = selectedSystemId == null
+            FilterChip(
+                selected = allSelected,
+                onClick  = { onSelected(null) },
+                label    = {
+                    Text("All", style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = if (allSelected) FontWeight.SemiBold else FontWeight.Normal))
+                },
+                shape  = RoundedCornerShape(50),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.onSurface,
+                    selectedLabelColor     = MaterialTheme.colorScheme.surface,
+                    containerColor         = MaterialTheme.colorScheme.surface,
+                    labelColor             = MaterialTheme.colorScheme.onSurface,
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled             = true,
+                    selected            = allSelected,
+                    borderColor         = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    selectedBorderColor = MaterialTheme.colorScheme.onSurface,
+                    borderWidth         = 1.dp,
+                    selectedBorderWidth = 1.dp,
+                ),
+            )
+        }
+        // Per-system chips
+        items(systems.size) { i ->
+            val system   = systems[i]
+            val selected = selectedSystemId == system.dbname
             FilterChip(
                 selected = selected,
-                onClick  = { onChipSelected(i) },
+                onClick  = { onSelected(system.dbname) },
                 label    = {
-                    Text(chips[i], style = MaterialTheme.typography.labelMedium.copy(
+                    Text(system.displayName(), style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal))
                 },
                 shape  = RoundedCornerShape(50),
