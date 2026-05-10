@@ -509,15 +509,16 @@ private fun DiscoverSection(games: List<Game>, onShuffle: () -> Unit, onGameClic
             SectionActionButton(Icons.Rounded.Shuffle, "Shuffle", onShuffle)
         }
 
-        // LazyRow clipped with rounded corners matching card radius
+        // Clip box starts exactly at the "D" of Discover (P = 16.dp)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(horizontal = P)
                 .clip(RoundedCornerShape(12.dp)),
         ) {
             LazyRow(
                 modifier              = Modifier.fillMaxWidth(),
-                contentPadding        = PaddingValues(horizontal = P, vertical = 4.dp),
+                contentPadding        = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(games, key = { it.id }) { game ->
