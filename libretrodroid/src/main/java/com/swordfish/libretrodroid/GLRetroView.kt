@@ -87,7 +87,7 @@ class GLRetroView(
     private var lifecycle: Lifecycle? = null
 
     init {
-        openGLESVersion = maxOf(getGLESVersion(context), data.requiredGLESVersion)
+        openGLESVersion = getGLESVersion(context)
         preserveEGLContextOnPause = true
         setEGLContextClientVersion(openGLESVersion)
         setRenderer(Renderer())

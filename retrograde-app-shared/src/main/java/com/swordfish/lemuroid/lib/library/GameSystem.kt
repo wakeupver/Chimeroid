@@ -1324,7 +1324,6 @@ data class GameSystem(
                             // Show all SwanStation variables in Core Options so power users
                             // can tweak BIOS paths, PGXP, overclock, etc.
                             autoDetectSettings = true,
-                            requiredGLESVersion = 3,
                         ),
                     ),
                     scanOptions =

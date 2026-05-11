@@ -37,11 +37,4 @@ data class SystemCoreConfig(
      * cores (e.g. SwanStation/PSX) where you want the full RetroArch-style variable dump.
      */
     val autoDetectSettings: Boolean = false,
-    /**
-     * Minimum OpenGL ES version the core requires.
-     * Passed to [GLRetroViewData.requiredGLESVersion] so the EGL context is created
-     * with the correct version. Defaults to 2 (standard GLES 2 context).
-     * Set to 3 for cores that require GLES 3 (e.g. SwanStation).
-     */
-    val requiredGLESVersion: Int = 2,
 ) : Serializable

@@ -34,11 +34,4 @@ class GLRetroViewData(context: Context) {
     var skipDuplicateFrames: Boolean = false
     var enableMicrophone: Boolean = false
     var immersiveMode: ImmersiveMode? = null
-    /**
-     * Minimum OpenGL ES version required by the core.
-     * 0 = auto-detect from device capability (default).
-     * 3 = force GLES 3 context (required by cores like SwanStation).
-     * The actual version used will be max(device_capability, this value).
-     */
-    var requiredGLESVersion: Int = 0
 }
