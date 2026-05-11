@@ -238,6 +238,7 @@ class GameViewModelRetroGameView(
             skipDuplicateFrames = systemCoreConfig.skipDuplicateFrames
             enableMicrophone = requestMicrophone
             immersiveMode = buildImmersiveModeConfiguration(enableImmersiveMode)
+            requiredGLESVersion = systemCoreConfig.requiredGLESVersion
         }
     }
 
