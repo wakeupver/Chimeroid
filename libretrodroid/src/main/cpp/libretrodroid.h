@@ -43,7 +43,6 @@
 #include "environment.h"
 #include "vfs/vfsfile.h"
 #include "renderers/es3/framebufferrenderer.h"
-#include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
 #include "utils/rect.h"
 
