@@ -179,6 +179,13 @@ bool Environment::environment_handle_set_hw_render(struct retro_hw_render_callba
     hw_render_callback->get_current_framebuffer = callback_get_current_framebuffer;
     hw_render_callback->get_proc_address = &eglGetProcAddress;
 
+    // Signal to the core that we will preserve the EGL context across surface
+    // recreations whenever possible (GLSurfaceView preserveEGLContextOnPause=true).
+    // SwanStation uses this flag to skip unnecessary GLAD re-initialisation and
+    // GPU resource teardown on context_reset calls that follow a window resize
+    // rather than a true context loss.
+    hw_render_callback->cache_context = true;
+
     return true;
 }
 

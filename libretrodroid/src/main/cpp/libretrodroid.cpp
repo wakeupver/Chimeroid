@@ -272,6 +272,27 @@ void LibretroDroid::onSurfaceCreated() {
     // which creates a new Video with the wrong AR → game appears clipped until restart.
     refreshAspectRatio();
 
+    // For HW-rendered cores (e.g. SwanStation) the surface may be recreated by the
+    // Android driver even when preserveEGLContextOnPause=true (observed on Adreno 630
+    // / crDroid on SDM845).  When that happens the old EGL context is destroyed and a
+    // brand-new one is created.  Without calling context_destroy first, SwanStation's
+    // SwitchToHardwareRenderer finds m_hw_render_display==null (because
+    // SwitchToSoftwareRenderer was never called) and creates a SECOND
+    // LibretroOpenGLHostDisplay while the first one is still alive as m_display.
+    // The subsequent DestroyRenderDevice() on the old display calls glDelete* on IDs
+    // that belong to the destroyed context; the Adreno EGL dispatch table's internal
+    // current_context pointer is null at that point and dereferencing it at offset 0x28
+    // produces SIGSEGV (fault addr 0x28) on the GLThread.
+    //
+    // Fix: always call context_destroy before context_reset when the surface is
+    // recreated.  This lets SwanStation cleanly switch back to the software renderer
+    // first (saving the HW display in m_hw_render_display), so that the subsequent
+    // context_reset can reuse or safely recreate it without double-free.
+    if (Environment::getInstance().getHwContextDestroy() != nullptr) {
+        LOGD("onSurfaceCreated: calling hw_context_destroy before hw_context_reset");
+        Environment::getInstance().getHwContextDestroy()();
+    }
+
     if (Environment::getInstance().getHwContextReset() != nullptr) {
         Environment::getInstance().getHwContextReset()();
     }
