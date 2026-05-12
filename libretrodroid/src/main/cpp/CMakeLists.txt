@@ -58,8 +58,6 @@ add_library(libretrodroid SHARED
         renderers/es3/es3utils.cpp
         renderers/es3/framebufferrenderer.h
         renderers/es3/framebufferrenderer.cpp
-        renderers/es2/imagerendereres2.h
-        renderers/es2/imagerendereres2.cpp
         renderers/es3/imagerendereres3.h
         renderers/es3/imagerendereres3.cpp
         audio.h

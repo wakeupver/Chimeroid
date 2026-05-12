@@ -38,7 +38,6 @@
 #include "utils/javautils.h"
 #include "environment.h"
 #include "renderers/es3/framebufferrenderer.h"
-#include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
 #include "utils/utils.h"
 #include "utils/rect.h"
@@ -359,11 +358,6 @@ void LibretroDroid::create(
     core->retro_init();
 
     preferLowLatencyAudio = lowLatencyAudio;
-
-    // HW accelerated cores are only supported on opengles 3.
-    if (Environment::getInstance().isUseHwAcceleration() && openglESVersion < 3) {
-        throw LibretroDroidError("OpenGL ES 3 is required for this Core", ERROR_GL_NOT_COMPATIBLE);
-    }
 
     fragmentShaderConfig = shaderConfig;
 

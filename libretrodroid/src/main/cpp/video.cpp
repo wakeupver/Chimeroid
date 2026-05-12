@@ -28,7 +28,6 @@
 #include "video.h"
 #include "renderers/es3/framebufferrenderer.h"
 #include "renderers/es3/imagerendereres3.h"
-#include "renderers/es2/imagerendereres2.h"
 
 namespace libretrodroid {
 
@@ -386,11 +385,7 @@ void Video::initializeRenderer(RenderingOptions renderingOptions) {
             std::move(shaders)
         );
     } else {
-        if (renderingOptions.openglESVersion >= 3) {
-            renderer = new ImageRendererES3();
-        } else {
-            renderer = new ImageRendererES2();
-        }
+        renderer = new ImageRendererES3();
     }
 
     renderer->setPixelFormat(renderingOptions.pixelFormat);
