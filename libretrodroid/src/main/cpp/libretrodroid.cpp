@@ -229,24 +229,6 @@ void LibretroDroid::onSurfaceCreated() {
     struct retro_system_av_info system_av_info {};
     core->retro_get_system_av_info(&system_av_info);
 
-    // Correct libretro HW-render protocol for context recreation:
-    //   1. Call context_destroy   — core tears down its own GL resources
-    //   2. Delete our GL objects  — safe now that core has released references
-    //   3. Create new GL objects
-    //   4. Call context_reset     — core rebuilds its GL resources in the new context
-    //
-    // Skipping step 1 causes SwanStation to skip its own teardown, so
-    // context_reset creates new objects on top of stale internal state.
-    // On the next retro_run() SwanStation mixes stale IDs (invalid in the new
-    // EGL context) with newly created IDs → Adreno null-ptr crash at offset 0x28.
-    //
-    // This mirrors RetroArch's video_driver_free_hw_context() call sequence.
-    if (Environment::getInstance().isUseHwAcceleration() &&
-        Environment::getInstance().getHwContextDestroy() != nullptr) {
-        LOGD("onSurfaceCreated: calling hw_context_destroy before GL teardown");
-        Environment::getInstance().getHwContextDestroy()();
-    }
-
     video = nullptr;
 
     // For HW-rendered cores (e.g. SwanStation/PSX), the game can dynamically switch
@@ -284,12 +266,6 @@ void LibretroDroid::onSurfaceCreated() {
     );
 
     video = std::unique_ptr<Video>(newVideo);
-
-    // Re-apply the stored aspect ratio override to the newly created Video object.
-    // The Video constructor initialises VideoLayout with aspectRatio=1.0 (default).
-    // Without this call, changing Android display resolution triggers onSurfaceCreated,
-    // which creates a new Video with the wrong AR → game appears clipped until restart.
-    refreshAspectRatio();
 
     if (Environment::getInstance().getHwContextReset() != nullptr) {
         Environment::getInstance().getHwContextReset()();
@@ -540,28 +516,6 @@ void LibretroDroid::step() {
     for (unsigned i = 0; __builtin_expect(i < totalRuns, 1); ++i)
         core->retro_run();
 
-    // For HW-rendered cores (e.g. SwanStation), rendering happens inside
-    // retro_run() via the video-refresh callback.  After retro_run() returns:
-    //
-    // 1. glFlush() — submit any pending GPU commands from SwanStation's frame
-    //    before our next compositing pass.  Without this, Adreno's command
-    //    queue can contain core commands that reference GL objects we are about
-    //    to rebind/clear, causing pipeline hazards and occasional SIGSEGV.
-    //    RetroArch achieves the same isolation by switching between hw_ctx and
-    //    ctx (two separate EGL contexts); we use a single context so an explicit
-    //    flush is the equivalent safeguard.
-    //
-    // 2. glBindFramebuffer(0) — reset any FBO the core left bound.  If the
-    //    core's last GL call before retro_video_refresh() left its own FBO
-    //    bound, our subsequent glClear/glDraw would write into it instead of
-    //    the screen surface.  For non-callback renderers this is already done
-    //    inside renderFrame(); for callback renderers we guarantee it here so
-    //    the driver sees a clean FBO state before each compositing pass.
-    if (__builtin_expect(Environment::getInstance().isUseHwAcceleration(), 0)) {
-        glFlush();
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
     if (__builtin_expect(video != nullptr && !video->rendersInVideoCallback(), 1)) {
         video->renderFrame();
     }
@@ -610,13 +564,6 @@ void LibretroDroid::step() {
 
         // Re-apply EGL swap interval since the core rate changed.
         applyEGLSwapInterval();
-
-        // Stop the old Oboe stream before destroying the Audio object.
-        // Oboe's data callback runs on a separate high-priority thread; destroying
-        // the Audio object while the callback is still running causes a use-after-free
-        // on the resampler and FIFO buffer.  Calling stop() first ensures Oboe drains
-        // and stops the callback thread before the destructor runs.
-        if (audio) audio->stop();
 
         double inputSampleRate = newSampleRate * fpsSync->getTimeStretchFactor();
         audio = std::make_unique<Audio>(

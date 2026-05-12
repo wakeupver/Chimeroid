@@ -110,12 +110,6 @@ void Video::updateProgram() {
 
     shadersChain = {};
 
-    // Shader programs changed — invalidate cached uniform values so they are
-    // re-pushed to the new programs on the next renderFrame() call.
-    cachedTextureWidth  = -1.0f;
-    cachedTextureHeight = -1.0f;
-    cachedScreenDensity = -1.0f;
-
     std::for_each(shaders.passes.begin(), shaders.passes.end(), [&](const auto& item){
         auto shader = ShaderChainEntry { };
 
@@ -177,16 +171,6 @@ void Video::renderFrame() {
     // glVertexAttribPointer treats our raw pointer as a VBO byte offset.
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    // Reset blend, depth, and stencil state that HW cores (e.g. SwanStation) may
-    // leave enabled after retro_run().  If these are active during our compositing
-    // glDrawArrays, the output is wrong (alpha-blended garbage, depth-culled quads,
-    // etc.) and on Adreno 6xx drivers the stale stencil state can cause a null-ptr
-    // crash inside the driver's per-draw validation path (fault addr 0x28).
-    glDisable(GL_BLEND);
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_SCISSOR_TEST);
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
     glDisable(GL_DEPTH_TEST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -208,21 +192,10 @@ void Video::renderFrame() {
     }
 
     updateProgram();
-
-    // Compute uniforms once per frame; only push to GPU if changed.
-    const float texW = getTextureWidth();
-    const float texH = getTextureHeight();
-    const float density = getScreenDensity();
-    const bool texSizeChanged   = (texW != cachedTextureWidth || texH != cachedTextureHeight);
-    const bool densityChanged   = (density != cachedScreenDensity);
-    if (texSizeChanged)  { cachedTextureWidth = texW; cachedTextureHeight = texH; }
-    if (densityChanged)  { cachedScreenDensity = density; }
-
-    const int chainSize = static_cast<int>(shadersChain.size());
-    for (int i = 0; i < chainSize; ++i) {
-        const auto& shader = shadersChain[i];
+    for (int i = 0; i < shadersChain.size(); ++i) {
+        auto shader = shadersChain[i];
         auto passData = renderer->getPassData(i);
-        const bool isLastPass = (i == chainSize - 1);
+        auto isLastPass = i == shadersChain.size() - 1;
 
         glBindFramebuffer(GL_FRAMEBUFFER, passData.framebuffer.value_or(0));
 
@@ -235,11 +208,11 @@ void Video::renderFrame() {
 
         glUseProgram(shader.gProgram);
 
-        const auto& vertices = isLastPass ? videoLayout.getForegroundVertices() : videoLayout.getFramebufferVertices();
+        auto vertices = isLastPass ? videoLayout.getForegroundVertices() : videoLayout.getFramebufferVertices();
         glVertexAttribPointer(shader.gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
         glEnableVertexAttribArray(shader.gvPositionHandle);
 
-        const auto& coordinates = videoLayout.getTextureCoordinates();
+        auto coordinates = videoLayout.getTextureCoordinates();
         glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, coordinates.data());
         glEnableVertexAttribArray(shader.gvCoordinateHandle);
 
@@ -253,13 +226,9 @@ void Video::renderFrame() {
             glUniform1i(shader.gPreviousPassTextureHandle, 1);
         }
 
-        // Only push uniforms if their values have changed this frame.
-        if (texSizeChanged) {
-            glUniform2f(shader.gTextureSizeHandle, texW, texH);
-        }
-        if (densityChanged) {
-            glUniform1f(shader.gScreenDensityHandle, density);
-        }
+        glUniform2f(shader.gTextureSizeHandle, getTextureWidth(), getTextureHeight());
+
+        glUniform1f(shader.gScreenDensityHandle, getScreenDensity());
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -272,9 +241,9 @@ void Video::renderFrame() {
         }
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        glUseProgram(0);
     }
-    // Single glUseProgram(0) at end of all passes (not per-pass).
-    glUseProgram(0);
 
     // RetroArch end-of-frame pattern: glBindVertexArray(0) after all rendering.
     // Ensures no VAO leaks into the next retro_run() call — matches gl3.c line ~4514.
