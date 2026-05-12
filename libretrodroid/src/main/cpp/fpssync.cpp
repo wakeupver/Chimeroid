@@ -53,45 +53,26 @@ FPSSync::FPSSync(double contentRefreshRate, double screenRefreshRate) {
     this->contentRefreshRate = contentRefreshRate;
     this->screenRefreshRate = screenRefreshRate;
 
-    // Compute the best EGL swap interval: how many screen vsyncs to hold per core frame.
-    //   120 Hz screen + 60 fps core → 2  (onDrawFrame fires at 60 Hz if driver honors it)
-    //   90 Hz  screen + 30 fps core → 3
-    //   60 Hz  screen + 60 fps core → 1
-    //   60 Hz  screen + 30 fps core → 2
-    this->swapInterval = std::max(1, (int)std::round(screenRefreshRate / contentRefreshRate));
-
-    // Effective display cadence assuming the driver honors the swap interval.
-    this->effectiveScreenRate = screenRefreshRate / swapInterval;
-
-    // IMPORTANT: only trust vsync-based pacing (useVSync=true) for the exact 1:1 case
-    // (swapInterval == 1).  Many Android GPU drivers (Adreno, Mali, PowerVR) silently
-    // ignore eglSwapInterval(N) for N > 1 and continue delivering onDrawFrame at the
-    // full screen refresh rate.  If useVSync=true while onDrawFrame still fires at e.g.
-    // 60 Hz for a 30 fps core, advanceFrames() returns 1 every call → retro_run() is
-    // called 60×/sec → game runs at 2× speed.
+    // useVSync=true when the display rate and core rate are within FPS_TOLERANCE.
+    // In this mode, advanceFrames() always returns 1 and wait() is a no-op —
+    // the display vsync itself provides the correct pacing.
     //
-    // For swapInterval > 1 we still call eglSwapInterval(N) (see applyEGLSwapInterval)
-    // as a CPU/power optimization hint.  Software pacing (useVSync=false) then handles
-    // both outcomes correctly:
-    //   • Driver honors N: onDrawFrame arrives at effectiveScreenRate Hz, wait() deadline
-    //     is already past → immediate return, zero extra spin.
-    //   • Driver ignores N: onDrawFrame arrives at screenRefreshRate Hz, advanceFrames()
-    //     returns 0 on "off" ticks and wait() sleeps to the deadline → correct fps.
-    this->useVSync = (swapInterval == 1) &&
-                     (std::abs(contentRefreshRate - screenRefreshRate) < FPS_TOLERANCE);
-
+    // When the display is a near-exact integer multiple of the core rate
+    // (e.g. 120 Hz screen + 60 fps core, ratio ≈ 2.0), we still use vsync mode
+    // so we don't fight against eglSwapBuffers().  The extra vsync ticks are
+    // absorbed by the non-vsync path's wait() sleep — but in practice it is
+    // simpler and more accurate to let the non-vsync wait() handle it via the
+    // sampleInterval deadline.  So we only set useVSync=true for the 1:1 ratio.
+    this->useVSync = std::abs(contentRefreshRate - screenRefreshRate) < FPS_TOLERANCE;
     this->sampleInterval = std::chrono::microseconds((long)((1000000L / contentRefreshRate)));
     reset();
 }
 
 void FPSSync::start() {
     LOGI(
-        "FPSSync: core=%.3f Hz  screen=%.3f Hz  swapInterval=%d  effectiveScreen=%.3f Hz"
-        "  useVSync=%d (swapInterval==1 && rate match)  sampleInterval=%ld µs",
+        "Starting game: core=%.3f Hz, screen=%.3f Hz, useVSync=%d, sampleInterval=%ld µs",
         contentRefreshRate,
         screenRefreshRate,
-        swapInterval,
-        effectiveScreenRate,
         useVSync,
         (long)(1000000L / contentRefreshRate)
     );
@@ -103,9 +84,6 @@ void FPSSync::reset() {
 }
 
 double FPSSync::getTimeStretchFactor() {
-    // useVSync=true implies swapInterval==1, so effectiveScreenRate == screenRefreshRate.
-    // The stretch factor adjusts audio pitch/speed to compensate for any screen/core
-    // rate mismatch (e.g. 59.94 Hz screen with a 60.0 fps core).
     return useVSync ? contentRefreshRate / screenRefreshRate : 1.0;
 }
 
@@ -120,14 +98,9 @@ void FPSSync::wait() {
     std::this_thread::sleep_until(sleepUntil);
     // Busy-spin the last ~800 µs for precise wakeup
     while (std::chrono::steady_clock::now() < deadline) {
-        // Yield hint: reduces power and memory-bus pressure in a tight spin loop.
-        // Use the ARM YIELD hint on ARM/AArch64 (where it's a real instruction),
-        // fall back to C++ yield on other architectures.
-#if defined(__arm__) || defined(__aarch64__)
+        // __builtin_arm_yield() hints the CPU to yield in a spin-wait loop,
+        // reducing power consumption and contention on hyperthreaded cores.
         __builtin_arm_yield();
-#else
-        std::this_thread::yield();
-#endif
     }
 }
 

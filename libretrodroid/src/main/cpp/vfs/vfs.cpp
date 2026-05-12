@@ -17,8 +17,6 @@
 
 #include "vfs.h"
 
-#include <cerrno>
-#include <cstring>
 #include <unistd.h>
 #include <optional>
 
@@ -94,11 +92,7 @@ int64_t VFS::truncate(struct retro_vfs_file_handle* stream, int64_t length) {
 }
 
 retro_vfs_interface * VFS::getInterface() {
-    // Static instance — allocated once, never leaked.
-    // `new retro_vfs_interface { ... }` on every game load (the previous code)
-    // caused one allocation per load with no corresponding delete → memory leak
-    // that grew proportionally to the number of game launches in a session.
-    static retro_vfs_interface instance {
+    return new retro_vfs_interface {
         /* Introduced in VFS API v1 */
         &VFS::path,
         &VFS::open,
@@ -115,7 +109,6 @@ retro_vfs_interface * VFS::getInterface() {
         /* Introduced in VFS API v2 */
         &VFS::truncate
     };
-    return &instance;
 }
 
 void VFS::initialize(std::vector<VFSFile> files) {
@@ -137,30 +130,14 @@ struct retro_vfs_file_handle* VFS::virtualOpen(const char *path, unsigned int mo
 
     LOGD("VFS Performing virtual file open: %s", virtualFile->getFileName().data());
 
+    auto stream = new retro_vfs_file_handle;
+
     int duplicateFD = dup(virtualFile->getFD());
-    if (duplicateFD < 0) {
-        // dup() fails when the process has hit its open-file-descriptor limit
-        // (EMFILE) or the source FD was already closed (EBADF).  Without this
-        // check, fdopen(-1, "rb") returns nullptr and the next getFileSize()
-        // call dereferences that nullptr → SIGSEGV.
-        LOGE("VFS virtualOpen: dup() failed for '%s': %s",
-             virtualFile->getFileName().data(), strerror(errno));
-        return nullptr;
-    }
-
     FILE* file = fdopen(duplicateFD, "rb");
-    if (file == nullptr) {
-        LOGE("VFS virtualOpen: fdopen() failed for '%s': %s",
-             virtualFile->getFileName().data(), strerror(errno));
-        ::close(duplicateFD);
-        return nullptr;
-    }
-
     size_t size = Utils::getFileSize(file);
 
     LOGV("VFS Virtual file size: %i", size);
 
-    auto stream = new retro_vfs_file_handle;
     stream->fd = duplicateFD;
     stream->hints = hints;
     stream->size = size;

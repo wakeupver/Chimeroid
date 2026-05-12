@@ -21,7 +21,7 @@
 #include <array>
 #include <vector>
 #include <memory>
-#include <GLES3/gl3.h>
+#include <GLES2/gl2.h>
 
 #include "renderers/es3/es3utils.h"
 

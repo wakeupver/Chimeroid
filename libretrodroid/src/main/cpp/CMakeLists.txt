@@ -3,18 +3,23 @@ cmake_minimum_required(VERSION 3.13.2)
 # ARM64-only build: aggressive optimizations for AArch64/NEON
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -DNDEBUG")
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -DNDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=armv8.2-a+simd+crypto -mtune=cortex-a76 \
+
+# Release flags:
+#  -march=armv8.2-a+simd+crypto  – enables fp16/dotprod on A75/A76/A55 gen2+
+#  -mtune=cortex-a55             – size-optimise for efficiency cluster
+#  -fno-strict-aliasing          – safe with NEON pointer casts
+#  -falign-functions=64          – hot functions start on cache-line boundaries
+#  -fno-math-errno               – remove math-error-check overhead (safe with -ffast-math)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=armv8.2-a+simd+crypto -mtune=cortex-a55 \
     -ffast-math -fno-math-errno -fno-strict-aliasing \
     -fomit-frame-pointer -funroll-loops \
     -falign-functions=64 \
-    -fmerge-all-constants \
     -fvisibility=hidden -flto=thin \
     -ffunction-sections -fdata-sections")
-set(CMAKE_C_FLAGS_RELEASE   "-O3 -march=armv8.2-a+simd+crypto -mtune=cortex-a76 \
+set(CMAKE_C_FLAGS_RELEASE   "-O3 -march=armv8.2-a+simd+crypto -mtune=cortex-a55 \
     -ffast-math -fno-math-errno -fno-strict-aliasing \
     -fomit-frame-pointer -funroll-loops \
     -falign-functions=64 \
-    -fmerge-all-constants \
     -fvisibility=hidden -flto=thin \
     -ffunction-sections -fdata-sections")
 set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} \
@@ -58,6 +63,8 @@ add_library(libretrodroid SHARED
         renderers/es3/es3utils.cpp
         renderers/es3/framebufferrenderer.h
         renderers/es3/framebufferrenderer.cpp
+        renderers/es2/imagerendereres2.h
+        renderers/es2/imagerendereres2.cpp
         renderers/es3/imagerendereres3.h
         renderers/es3/imagerendereres3.cpp
         audio.h

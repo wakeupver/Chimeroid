@@ -17,6 +17,7 @@
 
 package com.swordfish.libretrodroid
 
+import android.app.ActivityManager
 import android.content.Context
 import android.graphics.PointF
 import android.graphics.RectF
@@ -274,7 +275,12 @@ class GLRetroView(
     }
 
     private fun getGLESVersion(context: Context): Int {
-        return 3
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        return if (activityManager.deviceConfigurationInfo.reqGlEsVersion >= 0x30000) {
+            3
+        } else {
+            2
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

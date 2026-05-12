@@ -43,6 +43,7 @@
 #include "environment.h"
 #include "vfs/vfsfile.h"
 #include "renderers/es3/framebufferrenderer.h"
+#include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
 #include "utils/rect.h"
 
@@ -149,7 +150,6 @@ private:
     void updateAudioSampleRateMultiplier();
     float findDefaultAspectRatio(const retro_system_av_info &system_av_info);
     void afterGameLoad();
-    void applyEGLSwapInterval();
 
 protected:
     static void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch);

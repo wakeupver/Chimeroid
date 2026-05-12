@@ -15,31 +15,28 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBRETRODROID_IMAGERENDERERES3_H
-#define LIBRETRODROID_IMAGERENDERERES3_H
+#ifndef LIBRETRODROID_IMAGERENDERERES2_H
+#define LIBRETRODROID_IMAGERENDERERES2_H
+
+#include "GLES2/gl2.h"
 
 #include "../renderer.h"
 #include "../../libretro-common/include/libretro.h"
-#include "es3utils.h"
-
-#include "GLES3/gl3.h"
 
 #include <cstdint>
 #include <utility>
 #include <vector>
-#include <memory>
 
 namespace libretrodroid {
 
-class ImageRendererES3: public Renderer {
+class ImageRendererES2: public Renderer {
 public:
-    explicit ImageRendererES3();
+    explicit ImageRendererES2();
     uintptr_t getTexture() override;
     uintptr_t getFramebuffer() override;
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) override;
     void setPixelFormat(int pixelFormat) override;
     void updateRenderedResolution(unsigned int width, unsigned int height) override;
-
     bool rendersInVideoCallback() override;
 
     void setShaders(ShaderManager::Chain shaders) override;
@@ -47,26 +44,21 @@ public:
     PassData getPassData(unsigned int layer) override;
 
 private:
-    void initializeTextures(unsigned int width, unsigned int height);
-    void applyGLSwizzle(int r, int g, int b, int a);
+    void convertDataFromRGB8888(const void* pixelData, size_t size);
     void convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch) const;
 
 private:
     int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
     unsigned int bytesPerPixel = 1;
-    bool swapRedAndBlueChannels = false;
     unsigned int glType = 0;
     unsigned int glInternalFormat = 0;
     unsigned int glFormat = 0;
 
-    bool isDirty = true;
+    bool linear = false;
 
     unsigned int currentTexture = 0;
-
-    ShaderManager::Chain shaders;
-    std::unique_ptr<ES3Utils::Framebuffers> framebuffers = std::make_unique<ES3Utils::Framebuffers>();
 };
 
 }
 
-#endif //LIBRETRODROID_IMAGERENDERERES3_H
+#endif //LIBRETRODROID_IMAGERENDERERES2_H

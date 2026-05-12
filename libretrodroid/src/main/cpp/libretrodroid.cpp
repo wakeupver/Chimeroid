@@ -38,6 +38,7 @@
 #include "utils/javautils.h"
 #include "environment.h"
 #include "renderers/es3/framebufferrenderer.h"
+#include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
 #include "utils/utils.h"
 #include "utils/rect.h"
@@ -174,19 +175,8 @@ std::pair<int8_t*, size_t> LibretroDroid::serializeSRAM() {
     std::lock_guard<std::mutex> lock(coreLock);
 
     size_t size = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
-    auto* data = new int8_t[size > 0 ? size : 1]; // always allocate ≥ 1 byte
-
-    if (size > 0) {
-        const void* sramData = core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
-        if (sramData != nullptr) {
-            memcpy(data, sramData, size);
-        } else {
-            // Core reports non-zero SRAM size but returns null pointer —
-            // treat as empty save to avoid a segfault.
-            LOGE("serializeSRAM: retro_get_memory_data returned nullptr despite size=%zu", size);
-            size = 0;
-        }
-    }
+    auto* data = new int8_t[size];
+    memcpy(data, (int8_t*) core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM), size);
 
     return std::pair(data, size);
 }
@@ -194,32 +184,6 @@ std::pair<int8_t*, size_t> LibretroDroid::serializeSRAM() {
 void LibretroDroid::onSurfaceChanged(unsigned int width, unsigned int height) {
     LOGD("Performing libretrodroid onSurfaceChanged");
     video->updateScreenSize(width, height);
-}
-
-void LibretroDroid::applyEGLSwapInterval() {
-    if (!fpsSync) return;
-
-    int interval = fpsSync->getOptimalSwapInterval();
-
-    // swapInterval=1 is the EGL default — no need to call eglSwapInterval.
-    if (interval == 1) {
-        LOGI("EGL swap interval: 1 (default, no call needed)");
-        return;
-    }
-
-    EGLDisplay display = eglGetCurrentDisplay();
-    if (display == EGL_NO_DISPLAY) {
-        LOGW("applyEGLSwapInterval: no EGL display — skipping");
-        return;
-    }
-
-    // Note: many Android drivers (Adreno, Mali) silently ignore N>1 and keep
-    // delivering onDrawFrame at the full screen rate.  We call it anyway as a
-    // CPU/power hint, but FPSSync uses useVSync=false for swapInterval>1 so
-    // software pacing remains correct regardless of driver compliance.
-    EGLBoolean ok = eglSwapInterval(display, interval);
-    LOGI("EGL swap interval hint: %d (screen=%.1f Hz / core ratio) — driver %s",
-         interval, screenRefreshRate, ok ? "accepted" : "may ignore");
 }
 
 void LibretroDroid::onSurfaceCreated() {
@@ -230,23 +194,10 @@ void LibretroDroid::onSurfaceCreated() {
 
     video = nullptr;
 
-    // For HW-rendered cores (e.g. SwanStation/PSX), the game can dynamically switch
-    // display resolution mid-game (256/320/384/512/640/720 px wide on PSX).
-    // SwanStation renders into our FBO using glViewport(active_left, 0, active_width, active_height)
-    // where active_width is the CURRENT display width. If our FBO is only base_width wide
-    // (e.g. 320), a 512-wide display mode overflows the FBO → right side of screen is clipped.
-    // Fix: allocate the FBO at max_width × max_height for HW cores so it can hold any display
-    // mode the core might use. For SW cores keep using base_width × base_height (exact fit).
-    const bool hwAccel = Environment::getInstance().isUseHwAcceleration();
-    const unsigned fboWidth  = (hwAccel && system_av_info.geometry.max_width  > 0)
-        ? system_av_info.geometry.max_width  : system_av_info.geometry.base_width;
-    const unsigned fboHeight = (hwAccel && system_av_info.geometry.max_height > 0)
-        ? system_av_info.geometry.max_height : system_av_info.geometry.base_height;
-
     Video::RenderingOptions renderingOptions {
-        hwAccel,
-        fboWidth,
-        fboHeight,
+        Environment::getInstance().isUseHwAcceleration(),
+        system_av_info.geometry.base_width,
+        system_av_info.geometry.base_height,
         Environment::getInstance().isUseDepth(),
         Environment::getInstance().isUseStencil(),
         openglESVersion,
@@ -266,42 +217,9 @@ void LibretroDroid::onSurfaceCreated() {
 
     video = std::unique_ptr<Video>(newVideo);
 
-    // Re-apply the stored aspect ratio override to the newly created Video object.
-    // The Video constructor initialises VideoLayout with aspectRatio=1.0 (default).
-    // Without this call, changing Android display resolution triggers onSurfaceCreated,
-    // which creates a new Video with the wrong AR → game appears clipped until restart.
-    refreshAspectRatio();
-
-    // For HW-rendered cores (e.g. SwanStation) the surface may be recreated by the
-    // Android driver even when preserveEGLContextOnPause=true (observed on Adreno 630
-    // / crDroid on SDM845).  When that happens the old EGL context is destroyed and a
-    // brand-new one is created.  Without calling context_destroy first, SwanStation's
-    // SwitchToHardwareRenderer finds m_hw_render_display==null (because
-    // SwitchToSoftwareRenderer was never called) and creates a SECOND
-    // LibretroOpenGLHostDisplay while the first one is still alive as m_display.
-    // The subsequent DestroyRenderDevice() on the old display calls glDelete* on IDs
-    // that belong to the destroyed context; the Adreno EGL dispatch table's internal
-    // current_context pointer is null at that point and dereferencing it at offset 0x28
-    // produces SIGSEGV (fault addr 0x28) on the GLThread.
-    //
-    // Fix: always call context_destroy before context_reset when the surface is
-    // recreated.  This lets SwanStation cleanly switch back to the software renderer
-    // first (saving the HW display in m_hw_render_display), so that the subsequent
-    // context_reset can reuse or safely recreate it without double-free.
-    if (Environment::getInstance().getHwContextDestroy() != nullptr) {
-        LOGD("onSurfaceCreated: calling hw_context_destroy before hw_context_reset");
-        Environment::getInstance().getHwContextDestroy()();
-    }
-
     if (Environment::getInstance().getHwContextReset() != nullptr) {
         Environment::getInstance().getHwContextReset()();
     }
-
-    // Apply the EGL swap interval derived from screen/core rate ratio.
-    // This must be called after the EGL surface is fully set up (i.e. here in onSurfaceCreated).
-    // e.g. 120 Hz screen + 60 fps core → interval=2 so onDrawFrame fires at 60 Hz,
-    //      letting FPSSync run in useVSync=true mode (zero busy-wait overhead).
-    applyEGLSwapInterval();
 }
 
 void LibretroDroid::onMotionEvent(
@@ -379,6 +297,11 @@ void LibretroDroid::create(
     core->retro_init();
 
     preferLowLatencyAudio = lowLatencyAudio;
+
+    // HW accelerated cores are only supported on opengles 3.
+    if (Environment::getInstance().isUseHwAcceleration() && openglESVersion < 3) {
+        throw LibretroDroidError("OpenGL ES 3 is required for this Core", ERROR_GL_NOT_COMPATIBLE);
+    }
 
     fragmentShaderConfig = shaderConfig;
 
@@ -553,17 +476,10 @@ void LibretroDroid::step() {
     if (video && Environment::getInstance().isGameGeometryUpdated()) {
         Environment::getInstance().clearGameGeometryUpdated();
 
-        // For HW-rendered cores the FBO was pre-allocated at max_width × max_height, so it
-        // can accommodate any display mode the core selects — do NOT shrink it here.
-        // Resizing it down to the new geometry.base_width would cause the same clip-on-right
-        // bug we just fixed: the next Render() might use a wider viewport than the FBO.
-        // For SW cores, resizing is still necessary so the texture matches the frame data.
-        if (!Environment::getInstance().isUseHwAcceleration()) {
-            video->updateRendererSize(
-                Environment::getInstance().getGameGeometryWidth(),
-                Environment::getInstance().getGameGeometryHeight()
-            );
-        }
+        video->updateRendererSize(
+            Environment::getInstance().getGameGeometryWidth(),
+            Environment::getInstance().getGameGeometryHeight()
+        );
 
         dirtyVideo = true;
     }
@@ -582,16 +498,6 @@ void LibretroDroid::step() {
              newFps, newSampleRate);
 
         fpsSync = std::make_unique<FPSSync>(newFps, screenRefreshRate);
-
-        // Re-apply EGL swap interval since the core rate changed.
-        applyEGLSwapInterval();
-
-        // Stop the old Oboe stream before destroying the Audio object.
-        // Oboe's data callback runs on a separate high-priority thread; destroying
-        // the Audio object while the callback is still running causes a use-after-free
-        // on the resampler and FIFO buffer.  Calling stop() first ensures Oboe drains
-        // and stops the callback thread before the destructor runs.
-        if (audio) audio->stop();
 
         double inputSampleRate = newSampleRate * fpsSync->getTimeStretchFactor();
         audio = std::make_unique<Audio>(

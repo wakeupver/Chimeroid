@@ -15,7 +15,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <GLES3/gl3.h>
+#include <GLES2/gl2.h>
 #include <EGL/egl.h>
 #include <cstdlib>
 #include <string>
@@ -28,6 +28,7 @@
 #include "video.h"
 #include "renderers/es3/framebufferrenderer.h"
 #include "renderers/es3/imagerendereres3.h"
+#include "renderers/es2/imagerendereres2.h"
 
 namespace libretrodroid {
 
@@ -109,12 +110,6 @@ void Video::updateProgram() {
 
     shadersChain = {};
 
-    // Shader programs changed — invalidate cached uniform values so they are
-    // re-pushed to the new programs on the next renderFrame() call.
-    cachedTextureWidth  = -1.0f;
-    cachedTextureHeight = -1.0f;
-    cachedScreenDensity = -1.0f;
-
     std::for_each(shaders.passes.begin(), shaders.passes.end(), [&](const auto& item){
         auto shader = ShaderChainEntry { };
 
@@ -157,26 +152,14 @@ void Video::renderFrame() {
         hasRenderedOnce.store(true, std::memory_order_relaxed);
     }
 
-    // Reset any core-owned VAO left bound after retro_run().
-    //
-    // GLES3 spec: glVertexAttribPointer with a raw (client-side) pointer is ONLY
-    // valid when VAO 0 (the default) is bound.  With any non-zero VAO the driver
-    // treats the pointer as a VBO byte-offset; VBO=0 → memcpy(dst,NULL,0x60) → SIGSEGV.
-    //
-    // SwanStation leaves m_display_vao (non-zero) bound after Render().
-    //
-    // We use VAO 0 (not a private non-zero VAO) because shader attribute locations
-    // (gvPositionHandle, gvCoordinateHandle) are resolved at runtime via
-    // glGetAttribLocation and vary per shader/pass. A non-zero VAO bakes in indices
-    // at creation time — if those indices don't match the runtime locations, position
-    // and texcoord arrays are swapped → game renders only in a corner of the screen.
-    glBindVertexArray(0);
-
-    // Ensure no VBO from the core's pass is still bound: with a VBO active,
-    // glVertexAttribPointer treats our raw pointer as a VBO byte offset.
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
     glDisable(GL_DEPTH_TEST);
+
+    // Hardware-rendered cores (e.g. Flycast/Dreamcast) may leave a VBO bound after
+    // their GL rendering pass. If GL_ARRAY_BUFFER is non-zero when glVertexAttribPointer
+    // is called with a raw pointer, the driver interprets the pointer as a VBO byte
+    // offset — producing garbage geometry and a blank display. Unbind here to guarantee
+    // the subsequent vertex-attrib calls always use raw host pointers.
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
@@ -197,21 +180,10 @@ void Video::renderFrame() {
     }
 
     updateProgram();
-
-    // Compute uniforms once per frame; only push to GPU if changed.
-    const float texW = getTextureWidth();
-    const float texH = getTextureHeight();
-    const float density = getScreenDensity();
-    const bool texSizeChanged   = (texW != cachedTextureWidth || texH != cachedTextureHeight);
-    const bool densityChanged   = (density != cachedScreenDensity);
-    if (texSizeChanged)  { cachedTextureWidth = texW; cachedTextureHeight = texH; }
-    if (densityChanged)  { cachedScreenDensity = density; }
-
-    const int chainSize = static_cast<int>(shadersChain.size());
-    for (int i = 0; i < chainSize; ++i) {
-        const auto& shader = shadersChain[i];
+    for (int i = 0; i < shadersChain.size(); ++i) {
+        auto shader = shadersChain[i];
         auto passData = renderer->getPassData(i);
-        const bool isLastPass = (i == chainSize - 1);
+        auto isLastPass = i == shadersChain.size() - 1;
 
         glBindFramebuffer(GL_FRAMEBUFFER, passData.framebuffer.value_or(0));
 
@@ -224,11 +196,11 @@ void Video::renderFrame() {
 
         glUseProgram(shader.gProgram);
 
-        const auto& vertices = isLastPass ? videoLayout.getForegroundVertices() : videoLayout.getFramebufferVertices();
+        auto vertices = isLastPass ? videoLayout.getForegroundVertices() : videoLayout.getFramebufferVertices();
         glVertexAttribPointer(shader.gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
         glEnableVertexAttribArray(shader.gvPositionHandle);
 
-        const auto& coordinates = videoLayout.getTextureCoordinates();
+        auto coordinates = videoLayout.getTextureCoordinates();
         glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, coordinates.data());
         glEnableVertexAttribArray(shader.gvCoordinateHandle);
 
@@ -242,13 +214,9 @@ void Video::renderFrame() {
             glUniform1i(shader.gPreviousPassTextureHandle, 1);
         }
 
-        // Only push uniforms if their values have changed this frame.
-        if (texSizeChanged) {
-            glUniform2f(shader.gTextureSizeHandle, texW, texH);
-        }
-        if (densityChanged) {
-            glUniform1f(shader.gScreenDensityHandle, density);
-        }
+        glUniform2f(shader.gTextureSizeHandle, getTextureWidth(), getTextureHeight());
+
+        glUniform1f(shader.gScreenDensityHandle, getScreenDensity());
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -261,13 +229,9 @@ void Video::renderFrame() {
         }
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
-    }
-    // Single glUseProgram(0) at end of all passes (not per-pass).
-    glUseProgram(0);
 
-    // RetroArch end-of-frame pattern: glBindVertexArray(0) after all rendering.
-    // Ensures no VAO leaks into the next retro_run() call — matches gl3.c line ~4514.
-    glBindVertexArray(0);
+        glUseProgram(0);
+    }
 }
 
 float Video::getScreenDensity() {
@@ -285,15 +249,6 @@ float Video::getTextureHeight() {
 void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     if (data != nullptr) {
         renderer->onNewFrame(data, width, height, pitch);
-
-        // For HW-rendered cores, data = RETRO_HW_FRAME_BUFFER_VALID ((void*)-1).
-        // width/height is still the current display resolution even for HW frames.
-        // Crop the texture UV so we sample only the rendered sub-region of the
-        // (max-size) FBO — prevents the game from appearing tiny in the corner.
-        if (fboAllocatedWidth > 0 && width > 0 && height > 0) {
-            updateTextureUVCropForHWFrame(width, height);
-        }
-
         isDirty.store(true, std::memory_order_release);
     }
 }
@@ -309,25 +264,6 @@ void Video::updateViewportSize(Rect viewportRect) {
 void Video::updateRendererSize(unsigned int width, unsigned int height) {
     LOGD("Updating renderer size: %d x %d", width, height);
     renderer->updateRenderedResolution(width, height);
-}
-
-void Video::updateTextureUVCropForHWFrame(unsigned renderedWidth, unsigned renderedHeight) {
-    if (fboAllocatedWidth == 0 || fboAllocatedHeight == 0) return;
-    if (renderedWidth == 0 || renderedHeight == 0) return;
-
-    float uMax = static_cast<float>(renderedWidth)  / static_cast<float>(fboAllocatedWidth);
-    float vMax = static_cast<float>(renderedHeight) / static_cast<float>(fboAllocatedHeight);
-
-    // Clamp to [0,1] — should always be ≤1 but guard against geometry misreport
-    uMax = std::min(uMax, 1.0F);
-    vMax = std::min(vMax, 1.0F);
-
-    LOGD("HW frame UV crop: rendered=%ux%u  fbo=%ux%u  uvMax=(%.4f, %.4f)",
-         renderedWidth, renderedHeight,
-         fboAllocatedWidth, fboAllocatedHeight,
-         uMax, vMax);
-
-    videoLayout.updateTextureUVCrop(uMax, vMax);
 }
 
 void Video::updateRotation(float rotation) {
@@ -362,11 +298,7 @@ Video::Video(
 
     glUseProgram(0);
 
-    fboAllocatedWidth  = renderingOptions.hardwareAccelerated ? renderingOptions.width  : 0;
-    fboAllocatedHeight = renderingOptions.hardwareAccelerated ? renderingOptions.height : 0;
-
     initializeRenderer(renderingOptions);
-
 }
 
 void Video::updateShaderType(ShaderManager::Config shaderConfig) {
@@ -385,7 +317,11 @@ void Video::initializeRenderer(RenderingOptions renderingOptions) {
             std::move(shaders)
         );
     } else {
-        renderer = new ImageRendererES3();
+        if (renderingOptions.openglESVersion >= 3) {
+            renderer = new ImageRendererES3();
+        } else {
+            renderer = new ImageRendererES2();
+        }
     }
 
     renderer->setPixelFormat(renderingOptions.pixelFormat);
