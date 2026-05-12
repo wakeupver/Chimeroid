@@ -177,6 +177,16 @@ void Video::renderFrame() {
     // glVertexAttribPointer treats our raw pointer as a VBO byte offset.
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+    // Reset blend, depth, and stencil state that HW cores (e.g. SwanStation) may
+    // leave enabled after retro_run().  If these are active during our compositing
+    // glDrawArrays, the output is wrong (alpha-blended garbage, depth-culled quads,
+    // etc.) and on Adreno 6xx drivers the stale stencil state can cause a null-ptr
+    // crash inside the driver's per-draw validation path (fault addr 0x28).
+    glDisable(GL_BLEND);
+    glDisable(GL_STENCIL_TEST);
+    glDisable(GL_SCISSOR_TEST);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
     glDisable(GL_DEPTH_TEST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
