@@ -94,7 +94,10 @@ void FramebufferRenderer::setShaders(ShaderManager::Chain shaders) {
 Renderer::PassData FramebufferRenderer::getPassData(unsigned int layer) {
     PassData result;
 
-    if (layer >= 0 && layer < framebuffers->size()) {
+    // NOTE: `layer >= 0` is a tautology for unsigned int — the compiler emits a
+    // -Wtype-limits warning and the check is silently dead.  The correct guard is
+    // simply `layer < framebuffers->size()`.
+    if (layer < framebuffers->size()) {
         result.framebuffer = framebuffers->at(layer)->framebuffer;
         result.width = framebuffers->at(layer)->width;
         result.height = framebuffers->at(layer)->height;

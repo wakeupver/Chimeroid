@@ -186,6 +186,14 @@ class GLRetroView(
         }
     }
 
+    /**
+     * Resets all cheat slots in the core via retro_cheat_reset().
+     * Must be called before re-applying cheats to ensure stale slots are cleared.
+     */
+    fun resetCheats(useEmulationThread: Boolean = true) = runOnEmulationThread(useEmulationThread) {
+        LibretroDroid.resetCheat()
+    }
+
     fun unserializeState(data: ByteArray, useEmulationThread: Boolean = true): Boolean {
         return runOnEmulationThread(useEmulationThread) {
             LibretroDroid.unserializeState(data)
@@ -366,7 +374,19 @@ class GLRetroView(
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) = catchExceptions {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_DISPLAY)
-            initializeCore()
+            if (isGameLoaded) {
+                // EGL context was recreated while the game was already running
+                // (e.g. GameMenuActivity or another Activity stole focus and the
+                // driver destroyed the surface despite preserveEGLContextOnPause=true).
+                // We must reinitialise the video layer and fire hw_context_reset so
+                // that HW-rendered cores (e.g. SwanStation with OpenGL renderer) can
+                // rebuild their framebuffers/textures against the new GL context.
+                // Skipping this call leaves the core pointing at deleted GL objects
+                // and produces a permanent black screen on resume.
+                LibretroDroid.onSurfaceCreated()
+            } else {
+                initializeCore()
+            }
             lifecycle?.coroutineScope?.launch {
                 retroGLEventsSubject.emit(GLRetroEvents.SurfaceCreated)
             }
@@ -431,13 +451,26 @@ class GLRetroView(
 
         val latch = CountDownLatch(1)
         var result: T? = null
+        var blockException: Throwable? = null
+
         queueEvent {
-            result = block()
-            latch.countDown()
+            try {
+                result = block()
+            } catch (e: Throwable) {
+                // Capture exception so it can be rethrown on the calling thread.
+                // Without this try-finally, any exception thrown inside block()
+                // causes latch.countDown() to be skipped → the calling thread
+                // blocks on awaitUninterruptibly() forever (deadlock).
+                blockException = e
+            } finally {
+                latch.countDown()
+            }
         }
 
         latch.awaitUninterruptibly()
-        return result!!
+        blockException?.let { throw it }
+        @Suppress("UNCHECKED_CAST")
+        return result as T
     }
 
     private fun buildShader(config: ShaderConfig): GLRetroShader {
