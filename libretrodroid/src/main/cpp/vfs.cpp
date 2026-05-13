@@ -17,8 +17,6 @@
 
 #include "vfs.h"
 
-#include <cerrno>
-#include <cstring>
 #include <unistd.h>
 #include <optional>
 
@@ -94,11 +92,7 @@ int64_t VFS::truncate(struct retro_vfs_file_handle* stream, int64_t length) {
 }
 
 retro_vfs_interface * VFS::getInterface() {
-    // Static instance — allocated once, never leaked.
-    // `new retro_vfs_interface { ... }` on every game load (the previous code)
-    // caused one allocation per load with no corresponding delete → memory leak
-    // that grew proportionally to the number of game launches in a session.
-    static retro_vfs_interface instance {
+    static retro_vfs_interface iface {
         /* Introduced in VFS API v1 */
         &VFS::path,
         &VFS::open,
@@ -115,7 +109,7 @@ retro_vfs_interface * VFS::getInterface() {
         /* Introduced in VFS API v2 */
         &VFS::truncate
     };
-    return &instance;
+    return &iface;
 }
 
 void VFS::initialize(std::vector<VFSFile> files) {
@@ -127,50 +121,40 @@ void VFS::deinitialize() {
 }
 
 struct retro_vfs_file_handle* VFS::virtualOpen(const char *path, unsigned int mode, unsigned int hints) {
-    LOGV("VFS Calling open: %s %i", path, mode);
+    LOGV("VFS Calling virtualOpen: %s %u", path, mode);
 
     VFSFile* virtualFile = findVirtualFile(path);
+    if (!virtualFile) return nullptr;
 
-    if (virtualFile == nullptr) {
-        return nullptr;
-    }
-
-    LOGD("VFS Performing virtual file open: %s", virtualFile->getFileName().data());
+    LOGD("VFS Performing virtual file open: %s", virtualFile->getFileName().c_str());
 
     int duplicateFD = dup(virtualFile->getFD());
     if (duplicateFD < 0) {
-        // dup() fails when the process has hit its open-file-descriptor limit
-        // (EMFILE) or the source FD was already closed (EBADF).  Without this
-        // check, fdopen(-1, "rb") returns nullptr and the next getFileSize()
-        // call dereferences that nullptr → SIGSEGV.
-        LOGE("VFS virtualOpen: dup() failed for '%s': %s",
-             virtualFile->getFileName().data(), strerror(errno));
+        LOGE("VFS dup() failed for path %s", path);
         return nullptr;
     }
 
     FILE* file = fdopen(duplicateFD, "rb");
-    if (file == nullptr) {
-        LOGE("VFS virtualOpen: fdopen() failed for '%s': %s",
-             virtualFile->getFileName().data(), strerror(errno));
-        ::close(duplicateFD);
+    if (!file) {
+        LOGE("VFS fdopen() failed for path %s", path);
+        close(duplicateFD);
         return nullptr;
     }
 
     size_t size = Utils::getFileSize(file);
+    LOGV("VFS Virtual file size: %zu", size);
 
-    LOGV("VFS Virtual file size: %i", size);
-
-    auto stream = new retro_vfs_file_handle;
-    stream->fd = duplicateFD;
-    stream->hints = hints;
-    stream->size = size;
-    stream->buf = nullptr;
-    stream->fp = file;
-    stream->orig_path = strdup(virtualFile->getFileName().data());
-    stream->mappos = 0;
-    stream->mapsize = 0;
-    stream->mapped = nullptr;
-    stream->scheme = VFS_SCHEME_NONE;
+    auto* stream = new retro_vfs_file_handle;
+    stream->fd         = duplicateFD;
+    stream->hints      = hints;
+    stream->size       = static_cast<int64_t>(size);
+    stream->buf        = nullptr;
+    stream->fp         = file;
+    stream->orig_path  = strdup(virtualFile->getFileName().c_str());
+    stream->mappos     = 0;
+    stream->mapsize    = 0;
+    stream->mapped     = nullptr;
+    stream->scheme     = VFS_SCHEME_NONE;
 
     return stream;
 }

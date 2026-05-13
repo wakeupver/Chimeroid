@@ -35,12 +35,19 @@ public:
     unsigned advanceFrames();
     void wait();
     double getTimeStretchFactor();
+
+    // Returns the EGL swap interval that best matches contentRefreshRate to screenRefreshRate.
+    // e.g. 120 Hz screen + 60 fps core → 2; 90 Hz + 30 fps → 3; 60 Hz + 60 fps → 1.
+    int getOptimalSwapInterval() const { return swapInterval; }
+
 private:
 
     double screenRefreshRate;
     double contentRefreshRate;
-    bool useVSync;
-    const double FPS_TOLERANCE = 5;
+    double effectiveScreenRate;   // screenRefreshRate / swapInterval
+    int    swapInterval;          // EGL swap interval chosen at construction
+    bool   useVSync;
+    const double FPS_TOLERANCE = 2.0;
 
     const TimePoint MIN_TIME = TimePoint::min();
     void start();
