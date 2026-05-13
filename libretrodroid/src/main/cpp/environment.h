@@ -120,10 +120,6 @@ private:
     bool environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback);
     bool environment_handle_get_vfs_interface(struct retro_vfs_interface_info* vfs_interface_info);
     bool environment_handle_get_microphone_interface(struct retro_microphone_interface* microphone_interface);
-    // Core options v1 (SET_CORE_OPTIONS / SET_CORE_OPTIONS_INTL)
-    bool environment_handle_set_core_options(const struct retro_core_option_definition* defs);
-    // Core options v2 (SET_CORE_OPTIONS_V2 / SET_CORE_OPTIONS_V2_INTL)
-    bool environment_handle_set_core_options_v2(const struct retro_core_options_v2* opts);
 
 private:
     retro_hw_context_reset_t hw_context_reset = nullptr;
