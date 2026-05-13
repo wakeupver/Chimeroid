@@ -18,7 +18,7 @@
 #ifndef LIBRETRODROID_VIDEO_H
 #define LIBRETRODROID_VIDEO_H
 
-#include <GLES2/gl2.h>
+#include <GLES3/gl3.h>
 #include <optional>
 #include <array>
 #include <atomic>
@@ -70,6 +70,10 @@ public:
     void updateAspectRatio(float aspectRatio);
     void updateScreenSize(unsigned screenWidth, unsigned screenHeight);
     void updateViewportSize(Rect viewportRect);
+
+    // Called after each HW frame; crops UV so only the rendered sub-region
+    // of the (max-size) FBO is sampled by the compositing quad.
+    void updateTextureUVCropForHWFrame(unsigned renderedWidth, unsigned renderedHeight);
     void updateRendererSize(unsigned width, unsigned height);
     void updateRotation(float rotation);
     void updateShaderType(ShaderManager::Config shaderConfig);
@@ -117,6 +121,12 @@ private:
     VideoLayout videoLayout;
 
     Renderer* renderer;
+
+    // FBO allocation size (may be larger than the actual rendered region for HW cores).
+    // Used to compute UV crop: uvMax = renderedSize / fboSize.
+    unsigned fboAllocatedWidth  = 0;
+    unsigned fboAllocatedHeight = 0;
+
 };
 
 }
