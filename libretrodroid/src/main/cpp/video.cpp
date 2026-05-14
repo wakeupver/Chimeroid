@@ -158,7 +158,22 @@ void Video::renderFrame() {
         hasRenderedOnce.store(true, std::memory_order_relaxed);
     }
 
-    // Reset any core-owned VAO left bound after retro_run().
+    // ── Save GL state that SwanStation set up and may still need after this
+    // ── call returns (renderFrame() can be invoked from inside the HW video
+    // ── callback, which fires while retro_run() is still on the stack).
+    // ────────────────────────────────────────────────────────────────────────
+    GLint savedFBO = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &savedFBO);
+
+    GLint savedVAO = 0;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &savedVAO);
+
+    GLint savedVBO = 0;
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &savedVBO);
+
+    GLboolean savedDepthTest = glIsEnabled(GL_DEPTH_TEST);
+
+    // Reset any core-owned VAO left bound after retro_run().\n    //\n    // GLES3 spec: glVertexAttribPointer with a raw (client-side) pointer is ONLY\n    // valid when VAO 0 (the default) is bound.  With any non-zero VAO the driver\n    // treats the pointer as a VBO byte-offset; VBO=0 → memcpy(dst,NULL,0x60) → SIGSEGV.\n    //\n    // SwanStation leaves m_display_vao (non-zero) bound after Render().
     //
     // GLES3 spec: glVertexAttribPointer with a raw (client-side) pointer is ONLY
     // valid when VAO 0 (the default) is bound.  With any non-zero VAO the driver
@@ -269,6 +284,17 @@ void Video::renderFrame() {
     // RetroArch end-of-frame pattern: glBindVertexArray(0) after all rendering.
     // Ensures no VAO leaks into the next retro_run() call — matches gl3.c line ~4514.
     glBindVertexArray(0);
+
+    // ── Restore GL state to what the core left it in before the video callback. ──
+    // renderFrame() may be called from INSIDE retro_run() (via the HW video
+    // refresh callback).  If SwanStation does any post-callback GL work (e.g.
+    // cleanup, VRAM readback, GPU sync) it expects the state it set up to still
+    // be in place.  We restore the three bindings we changed so the driver does
+    // not access stale/null objects and crash at null+0x28 in Adreno.
+    if (savedDepthTest) glEnable(GL_DEPTH_TEST);
+    glBindBuffer(GL_ARRAY_BUFFER, savedVBO);
+    glBindVertexArray(savedVAO);
+    glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)savedFBO);
 }
 
 float Video::getScreenDensity() {
