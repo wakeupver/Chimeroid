@@ -175,19 +175,8 @@ std::pair<int8_t*, size_t> LibretroDroid::serializeSRAM() {
     std::lock_guard<std::mutex> lock(coreLock);
 
     size_t size = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
-    auto* data = new int8_t[size > 0 ? size : 1]; // always allocate ≥ 1 byte
-
-    if (size > 0) {
-        const void* sramData = core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
-        if (sramData != nullptr) {
-            memcpy(data, sramData, size);
-        } else {
-            // Core reports non-zero SRAM size but returns null pointer —
-            // treat as empty save to avoid a segfault.
-            LOGE("serializeSRAM: retro_get_memory_data returned nullptr despite size=%zu", size);
-            size = 0;
-        }
-    }
+    auto* data = new int8_t[size];
+    memcpy(data, (int8_t*) core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM), size);
 
     return std::pair(data, size);
 }
@@ -195,32 +184,6 @@ std::pair<int8_t*, size_t> LibretroDroid::serializeSRAM() {
 void LibretroDroid::onSurfaceChanged(unsigned int width, unsigned int height) {
     LOGD("Performing libretrodroid onSurfaceChanged");
     video->updateScreenSize(width, height);
-}
-
-void LibretroDroid::applyEGLSwapInterval() {
-    if (!fpsSync) return;
-
-    int interval = fpsSync->getOptimalSwapInterval();
-
-    // swapInterval=1 is the EGL default — no need to call eglSwapInterval.
-    if (interval == 1) {
-        LOGI("EGL swap interval: 1 (default, no call needed)");
-        return;
-    }
-
-    EGLDisplay display = eglGetCurrentDisplay();
-    if (display == EGL_NO_DISPLAY) {
-        LOGW("applyEGLSwapInterval: no EGL display — skipping");
-        return;
-    }
-
-    // Note: many Android drivers (Adreno, Mali) silently ignore N>1 and keep
-    // delivering onDrawFrame at the full screen rate.  We call it anyway as a
-    // CPU/power hint, but FPSSync uses useVSync=false for swapInterval>1 so
-    // software pacing remains correct regardless of driver compliance.
-    EGLBoolean ok = eglSwapInterval(display, interval);
-    LOGI("EGL swap interval hint: %d (screen=%.1f Hz / core ratio) — driver %s",
-         interval, screenRefreshRate, ok ? "accepted" : "may ignore");
 }
 
 void LibretroDroid::onSurfaceCreated() {
@@ -231,23 +194,10 @@ void LibretroDroid::onSurfaceCreated() {
 
     video = nullptr;
 
-    // For HW-rendered cores (e.g. SwanStation/PSX), the game can dynamically switch
-    // display resolution mid-game (256/320/384/512/640/720 px wide on PSX).
-    // SwanStation renders into our FBO using glViewport(active_left, 0, active_width, active_height)
-    // where active_width is the CURRENT display width. If our FBO is only base_width wide
-    // (e.g. 320), a 512-wide display mode overflows the FBO → right side of screen is clipped.
-    // Fix: allocate the FBO at max_width × max_height for HW cores so it can hold any display
-    // mode the core might use. For SW cores keep using base_width × base_height (exact fit).
-    const bool hwAccel = Environment::getInstance().isUseHwAcceleration();
-    const unsigned fboWidth  = (hwAccel && system_av_info.geometry.max_width  > 0)
-        ? system_av_info.geometry.max_width  : system_av_info.geometry.base_width;
-    const unsigned fboHeight = (hwAccel && system_av_info.geometry.max_height > 0)
-        ? system_av_info.geometry.max_height : system_av_info.geometry.base_height;
-
     Video::RenderingOptions renderingOptions {
-        hwAccel,
-        fboWidth,
-        fboHeight,
+        Environment::getInstance().isUseHwAcceleration(),
+        system_av_info.geometry.base_width,
+        system_av_info.geometry.base_height,
         Environment::getInstance().isUseDepth(),
         Environment::getInstance().isUseStencil(),
         openglESVersion,
@@ -267,21 +217,9 @@ void LibretroDroid::onSurfaceCreated() {
 
     video = std::unique_ptr<Video>(newVideo);
 
-    // Re-apply the stored aspect ratio override to the newly created Video object.
-    // The Video constructor initialises VideoLayout with aspectRatio=1.0 (default).
-    // Without this call, changing Android display resolution triggers onSurfaceCreated,
-    // which creates a new Video with the wrong AR → game appears clipped until restart.
-    refreshAspectRatio();
-
     if (Environment::getInstance().getHwContextReset() != nullptr) {
         Environment::getInstance().getHwContextReset()();
     }
-
-    // Apply the EGL swap interval derived from screen/core rate ratio.
-    // This must be called after the EGL surface is fully set up (i.e. here in onSurfaceCreated).
-    // e.g. 120 Hz screen + 60 fps core → interval=2 so onDrawFrame fires at 60 Hz,
-    //      letting FPSSync run in useVSync=true mode (zero busy-wait overhead).
-    applyEGLSwapInterval();
 }
 
 void LibretroDroid::onMotionEvent(
@@ -509,28 +447,26 @@ void LibretroDroid::step() {
 
     LOGD("Stepping into retro_run()");
 
-    // advanceFrames() returns 0 when the next core frame deadline hasn't been
-    // reached yet (e.g. 30 fps core on 60 Hz display — every other vsync is a
-    // "skip" vsync where we just re-render the last frame and wait).
-    // The spiral-of-death cap (max 2) now lives inside advanceFrames() itself.
     unsigned frames = 1;
-    if (__builtin_expect(fpsSync != nullptr, 1)) {
-        frames = fpsSync->advanceFrames();
+    if (fpsSync) {
+        unsigned requestedFrames = fpsSync->advanceFrames();
+
+        // If the application runs too slow it's better to just skip those frames.
+        frames = std::min(requestedFrames, 2u);
     }
 
-    const unsigned totalRuns = frames * frameSpeed;
-    for (unsigned i = 0; __builtin_expect(i < totalRuns, 1); ++i)
+    for (size_t i = 0; i < frames * frameSpeed; i++)
         core->retro_run();
 
-    if (__builtin_expect(video != nullptr && !video->rendersInVideoCallback(), 1)) {
+    if (video && !video->rendersInVideoCallback()) {
         video->renderFrame();
     }
 
-    if (__builtin_expect(fpsSync != nullptr, 1)) {
+    if (fpsSync) {
         fpsSync->wait();
     }
 
-    if (__builtin_expect(rumble != nullptr && rumbleEnabled, 0)) {
+    if (rumble && rumbleEnabled) {
         rumble->fetchFromEnvironment();
     }
 
@@ -538,54 +474,12 @@ void LibretroDroid::step() {
     if (video && Environment::getInstance().isGameGeometryUpdated()) {
         Environment::getInstance().clearGameGeometryUpdated();
 
-        // For HW-rendered cores the FBO was pre-allocated at max_width × max_height, so it
-        // can accommodate any display mode the core selects — do NOT shrink it here.
-        // Resizing it down to the new geometry.base_width would cause the same clip-on-right
-        // bug we just fixed: the next Render() might use a wider viewport than the FBO.
-        // For SW cores, resizing is still necessary so the texture matches the frame data.
-        if (!Environment::getInstance().isUseHwAcceleration()) {
-            video->updateRendererSize(
-                Environment::getInstance().getGameGeometryWidth(),
-                Environment::getInstance().getGameGeometryHeight()
-            );
-        }
+        video->updateRendererSize(
+            Environment::getInstance().getGameGeometryWidth(),
+            Environment::getInstance().getGameGeometryHeight()
+        );
 
         dirtyVideo = true;
-    }
-
-    // Some cores (e.g. Flycast) call RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO at runtime to
-    // report the true frame-rate of the loaded game.  We must recreate fpsSync and the
-    // audio stream to match — otherwise a 30 fps game like Jet Grind Radio or Crazy Taxi
-    // keeps running at 60 fps (2× speed) because fpsSync still has the initial value from
-    // retro_get_system_av_info().
-    if (Environment::getInstance().isGameTimingUpdated()) {
-        double newFps        = Environment::getInstance().getGameTimingFps();
-        double newSampleRate = Environment::getInstance().getGameTimingSampleRate();
-        Environment::getInstance().clearGameTimingUpdated();
-
-        LOGI("Core updated AV timing: fps=%.3f sampleRate=%.1f — recreating fpsSync and audio",
-             newFps, newSampleRate);
-
-        fpsSync = std::make_unique<FPSSync>(newFps, screenRefreshRate);
-
-        // Re-apply EGL swap interval since the core rate changed.
-        applyEGLSwapInterval();
-
-        // Stop the old Oboe stream before destroying the Audio object.
-        // Oboe's data callback runs on a separate high-priority thread; destroying
-        // the Audio object while the callback is still running causes a use-after-free
-        // on the resampler and FIFO buffer.  Calling stop() first ensures Oboe drains
-        // and stops the callback thread before the destructor runs.
-        if (audio) audio->stop();
-
-        double inputSampleRate = newSampleRate * fpsSync->getTimeStretchFactor();
-        audio = std::make_unique<Audio>(
-            (int32_t) std::lround(inputSampleRate),
-            newFps,
-            preferLowLatencyAudio
-        );
-        updateAudioSampleRateMultiplier();
-        audio->start();
     }
 
     if (video && Environment::getInstance().isScreenRotationUpdated()) {
@@ -601,17 +495,7 @@ float LibretroDroid::getAspectRatio() {
 }
 
 void LibretroDroid::refreshAspectRatio() {
-    // Respect Kotlin-side override across resume(); fall back to core native AR.
-    float effective = (aspectRatioOverride > 0.0f) ? aspectRatioOverride : getAspectRatio();
-    video->updateAspectRatio(effective);
-}
-
-void LibretroDroid::setAspectRatioOverride(float ratio) {
-    // Persist override so refreshAspectRatio() (called every resume) honours it.
-    // ratio <= 0 clears the override and reverts to core native AR.
-    aspectRatioOverride = ratio;
-    float effective = (ratio > 0.0f) ? ratio : getAspectRatio();
-    video->updateAspectRatio(effective);
+    video->updateAspectRatio(getAspectRatio());
 }
 
 void LibretroDroid::setRumbleEnabled(bool enabled) {
@@ -625,10 +509,6 @@ bool LibretroDroid::isRumbleEnabled() const {
 void LibretroDroid::setFrameSpeed(unsigned int speed) {
     frameSpeed = speed;
     updateAudioSampleRateMultiplier();
-}
-
-void LibretroDroid::setSkipDuplicateFrames(bool skip) {
-    skipDuplicateFrames = skip;
 }
 
 void LibretroDroid::setAudioEnabled(bool enabled) {
@@ -736,8 +616,6 @@ void LibretroDroid::afterGameLoad() {
 
     updateAudioSampleRateMultiplier();
 
-    videoBaseWidth  = system_av_info.geometry.base_width  > 0 ? system_av_info.geometry.base_width  : 1;
-    videoBaseHeight = system_av_info.geometry.base_height > 0 ? system_av_info.geometry.base_height : 1;
     defaultAspectRatio = findDefaultAspectRatio(system_av_info);
 }
 
@@ -762,15 +640,6 @@ void LibretroDroid::setViewport(Rect viewportRect) {
     if (video != nullptr) {
         video->updateViewportSize(viewportRect);
     }
-}
-
-
-unsigned int LibretroDroid::getVideoBaseWidth() const {
-    return videoBaseWidth;
-}
-
-unsigned int LibretroDroid::getVideoBaseHeight() const {
-    return videoBaseHeight;
 }
 
 } //namespace libretrodroid

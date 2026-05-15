@@ -18,7 +18,6 @@
 #ifndef LIBRETRODROID_SINCRESAMPLER_H
 #define LIBRETRODROID_SINCRESAMPLER_H
 
-#include <vector>
 #include "resampler.h"
 
 namespace libretrodroid {
@@ -26,7 +25,7 @@ namespace libretrodroid {
 class SincResampler : public Resampler {
 public:
     void resample(const int16_t *source, int32_t inputFrames, int16_t *sink, int32_t sinkFrames) override;
-    explicit SincResampler(const int taps);
+    SincResampler(const int taps);
     ~SincResampler() = default;
 
 private:
@@ -35,8 +34,6 @@ private:
 private:
     static constexpr float PI_F = 3.14159265358979f;
     int halfTaps;
-    // Precomputed sinc LUT: eliminates sinf() from the hot audio callback path.
-    std::vector<float> lut;
 };
 
 } //namespace libretrodroid

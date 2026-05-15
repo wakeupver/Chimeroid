@@ -56,21 +56,7 @@ void ImageRendererES3::initializeTextures(unsigned int width, unsigned int heigh
     framebuffers = libretrodroid::ES3Utils::buildShaderPasses(width, height, shaders);
 
     glBindTexture(GL_TEXTURE_2D, currentTexture);
-
-    // Use immutable texture storage (glTexStorage2D): the driver allocates the
-    // backing memory once and never reallocates on subsequent glTexSubImage2D
-    // calls, reducing upload latency by ~15-20% on TBDR GPUs (Adreno/Mali).
-    // We must delete and recreate the texture object whenever the size changes
-    // because immutable storage cannot be redefined after creation.
-    if (lastAllocatedWidth != width || lastAllocatedHeight != height) {
-        glDeleteTextures(1, &currentTexture);
-        glGenTextures(1, &currentTexture);
-        glBindTexture(GL_TEXTURE_2D, currentTexture);
-        glTexStorage2D(GL_TEXTURE_2D, 1, glInternalFormatSized, width, height);
-        lastAllocatedWidth  = width;
-        lastAllocatedHeight = height;
-    }
-
+    glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, shaders.linearTexture ? GL_LINEAR : GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, shaders.linearTexture ? GL_LINEAR : GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -108,8 +94,7 @@ void ImageRendererES3::setPixelFormat(int pixelFormat) {
     switch (pixelFormat) {
 
         case RETRO_PIXEL_FORMAT_XRGB8888:
-            // Use sized internal format (GL_RGBA8) required by glTexStorage2D.
-            this->glInternalFormatSized = GL_RGBA8;
+            this->glInternalFormat = GL_RGBA;
             this->glFormat = GL_RGBA;
             this->glType = GL_UNSIGNED_BYTE;
             this->bytesPerPixel = 4;
@@ -119,34 +104,22 @@ void ImageRendererES3::setPixelFormat(int pixelFormat) {
         default:
         case RETRO_PIXEL_FORMAT_0RGB1555:
         case RETRO_PIXEL_FORMAT_RGB565:
-            // GL_RGB565 is both a sized and a base format in ES3.
-            this->glInternalFormatSized = GL_RGB565;
+            this->glInternalFormat = GL_RGB565;
             this->glFormat = GL_RGB;
             this->glType = GL_UNSIGNED_SHORT_5_6_5;
             this->bytesPerPixel = 2;
             this->swapRedAndBlueChannels = false;
             break;
     }
-
-    // Force texture reallocation with new format.
-    lastAllocatedWidth  = 0;
-    lastAllocatedHeight = 0;
 }
 
 void ImageRendererES3::convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch) const {
     auto castData = (uint16_t*) data;
 
-    // Iterate only over valid pixels per row (width), stepping by pitch stride.
-    // Previously used `height * pitch / bytesPerPixel` which over-reads when
-    // pitch > width * bytesPerPixel (padded rows), corrupting data past the frame.
-    const size_t rowStride = pitch / bytesPerPixel;
-    for (unsigned int y = 0; y < height; ++y) {
-        uint16_t* row = castData + y * rowStride;
-        for (unsigned int x = 0; x < width; ++x) {
-            row[x] = ((0x1Fu) & row[x])
-                | (((0x1Fu << 5)  & row[x]) << 1)
-                | (((0x1Fu << 10) & row[x]) << 1);
-        }
+    for (int i = 0; i < height * pitch / bytesPerPixel; ++i) {
+        castData[i] = ((0x1Fu) & castData[i])
+            | (((0x1Fu << 5) & castData[i]) << 1)
+            | (((0x1Fu << 10) & castData[i]) << 1);
     }
 }
 

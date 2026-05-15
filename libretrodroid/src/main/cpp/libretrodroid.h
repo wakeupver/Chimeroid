@@ -28,7 +28,6 @@
 #include <mutex>
 #include <memory>
 #include <optional>
-#include <functional>
 
 #include "log.h"
 #include "core.h"
@@ -109,9 +108,6 @@ public:
 
     void refreshAspectRatio();
     float getAspectRatio();
-    void setAspectRatioOverride(float ratio);
-    unsigned int getVideoBaseWidth() const;
-    unsigned int getVideoBaseHeight() const;
 
     bool requiresVideoRefresh() const;
     void clearRequiresVideoRefresh();
@@ -132,8 +128,6 @@ public:
 
     void setFrameSpeed(unsigned int speed);
 
-    void setSkipDuplicateFrames(bool skip);
-
     void setAudioEnabled(bool enabled);
 
     void setShaderConfig(ShaderManager::Config shaderConfig);
@@ -150,7 +144,6 @@ private:
     void updateAudioSampleRateMultiplier();
     float findDefaultAspectRatio(const retro_system_av_info &system_av_info);
     void afterGameLoad();
-    void applyEGLSwapInterval();
 
 protected:
     static void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch);
@@ -178,9 +171,6 @@ private:
     ImmersiveMode::Config immersiveModeConfig {};
 
     float defaultAspectRatio = 1.0;
-    float aspectRatioOverride = -1.0f; // negative = no override (use core native AR)
-    unsigned int videoBaseWidth = 1;
-    unsigned int videoBaseHeight = 1;
     bool dirtyVideo = false;
 
     std::mutex coreLock;

@@ -572,14 +572,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEn
     LibretroDroid::getInstance().setAudioEnabled(enabled);
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setSkipDuplicateFrames(
-    JNIEnv* env,
-    jclass obj,
-    jboolean skip
-) {
-    LibretroDroid::getInstance().setSkipDuplicateFrames(skip);
-}
-
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setShaderConfig(
     JNIEnv* env,
     jclass obj,
@@ -605,30 +597,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_refreshAsp
 ) {
     LibretroDroid::getInstance().refreshAspectRatio();
 }
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAspectRatioOverride(
-    JNIEnv* env,
-    jclass obj,
-    jfloat ratio
-) {
-    LibretroDroid::getInstance().setAspectRatioOverride(ratio);
-}
-
-
-JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVideoWidth(
-    JNIEnv* env,
-    jclass obj
-) {
-    return (jint) LibretroDroid::getInstance().getVideoBaseWidth();
-}
-
-JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVideoHeight(
-    JNIEnv* env,
-    jclass obj
-) {
-    return (jint) LibretroDroid::getInstance().getVideoBaseHeight();
-}
-
 
 }
 

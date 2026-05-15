@@ -15,7 +15,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <GLES3/gl3.h>
+#include <GLES2/gl2.h>
 #include <EGL/egl.h>
 #include <cstdlib>
 #include <string>
@@ -110,12 +110,6 @@ void Video::updateProgram() {
 
     shadersChain = {};
 
-    // Shader programs changed — invalidate cached uniform values so they are
-    // re-pushed to the new programs on the next renderFrame() call.
-    cachedTextureWidth  = -1.0f;
-    cachedTextureHeight = -1.0f;
-    cachedScreenDensity = -1.0f;
-
     std::for_each(shaders.passes.begin(), shaders.passes.end(), [&](const auto& item){
         auto shader = ShaderChainEntry { };
 
@@ -144,62 +138,14 @@ void Video::updateProgram() {
 }
 
 void Video::renderFrame() {
-    // skipDuplicateFrames optimization: skip rendering if the core hasn't produced a
-    // new frame. BUT: GLSurfaceView always calls eglSwapBuffers() after onDrawFrame(),
-    // so returning early leaves the back buffer undefined → the next presented frame
-    // can be black or garbage (visible flicker). Fix: allow early return only before
-    // the very first frame; once we have a valid frame, always re-render it so the
-    // back buffer is always well-defined after every swap.
-    if (skipDuplicateFrames && !isDirty.load(std::memory_order_acquire)) {
-        if (!hasRenderedOnce.load(std::memory_order_relaxed)) return;
-        // Fall through and re-render the last valid frame from the existing texture.
-    } else {
-        isDirty.store(false, std::memory_order_release);
-        hasRenderedOnce.store(true, std::memory_order_relaxed);
-    }
-
-    // ── Save GL state that SwanStation set up and may still need after this
-    // ── call returns (renderFrame() can be invoked from inside the HW video
-    // ── callback, which fires while retro_run() is still on the stack).
-    // ────────────────────────────────────────────────────────────────────────
-    GLint savedFBO = 0;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &savedFBO);
-
-    GLint savedVAO = 0;
-    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &savedVAO);
-
-    GLint savedVBO = 0;
-    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &savedVBO);
-
-    GLboolean savedDepthTest = glIsEnabled(GL_DEPTH_TEST);
-
-    // Reset any core-owned VAO left bound after retro_run().\n    //\n    // GLES3 spec: glVertexAttribPointer with a raw (client-side) pointer is ONLY\n    // valid when VAO 0 (the default) is bound.  With any non-zero VAO the driver\n    // treats the pointer as a VBO byte-offset; VBO=0 → memcpy(dst,NULL,0x60) → SIGSEGV.\n    //\n    // SwanStation leaves m_display_vao (non-zero) bound after Render().
-    //
-    // GLES3 spec: glVertexAttribPointer with a raw (client-side) pointer is ONLY
-    // valid when VAO 0 (the default) is bound.  With any non-zero VAO the driver
-    // treats the pointer as a VBO byte-offset; VBO=0 → memcpy(dst,NULL,0x60) → SIGSEGV.
-    //
-    // SwanStation leaves m_display_vao (non-zero) bound after Render().
-    //
-    // We use VAO 0 (not a private non-zero VAO) because shader attribute locations
-    // (gvPositionHandle, gvCoordinateHandle) are resolved at runtime via
-    // glGetAttribLocation and vary per shader/pass. A non-zero VAO bakes in indices
-    // at creation time — if those indices don't match the runtime locations, position
-    // and texcoord arrays are swapped → game renders only in a corner of the screen.
-    glBindVertexArray(0);
-
-    // Ensure no VBO from the core's pass is still bound: with a VBO active,
-    // glVertexAttribPointer treats our raw pointer as a VBO byte offset.
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    if (skipDuplicateFrames && !isDirty) return;
+    isDirty = false;
 
     glDisable(GL_DEPTH_TEST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
-    // Clear color only — the default EGL surface on Android typically has no depth
-    // buffer, so clearing GL_DEPTH_BUFFER_BIT here is a no-op that wastes a state
-    // transition on some drivers and can trigger unnecessary tile-flush on TBDR GPUs.
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if (immersiveModeEnabled) {
         immersiveMode.renderBackground(
@@ -213,21 +159,10 @@ void Video::renderFrame() {
     }
 
     updateProgram();
-
-    // Compute uniforms once per frame; only push to GPU if changed.
-    const float texW = getTextureWidth();
-    const float texH = getTextureHeight();
-    const float density = getScreenDensity();
-    const bool texSizeChanged   = (texW != cachedTextureWidth || texH != cachedTextureHeight);
-    const bool densityChanged   = (density != cachedScreenDensity);
-    if (texSizeChanged)  { cachedTextureWidth = texW; cachedTextureHeight = texH; }
-    if (densityChanged)  { cachedScreenDensity = density; }
-
-    const int chainSize = static_cast<int>(shadersChain.size());
-    for (int i = 0; i < chainSize; ++i) {
-        const auto& shader = shadersChain[i];
+    for (int i = 0; i < shadersChain.size(); ++i) {
+        auto shader = shadersChain[i];
         auto passData = renderer->getPassData(i);
-        const bool isLastPass = (i == chainSize - 1);
+        auto isLastPass = i == shadersChain.size() - 1;
 
         glBindFramebuffer(GL_FRAMEBUFFER, passData.framebuffer.value_or(0));
 
@@ -240,11 +175,11 @@ void Video::renderFrame() {
 
         glUseProgram(shader.gProgram);
 
-        const auto& vertices = isLastPass ? videoLayout.getForegroundVertices() : videoLayout.getFramebufferVertices();
+        auto vertices = isLastPass ? videoLayout.getForegroundVertices() : videoLayout.getFramebufferVertices();
         glVertexAttribPointer(shader.gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
         glEnableVertexAttribArray(shader.gvPositionHandle);
 
-        const auto& coordinates = videoLayout.getTextureCoordinates();
+        auto coordinates = videoLayout.getTextureCoordinates();
         glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, coordinates.data());
         glEnableVertexAttribArray(shader.gvCoordinateHandle);
 
@@ -258,13 +193,9 @@ void Video::renderFrame() {
             glUniform1i(shader.gPreviousPassTextureHandle, 1);
         }
 
-        // Only push uniforms if their values have changed this frame.
-        if (texSizeChanged) {
-            glUniform2f(shader.gTextureSizeHandle, texW, texH);
-        }
-        if (densityChanged) {
-            glUniform1f(shader.gScreenDensityHandle, density);
-        }
+        glUniform2f(shader.gTextureSizeHandle, getTextureWidth(), getTextureHeight());
+
+        glUniform1f(shader.gScreenDensityHandle, getScreenDensity());
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -277,24 +208,9 @@ void Video::renderFrame() {
         }
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        glUseProgram(0);
     }
-    // Single glUseProgram(0) at end of all passes (not per-pass).
-    glUseProgram(0);
-
-    // RetroArch end-of-frame pattern: glBindVertexArray(0) after all rendering.
-    // Ensures no VAO leaks into the next retro_run() call — matches gl3.c line ~4514.
-    glBindVertexArray(0);
-
-    // ── Restore GL state to what the core left it in before the video callback. ──
-    // renderFrame() may be called from INSIDE retro_run() (via the HW video
-    // refresh callback).  If SwanStation does any post-callback GL work (e.g.
-    // cleanup, VRAM readback, GPU sync) it expects the state it set up to still
-    // be in place.  We restore the three bindings we changed so the driver does
-    // not access stale/null objects and crash at null+0x28 in Adreno.
-    if (savedDepthTest) glEnable(GL_DEPTH_TEST);
-    glBindBuffer(GL_ARRAY_BUFFER, savedVBO);
-    glBindVertexArray(savedVAO);
-    glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)savedFBO);
 }
 
 float Video::getScreenDensity() {
@@ -312,16 +228,7 @@ float Video::getTextureHeight() {
 void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     if (data != nullptr) {
         renderer->onNewFrame(data, width, height, pitch);
-
-        // For HW-rendered cores, data = RETRO_HW_FRAME_BUFFER_VALID ((void*)-1).
-        // width/height is still the current display resolution even for HW frames.
-        // Crop the texture UV so we sample only the rendered sub-region of the
-        // (max-size) FBO — prevents the game from appearing tiny in the corner.
-        if (fboAllocatedWidth > 0 && width > 0 && height > 0) {
-            updateTextureUVCropForHWFrame(width, height);
-        }
-
-        isDirty.store(true, std::memory_order_release);
+        isDirty = true;
     }
 }
 
@@ -336,25 +243,6 @@ void Video::updateViewportSize(Rect viewportRect) {
 void Video::updateRendererSize(unsigned int width, unsigned int height) {
     LOGD("Updating renderer size: %d x %d", width, height);
     renderer->updateRenderedResolution(width, height);
-}
-
-void Video::updateTextureUVCropForHWFrame(unsigned renderedWidth, unsigned renderedHeight) {
-    if (fboAllocatedWidth == 0 || fboAllocatedHeight == 0) return;
-    if (renderedWidth == 0 || renderedHeight == 0) return;
-
-    float uMax = static_cast<float>(renderedWidth)  / static_cast<float>(fboAllocatedWidth);
-    float vMax = static_cast<float>(renderedHeight) / static_cast<float>(fboAllocatedHeight);
-
-    // Clamp to [0,1] — should always be ≤1 but guard against geometry misreport
-    uMax = std::min(uMax, 1.0F);
-    vMax = std::min(vMax, 1.0F);
-
-    LOGD("HW frame UV crop: rendered=%ux%u  fbo=%ux%u  uvMax=(%.4f, %.4f)",
-         renderedWidth, renderedHeight,
-         fboAllocatedWidth, fboAllocatedHeight,
-         uMax, vMax);
-
-    videoLayout.updateTextureUVCrop(uMax, vMax);
 }
 
 void Video::updateRotation(float rotation) {
@@ -389,11 +277,7 @@ Video::Video(
 
     glUseProgram(0);
 
-    fboAllocatedWidth  = renderingOptions.hardwareAccelerated ? renderingOptions.width  : 0;
-    fboAllocatedHeight = renderingOptions.hardwareAccelerated ? renderingOptions.height : 0;
-
     initializeRenderer(renderingOptions);
-
 }
 
 void Video::updateShaderType(ShaderManager::Config shaderConfig) {

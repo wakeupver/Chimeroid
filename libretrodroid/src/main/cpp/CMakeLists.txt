@@ -1,24 +1,7 @@
 cmake_minimum_required(VERSION 3.13.2)
 
-# ARM64-only build: aggressive optimizations for AArch64/NEON
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -DNDEBUG")
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -DNDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=armv8.2-a+simd+crypto -mtune=cortex-a76 \
-    -ffast-math -fno-math-errno -fno-strict-aliasing \
-    -fomit-frame-pointer -funroll-loops \
-    -falign-functions=64 \
-    -fmerge-all-constants \
-    -fvisibility=hidden -flto=thin \
-    -ffunction-sections -fdata-sections")
-set(CMAKE_C_FLAGS_RELEASE   "-O3 -march=armv8.2-a+simd+crypto -mtune=cortex-a76 \
-    -ffast-math -fno-math-errno -fno-strict-aliasing \
-    -fomit-frame-pointer -funroll-loops \
-    -falign-functions=64 \
-    -fmerge-all-constants \
-    -fvisibility=hidden -flto=thin \
-    -ffunction-sections -fdata-sections")
-set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} \
-    -Wl,--gc-sections -Wl,--strip-all -flto=thin")
+# now build app's shared lib
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
 
 add_definitions("-DVFS_FRONTEND -DHAVE_STRL")
 
@@ -106,12 +89,8 @@ add_library(libretrodroid SHARED
         ${LIBRETRO_COMMON}
 )
 
-# Support 16k pages for Android 15 + LTO thin linking
-target_link_options(libretrodroid PRIVATE
-    "-Wl,-z,max-page-size=16384"
-    "-Wl,--gc-sections"
-    "-flto=thin"
-)
+# Support 16k pages for Android 15
+target_link_options(libretrodroid PRIVATE "-Wl,-z,max-page-size=16384")
 
 # add lib dependencies
 target_link_libraries(libretrodroid

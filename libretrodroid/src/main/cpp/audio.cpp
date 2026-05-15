@@ -46,13 +46,8 @@ bool Audio::initializeStream() {
 
     if (audioLatencySettings->useLowLatencyStream) {
         builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
-        // Exclusive mode: bypass the Android audio mixer entirely.
-        // Gives ~2–5 ms lower latency on AAudio devices (Android 8+).
-        // Falls back to Shared automatically if device doesn't support it.
-        builder.setSharingMode(oboe::SharingMode::Exclusive);
     } else {
         builder.setFramesPerCallback(audioBufferSize / 10);
-        builder.setSharingMode(oboe::SharingMode::Shared);
     }
 
     oboe::Result result = builder.openManagedStream(stream);
@@ -61,8 +56,6 @@ bool Audio::initializeStream() {
         fifoBuffer = std::make_unique<oboe::FifoBuffer>(2, audioBufferSize);
         temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[audioBufferSize]);
         latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
-        LOGI("Audio stream opened: sampleRate=%d, sharingMode=%d, bufSize=%d",
-             stream->getSampleRate(), (int)stream->getSharingMode(), audioBufferSize);
         return true;
     } else {
         LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
@@ -105,23 +98,7 @@ void Audio::stop() {
 }
 
 void Audio::write(const int16_t *data, size_t frames) {
-    if (!fifoBuffer) return;
-    // Guard against overrun: if the FIFO is full, drop the oldest data by reading
-    // it away first.  Without this, write() silently clips samples which causes
-    // audio artifacts (clicks/pops) when a core produces audio faster than Oboe
-    // consumes it (e.g. during fast-forward or the first few frames of emulation).
-    int32_t samples = static_cast<int32_t>(frames * 2);
-    int32_t capacity = static_cast<int32_t>(fifoBuffer->getBufferCapacityInFrames());
-    int32_t full     = static_cast<int32_t>(fifoBuffer->getFullFramesAvailable());
-    int32_t freeFrames = capacity - full;
-    if (samples > freeFrames) {
-        int32_t toDrop = samples - freeFrames;
-        if (toDrop > full) toDrop = full; // clamp to what's actually readable
-        if (toDrop > 0) {
-            fifoBuffer->readNow(temporaryAudioBuffer.get(), toDrop);
-        }
-    }
-    fifoBuffer->write(data, samples);
+    fifoBuffer->write(data, frames * 2);
 }
 
 void Audio::setPlaybackSpeed(const double newPlaybackSpeed) {
@@ -158,9 +135,6 @@ double Audio::computeDynamicBufferConversionFactor(double dt) {
     double errorMeasure = (framesCapacityInBuffer - 2.0f * framesAvailableInBuffer) / framesCapacityInBuffer;
 
     errorIntegral += errorMeasure * dt;
-    // Clamp the integral to prevent windup during extended buffer starvation
-    // or overflow (e.g. after a pause/resume cycle where the FIFO drains completely).
-    errorIntegral = std::clamp(errorIntegral, -maxi / ki, maxi / ki);
 
     // Wikipedia states that human ear resolution is around 3.6 Hz within the octave of 1000–2000 Hz.
     // This changes continuously, so we should try to keep it a very low value.
@@ -187,11 +161,6 @@ void Audio::onErrorAfterClose(oboe::AudioStream* oldStream, oboe::Result result)
 
     if (result != oboe::Result::ErrorDisconnected)
         return;
-
-    // Reset PI controller state so stale errorIntegral from the old stream
-    // doesn't immediately drive the new stream's speed toward max/min.
-    errorIntegral = 0.0;
-    framesToSubmit = 0.0;
 
     initializeStream();
     if (startRequested) {
