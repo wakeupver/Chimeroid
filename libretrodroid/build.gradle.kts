@@ -12,6 +12,7 @@ android {
 
     defaultConfig {
         ndk {
+            // arm64-only: same as before
             abiFilters += setOf("arm64-v8a")
         }
         externalNativeBuild {
@@ -65,4 +66,5 @@ android {
 
 dependencies {
     implementation(deps.libs.androidx.lifecycle.runtime)
+    // Oboe removed: using AAudio directly via NDK
 }

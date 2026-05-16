@@ -459,6 +459,9 @@ libretro_vfs_implementation_file *retro_vfs_file_open_impl(
 #if defined(_WIN32) && !defined(_XBOX)
             if (!stream->fh)
                goto error;
+#elif defined(__APPLE__)
+            if (!stream->iokit_mmc)
+               goto error;
 #else
             if (!stream->fp)
                goto error;
@@ -1136,8 +1139,20 @@ int retro_vfs_stat_64_impl(const char *path, int64_t *size)
 
       file_info                 = GetFileAttributes(path_local);
 
+      /* Use _stat64 explicitly to match the struct _stat64 buffer
+       * declared above. The bare _stat is a macro that expands to
+       * _stat64i32 on VS2005+ (or _stat32 with _USE_32BIT_TIME_T),
+       * neither of which match struct _stat64 -- passing the wrong
+       * struct silently truncates st_size. _stat64 has been in MSVC
+       * since VS2003 (_MSC_VER >= 1300) and is provided by mingw-w64.
+       * VC6 has no 64-bit time_t at all; _stati64 is the only match. */
+#if defined(_MSC_VER) && _MSC_VER < 1300
       if (file_info == INVALID_FILE_ATTRIBUTES
-            || _stat(path_local, &stat_buf) != 0)
+            || _stati64(path_local, (struct _stati64*)&stat_buf) != 0)
+#else
+      if (file_info == INVALID_FILE_ATTRIBUTES
+            || _stat64(path_local, &stat_buf) != 0)
+#endif
       {
          free(path_local);
          return 0;

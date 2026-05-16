@@ -115,6 +115,7 @@
 /* iOS/OSX specific. Lacks clock_gettime(), so implement it. */
 #ifdef __MACH__
 #include <sys/time.h>
+#include <AvailabilityMacros.h>
 
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 0
@@ -124,10 +125,18 @@
 #define CLOCK_REALTIME 0
 #endif
 
-/**
- * TODO/FIXME: clock_gettime function is part of iOS 10 now
- **/
-#if __IPHONE_OS_VERSION_MIN_REQUIRED < 100000
+/* clock_gettime() was added in iOS 10.0 / macOS 10.12 Sierra.
+ * On deployment targets below those versions the symbol doesn't
+ * exist in libSystem and the link fails, so fall back to a
+ * gettimeofday() shim.  Gated on MIN_REQUIRED (deployment target)
+ * rather than MAX_ALLOWED (SDK) because the binary needs to run on
+ * the deployment target, and Apple weak-links clock_gettime when
+ * targeting < 10.12 even from a newer SDK. */
+#if (defined(__IPHONE_OS_VERSION_MIN_REQUIRED) \
+       && __IPHONE_OS_VERSION_MIN_REQUIRED < 100000) \
+ || (defined(MAC_OS_X_VERSION_MIN_REQUIRED) \
+       && MAC_OS_X_VERSION_MIN_REQUIRED < 101200)
+#define RA_NEEDS_CLOCK_GETTIME_SHIM 1
 static int ra_clock_gettime(int clk_ik, struct timespec *t)
 {
    struct timeval now;
@@ -141,7 +150,7 @@ static int ra_clock_gettime(int clk_ik, struct timespec *t)
 #endif
 #endif
 
-#if defined(__MACH__) && __IPHONE_OS_VERSION_MIN_REQUIRED < 100000
+#if defined(__MACH__) && defined(RA_NEEDS_CLOCK_GETTIME_SHIM)
 #else
 #define ra_clock_gettime clock_gettime
 #endif
@@ -244,6 +253,8 @@ retro_time_t cpu_features_get_time_usec(void)
    return osGetTime() * 1000;
 #elif defined(_POSIX_MONOTONIC_CLOCK) || defined(__QNX__) || defined(ANDROID) || defined(__MACH__)
    struct timespec tv;
+   tv.tv_sec  = 0;
+   tv.tv_nsec = 0;
    if (ra_clock_gettime(CLOCK_MONOTONIC, &tv) < 0)
       return 0;
    return tv.tv_sec * INT64_C(1000000) + (tv.tv_nsec + 500) / 1000;
@@ -603,56 +614,78 @@ uint64_t cpu_features_get(void)
    const int avx_flags = (1 << 27) | (1 << 28);
 #endif
 #if defined(__MACH__)
-   size_t _len          = sizeof(size_t);
-   if (sysctlbyname("hw.optional.floatingpoint", NULL, &_len, NULL, 0) == 0)
+   /* sysctlbyname() returns 0 (success) whenever the key exists, regardless
+    * of its value. On Intel Macs the hw.optional.* keys are always present
+    * but report 0 when the feature is unsupported (e.g. avx512f on pre-Skylake
+    * Xeon CPUs). We therefore have to read the value, not just the success
+    * code. */
+   int      _val        = 0;
+   size_t   _len        = sizeof(_val);
+   if (   sysctlbyname("hw.optional.floatingpoint", &_val, &_len, NULL, 0) == 0
+       && _val)
       cpu |= RETRO_SIMD_CMOV;
 
 #if defined(CPU_X86)
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.mmx", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.mmx", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_MMX | RETRO_SIMD_MMXEXT;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.sse", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.sse", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_SSE;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.sse2", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.sse2", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_SSE2;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.sse3", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.sse3", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_SSE3;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.supplementalsse3", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.supplementalsse3", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_SSSE3;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.sse4_1", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.sse4_1", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_SSE4;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.sse4_2", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.sse4_2", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_SSE42;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.aes", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.aes", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_AES;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.avx1_0", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.avx1_0", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_AVX;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.avx2_0", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.avx2_0", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_AVX2;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.avx512f", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.avx512f", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_AVX512;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.altivec", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.altivec", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_VMX;
 #else
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.neon", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.neon", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_NEON;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.neon_fp16", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.neon_fp16", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_VFPV3;
-   _len            = sizeof(size_t);
-   if (sysctlbyname("hw.optional.neon_hpfp", NULL, &_len, NULL, 0) == 0)
+   _val = 0;
+   _len = sizeof(_val);
+   if (sysctlbyname("hw.optional.neon_hpfp", &_val, &_len, NULL, 0) == 0 && _val)
       cpu |= RETRO_SIMD_VFPV4;
 #endif
 #elif defined(_XBOX1)

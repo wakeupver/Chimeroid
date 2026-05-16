@@ -658,6 +658,28 @@ static bool rpng_process_ihdr(struct png_ihdr *ihdr)
          return false;
    }
 
+   /* On 32-bit hosts the per-row decode mallocs cannot fit much
+    * more than 1 GiB of decoded RGBA, and an undersized malloc
+    * combined with attacker-controlled dimensions has historically
+    * been the heap-overflow primitive prompting the 0x4000 caps
+    * in rbmp.c, rtga.c and rwebp.c.  Keep the tight cap there.
+    *
+    * On 64-bit the (size_t) casts in rpng_reverse_filter_init and
+    * the final allocator make the per-row arithmetic overflow-safe
+    * regardless of dimensions, and the 4 GiB output guard further
+    * down in rpng_iterate_image already rejects images whose
+    * decoded buffer cannot be addressed.  Loading a 30000x30000
+    * RGBA image on a desktop with the RAM to spare is a legitimate
+    * use case (cf. IrfanView), so do not impose the 0x4000 cap
+    * there. */
+#if SIZE_MAX <= 0xFFFFFFFFu
+   if (ihdr->width > 0x4000u || ihdr->height > 0x4000u)
+   {
+      fprintf(stderr, "[RPNG] Error in line %d.\n", __LINE__);
+      return false;
+   }
+#endif
+
 #ifdef RPNG_TEST
    fprintf(stderr, "IHDR: (%u x %u), bpc = %u, palette = %s, color = %s, alpha = %s, adam7 = %s.\n",
          ihdr->width, ihdr->height,
@@ -695,6 +717,15 @@ static bool rpng_process_ihdr(struct png_ihdr *ihdr)
       default:
          return false;
    }
+
+   /* See the matching comment in the RPNG_TEST/DEBUG variant
+    * above.  Cap only on 32-bit; 64-bit lets the (size_t)
+    * widening + 4 GiB output guard handle large legitimate
+    * images. */
+#if SIZE_MAX <= 0xFFFFFFFFu
+   if (ihdr->width > 0x4000u || ihdr->height > 0x4000u)
+      return false;
+#endif
 
    return true;
 }
@@ -1063,7 +1094,7 @@ static int rpng_reverse_filter_init(const struct png_ihdr *ihdr,
             rpng_passes[pngp->pass_pos].stride_y - 1) / rpng_passes[pngp->pass_pos].stride_y;
 
       if (!(pngp->data = (uint32_t*)malloc(
-            pngp->pass_width * pngp->pass_height * sizeof(uint32_t))))
+            (size_t)pngp->pass_width * (size_t)pngp->pass_height * sizeof(uint32_t))))
          return -1;
 
       pngp->ihdr        = *ihdr;
@@ -1371,11 +1402,11 @@ end:
 #ifdef GEKKO
    /* We often use these in textures, make sure 
     * they're 32-byte aligned */
-   *data = (uint32_t*)memalign(32, rpng->ihdr.width *
-         rpng->ihdr.height * sizeof(uint32_t));
+   *data = (uint32_t*)memalign(32, (size_t)rpng->ihdr.width *
+         (size_t)rpng->ihdr.height * sizeof(uint32_t));
 #else
-   *data = (uint32_t*)malloc(rpng->ihdr.width *
-         rpng->ihdr.height * sizeof(uint32_t));
+   *data = (uint32_t*)malloc((size_t)rpng->ihdr.width *
+         (size_t)rpng->ihdr.height * sizeof(uint32_t));
 #endif
    if (!*data)
       goto false_end;
@@ -1397,17 +1428,48 @@ false_end:
    return -1;
 }
 
+/* Cap on the accumulated IDAT stream.  The IHDR check rejects
+ * images whose decoded output would exceed 4 GiB, so any legitimate
+ * IDAT stream will be well under this ceiling.  256 MiB of
+ * compressed IDAT is far larger than any realistic libretro asset
+ * and small enough that even on 32-bit the doubling loop below
+ * cannot overflow.  Rejecting here closes off a decompression-bomb
+ * path where a hostile PNG streams many large IDAT chunks to force
+ * the intermediate buffer to grow arbitrarily. */
+#define RPNG_IDAT_MAX ((size_t)256 * 1024 * 1024)
+
 static bool rpng_realloc_idat(struct idat_buffer *buf, uint32_t chunk_size)
 {
-   size_t required = buf->size + chunk_size;
+   size_t required;
+
+   /* Pre-patch: buf->size + chunk_size was size_t + uint32_t.  On
+    * 32-bit size_t the sum could wrap (accumulated IDAT plus a
+    * near-UINT32_MAX chunk_size), making "required > capacity"
+    * false, the realloc skipped, and the subsequent memcpy writing
+    * past the existing buffer.  Detect overflow explicitly and
+    * cap total growth. */
+   if (chunk_size > RPNG_IDAT_MAX - buf->size)
+      return false;
+   required = buf->size + chunk_size;
 
    if (required > buf->capacity)
    {
       uint8_t *new_buffer = NULL;
       size_t new_cap      = buf->capacity ? buf->capacity : 4096;
 
+      /* Cap the doubling too so a malicious chunk at the edge of
+       * RPNG_IDAT_MAX cannot drive new_cap past SIZE_MAX / 2. */
       while (new_cap < required)
+      {
+         if (new_cap > RPNG_IDAT_MAX / 2)
+         {
+            new_cap = RPNG_IDAT_MAX;
+            break;
+         }
          new_cap *= 2;
+      }
+      if (new_cap < required)
+         return false;
 
       new_buffer = (uint8_t*)realloc(buf->data, new_cap);
 
@@ -1516,20 +1578,34 @@ bool rpng_iterate_image(rpng_t *rpng)
 {
    uint8_t *buf             = (uint8_t*)rpng->buff_data;
    uint32_t chunk_size      = 0;
+   size_t   remaining;
 
    /* Check whether data buffer pointer is valid */
    if (buf > rpng->buff_end)
       return false;
 
    /* Check whether reading the header will overflow
-    * the data buffer */
-   if (rpng->buff_end - buf < 8)
+    * the data buffer.  buff_end points at the LAST byte of the
+    * input, so bytes-remaining = (buff_end - buf) + 1. */
+   if ((size_t)(rpng->buff_end - buf) + 1 < 8)
       return false;
 
    chunk_size = rpng_dword_be(buf);
 
-   /* Check whether chunk will overflow the data buffer */
-   if (buf + 8 + chunk_size > rpng->buff_end)
+   /* Check whether chunk will overflow the data buffer.
+    *
+    * Pre-patch:
+    *    if (buf + 8 + chunk_size > rpng->buff_end) return false;
+    * is pointer arithmetic on a uint8_t * with an attacker-
+    * controlled 32-bit chunk_size.  For a value near UINT32_MAX
+    * the sum wraps the pointer address (UB per C99; on 32-bit the
+    * arithmetic genuinely rolls over and the compare defeats the
+    * check, letting the memcpy at the IDAT handler read ~4 GiB
+    * past the end of the input).  Compare sizes instead of
+    * pointers, and reject chunk_size that cannot possibly fit
+    * even before accounting for the type/CRC overhead. */
+   remaining = (size_t)(rpng->buff_end - buf) + 1;
+   if (chunk_size > remaining || remaining - chunk_size < 12)
       return false;
 
    switch (rpng_read_chunk_header(buf, chunk_size))
@@ -1542,9 +1618,10 @@ bool rpng_iterate_image(rpng_t *rpng)
          return false;
 
       case PNG_CHUNK_IHDR:
-         if (     (rpng->flags & RPNG_FLAG_HAS_IHDR)
-               || (rpng->flags & RPNG_FLAG_HAS_IDAT)
-               || (rpng->flags & RPNG_FLAG_HAS_IEND))
+         if (rpng->flags & (
+                    RPNG_FLAG_HAS_IHDR 
+                  | RPNG_FLAG_HAS_IDAT
+                  | RPNG_FLAG_HAS_IEND))
             return false;
 
          if (chunk_size != 13)
@@ -1587,14 +1664,24 @@ bool rpng_iterate_image(rpng_t *rpng)
           * constant unambiguously 64-bit on LLP64 (Windows) where
           * unsigned long is 32-bit.  rpng_pass_geom's arithmetic is
           * itself size_t-wide after the prior widening commit, so the
-          * pass_size returned here is trustworthy. */
+          * pass_size returned here is trustworthy.
+          *
+          * On ILP32 platforms (e.g. 32-bit PPC / i686), size_t is 32-bit
+          * and pass_size can never reach 2^32, so GCC warns that the
+          * pass_size cap is always false.  Preprocessor-gate it on
+          * 64-bit size_t; the output-size cap remains active on both
+          * 32-bit and 64-bit (width*height*4 can overflow 32-bit even
+          * when each factor is 32-bit). */
          {
             size_t pass_size = 0;
             rpng_pass_geom(&rpng->ihdr, rpng->ihdr.width,
                            rpng->ihdr.height, NULL, NULL, &pass_size);
             if ((uint64_t)rpng->ihdr.width * rpng->ihdr.height
                      * sizeof(uint32_t) >= 0x100000000ULL
-                  || (uint64_t)pass_size >= 0x100000000ULL)
+#if SIZE_MAX > 0xFFFFFFFFULL
+                  || (uint64_t)pass_size >= 0x100000000ULL
+#endif
+               )
                return false;
          }
 
@@ -1619,11 +1706,12 @@ bool rpng_iterate_image(rpng_t *rpng)
             if (chunk_size % 3)
                return false;
 
-            if (     !(rpng->flags & RPNG_FLAG_HAS_IHDR)
-                  ||  (rpng->flags & RPNG_FLAG_HAS_PLTE)
-                  ||  (rpng->flags & RPNG_FLAG_HAS_IEND)
-                  ||  (rpng->flags & RPNG_FLAG_HAS_IDAT)
-                  ||  (rpng->flags & RPNG_FLAG_HAS_TRNS))
+            if (    !(rpng->flags & RPNG_FLAG_HAS_IHDR) 
+                  || (rpng->flags & (
+                        RPNG_FLAG_HAS_PLTE 
+                      | RPNG_FLAG_HAS_IEND 
+                      | RPNG_FLAG_HAS_IDAT
+                      | RPNG_FLAG_HAS_TRNS)))
                return false;
 
             buf += 8;
@@ -1684,15 +1772,20 @@ bool rpng_iterate_image(rpng_t *rpng)
          break;
 
       case PNG_CHUNK_IEND:
-         if (     !(rpng->flags & RPNG_FLAG_HAS_IHDR)
-               || !(rpng->flags & RPNG_FLAG_HAS_IDAT))
+         if ((rpng->flags & (RPNG_FLAG_HAS_IHDR | RPNG_FLAG_HAS_IDAT)) != (RPNG_FLAG_HAS_IHDR | RPNG_FLAG_HAS_IDAT))
             return false;
 
          rpng->flags         |= RPNG_FLAG_HAS_IEND;
          return false;
    }
 
-   rpng->buff_data += chunk_size + 12;
+   /* chunk_size + 12 is a uint32_t + int, promoted to uint32_t,
+    * which wraps for chunk_size near UINT32_MAX.  The
+    * per-chunk-size overflow guard at the top of this function
+    * already rejects values that large, but keep the arithmetic
+    * explicit in size_t here so readers (and future callers who
+    * might loosen that guard) don't trip the wrap. */
+   rpng->buff_data += (size_t)chunk_size + 12;
 
    /* Check whether data buffer pointer is valid */
    if (rpng->buff_data > rpng->buff_end)

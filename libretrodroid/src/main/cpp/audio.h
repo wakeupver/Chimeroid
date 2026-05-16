@@ -1,96 +1,110 @@
 /*
  *     Copyright (C) 2019  Filippo Scognamiglio
+ *     Copyright (C) 2024  Chimeroid Project (AAudio rewrite)
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
- *     This program is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef LIBRETRODROID_AUDIO_H
 #define LIBRETRODROID_AUDIO_H
 
-#include <array>
+#include <aaudio/AAudio.h>
+#include <atomic>
+#include <memory>
+#include <mutex>
 #include <unistd.h>
-#include <oboe/Oboe.h>
-#include <oboe/FifoBuffer.h>
 
 #include "resamplers/linearresampler.h"
 
 namespace libretrodroid {
 
-class Audio: public oboe::AudioStreamDataCallback, oboe::AudioStreamErrorCallback {
-private:
-    struct AudioLatencySettings {
-        unsigned bufferSizeInVideoFrames;
-        bool useLowLatencyStream;
-    };
-
-    const AudioLatencySettings DEFAULT_LATENCY_SETTINGS { 8, false };
-    const AudioLatencySettings LOW_LATENCY_SETTINGS { 4, true };
-
+/* ---------------------------------------------------------------------------
+ * Lock-free stereo int16_t ring buffer.
+ * Inspired by RetroArch's audio FIFO pattern.
+ * ---------------------------------------------------------------------------*/
+class AudioFifo {
 public:
-    Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio);
-    ~Audio() override = default;
+    explicit AudioFifo(size_t capacityFrames);
+    size_t write(const int16_t* src, size_t frames);
+    void   readNow(int16_t* dst, size_t frames);
+    size_t framesAvailable() const;
+    size_t capacity()        const { return mCapacity; }
+
+private:
+    const size_t              mCapacity;
+    std::unique_ptr<int16_t[]> mBuffer;
+    std::atomic<size_t>       mRead{0};
+    std::atomic<size_t>       mWrite{0};
+};
+
+/* ---------------------------------------------------------------------------
+ * Audio engine – pure AAudio (Android NDK, no Oboe dependency).
+ * Public API identical to the original Oboe-based implementation so that
+ * LibretroDroid and all callers require zero modification.
+ * ---------------------------------------------------------------------------*/
+class Audio {
+public:
+    Audio(int32_t sampleRate, double refreshRate, bool preferLowLatency);
+    ~Audio();
 
     void start();
     void stop();
-
-    oboe::DataCallbackResult onAudioReady(
-        oboe::AudioStream *oboeStream,
-        void *audioData,
-        int32_t numFrames
-    ) override;
-
-    void onErrorAfterClose(oboe::AudioStream *oldStream, oboe::Result result) override;
-
-public:
-    void write(const int16_t *data, size_t frames);
-    void setPlaybackSpeed(const double newPlaybackSpeed);
+    void write(const int16_t* data, size_t frames);
+    void setPlaybackSpeed(double newSpeed);
 
 private:
-    static int32_t roundToEven(int32_t x);
-    double computeDynamicBufferConversionFactor(double dt);
-    int32_t computeAudioBufferSize();
-    bool initializeStream();
-    std::unique_ptr<Audio::AudioLatencySettings> findBestLatencySettings(bool preferLowLatencyAudio);
-    double computeMaximumLatency() const;
+    /* AAudio callbacks (static trampolines) */
+    static aaudio_data_callback_result_t sDataCallback(
+        AAudioStream* stream, void* userData,
+        void* audioData, int32_t numFrames);
 
-private:
-    const double kp = 0.006;
-    const double ki = 0.00002;
-    const double maxp = 0.003;
-    const double maxi = 0.02;
+    static void sErrorCallback(
+        AAudioStream* stream, void* userData, aaudio_result_t error);
 
-    LinearResampler resampler;
-    std::unique_ptr<oboe::FifoBuffer> fifoBuffer = nullptr;
-    std::unique_ptr<int16_t[]> temporaryAudioBuffer = nullptr;
+    aaudio_data_callback_result_t onAudioReady(void* audioData, int32_t numFrames);
+    void onError(aaudio_result_t error);
 
-    oboe::ManagedStream stream = nullptr;
-    std::unique_ptr<oboe::LatencyTuner> latencyTuner = nullptr;
+    /* PI controller – same math as original */
+    double computeDynamicBufferFactor(double dt);
 
-    bool startRequested = false;
-    int32_t inputSampleRate;
-    double contentRefreshRate = 60.0;
+    bool openStream(bool lowLatency);
+    void closeStream();
+    int32_t computeBufferFrames() const;
+    double  computeMaxLatencyMs() const;
 
-    double baseConversionFactor = 1.0;
+    /* PI constants (identical to original Oboe implementation) */
+    static constexpr double kKp   = 0.006;
+    static constexpr double kKi   = 0.00002;
+    static constexpr double kMaxP = 0.003;
+    static constexpr double kMaxI = 0.02;
 
-    double framesToSubmit = 0.0;
-    double errorIntegral = 0.0;
+    /* Stream state */
+    AAudioStream* mStream        = nullptr;
+    bool          mStarted       = false;
+    bool          mLowLatency    = false;
 
-    double playbackSpeed = 1.0;
+    int32_t mInputSampleRate     = 48000;
+    int32_t mDeviceSampleRate    = 48000;
+    double  mContentRefreshRate  = 60.0;
+    double  mBaseConvFactor      = 1.0;
 
-    std::unique_ptr<AudioLatencySettings> audioLatencySettings;
+    /* Playback control */
+    double mPlaybackSpeed   = 1.0;
+    double mFramesToSubmit  = 0.0;
+    double mErrorIntegral   = 0.0;
+
+    /* Audio pipeline */
+    LinearResampler            mResampler;
+    std::unique_ptr<AudioFifo> mFifo;
+    std::unique_ptr<int16_t[]> mTempBuf;
+    size_t                     mTempBufFrames = 0;
+
+    std::mutex mMutex;
 };
 
 } // namespace libretrodroid
 
-#endif //LIBRETRODROID_AUDIO_H
+#endif // LIBRETRODROID_AUDIO_H
