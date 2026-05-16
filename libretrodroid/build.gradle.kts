@@ -11,8 +11,12 @@ android {
     }
 
     defaultConfig {
+        // AAudio requires API 26. Override minSdk for this native-only module.
+        // The parent app's declared minSdk (23) is what Google Play enforces;
+        // this minSdk only governs which NDK APIs this library can call.
+        minSdk = 26
+
         ndk {
-            // arm64-only: same as before
             abiFilters += setOf("arm64-v8a")
         }
         externalNativeBuild {
@@ -21,10 +25,7 @@ android {
                     "-DANDROID_STL=c++_static",
                     "-DANDROID_ARM_NEON=TRUE",
                     "-DCMAKE_BUILD_TYPE=Release",
-                    // AAudio requires API 26+. Set the NDK compile target to 26
-                    // so AAudio symbols are visible. The app's declared minSdk (23)
-                    // is unaffected — this only governs which NDK APIs are available
-                    // to the native library at compile time.
+                    // Explicit NDK API level — belt-and-suspenders with CMakeLists
                     "-DANDROID_PLATFORM=android-26"
                 )
                 cppFlags(
@@ -71,5 +72,4 @@ android {
 
 dependencies {
     implementation(deps.libs.androidx.lifecycle.runtime)
-    // Oboe removed: using AAudio directly via NDK
 }

@@ -1,6 +1,18 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(libretrodroid)
 
+# ─── AAudio requires Android API 26+ ─────────────────────────────────────────
+# Force the NDK to expose API-26 symbols regardless of the app's declared
+# minSdkVersion. ANDROID_PLATFORM in Gradle can be overridden; setting
+# CMAKE_SYSTEM_VERSION here is the authoritative per-module override.
+if(ANDROID)
+    if(NOT DEFINED CMAKE_SYSTEM_VERSION OR CMAKE_SYSTEM_VERSION LESS 26)
+        set(CMAKE_SYSTEM_VERSION 26)
+    endif()
+    # Belt-and-suspenders: define the guard macro that AAudio.h checks
+    add_definitions("-D__ANDROID_API__=26")
+endif()
+
 # ─── Compiler flags ───────────────────────────────────────────────────────────
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
 
@@ -116,12 +128,11 @@ add_library(libretrodroid SHARED
 target_link_options(libretrodroid PRIVATE "-Wl,-z,max-page-size=16384")
 
 # ─── Link libraries ───────────────────────────────────────────────────────────
-# aaudio replaces oboe; GLESv3, EGL, android, log are NDK-provided
 target_link_libraries(libretrodroid
     android
     log
     EGL
     GLESv3
-    aaudio      # AAudio: Android 8.1+ (API 27). Replaces Oboe.
-    OpenSLES    # Fallback path via AAudio's internal routing - optional safety
+    aaudio
+    OpenSLES
 )

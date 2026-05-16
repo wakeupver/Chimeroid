@@ -11,6 +11,14 @@
 #ifndef LIBRETRODROID_AUDIO_H
 #define LIBRETRODROID_AUDIO_H
 
+// AAudio.h requires __ANDROID_API__ >= 26
+#ifndef __ANDROID_API__
+#  define __ANDROID_API__ 26
+#endif
+#if __ANDROID_API__ < 26
+#  undef __ANDROID_API__
+#  define __ANDROID_API__ 26
+#endif
 #include <aaudio/AAudio.h>
 #include <atomic>
 #include <memory>
