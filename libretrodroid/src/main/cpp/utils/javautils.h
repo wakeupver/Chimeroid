@@ -18,8 +18,9 @@
 #ifndef LIBRETRODROID_JAVAUTILS_H
 #define LIBRETRODROID_JAVAUTILS_H
 
-#include "unordered_map"
-#include "string"
+#include <functional>
+#include <string>
+#include <unordered_map>
 
 #include <jni.h>
 #include "../environment.h"
@@ -29,7 +30,6 @@ namespace libretrodroid {
 
 class JavaUtils {
 public:
-    // Conversion from LibretroDroid types
     static Variable variableFromJava(JNIEnv* env, jobject obj);
     static ShaderManager::Config shaderFromJava(JNIEnv* env, jobject obj);
 
