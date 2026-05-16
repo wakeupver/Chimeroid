@@ -20,7 +20,12 @@ android {
                 arguments(
                     "-DANDROID_STL=c++_static",
                     "-DANDROID_ARM_NEON=TRUE",
-                    "-DCMAKE_BUILD_TYPE=Release"
+                    "-DCMAKE_BUILD_TYPE=Release",
+                    // AAudio requires API 26+. Set the NDK compile target to 26
+                    // so AAudio symbols are visible. The app's declared minSdk (23)
+                    // is unaffected — this only governs which NDK APIs are available
+                    // to the native library at compile time.
+                    "-DANDROID_PLATFORM=android-26"
                 )
                 cppFlags(
                     "-O3",
