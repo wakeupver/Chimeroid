@@ -2,15 +2,32 @@ name: Publish
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.17.0)'
+        required: true
+        default: 'v1.17.0'
+      prerelease:
+        description: 'Mark as pre-release?'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+  push:
+    tags:
+      - 'v*'
 
 jobs:
-
   build:
-    name: Build APK
+    name: Build Release APK
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -21,12 +38,11 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Decode keystore
-        run: |
-          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > release.jks
-
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      - name: Decode keystore
+        run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > release.jks
 
       - name: Build release APK
         env:
@@ -34,31 +50,40 @@ jobs:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
-        run: ./gradlew assembleFreeRelease
+        run: ./gradlew :chimeroid-app:assembleFreeRelease
+
+      - name: Rename APK
+        run: |
+          TAG=${{ github.event.inputs.tag || github.ref_name }}
+          mv chimeroid-app/build/outputs/apk/free/release/chimeroid-app-free-release.apk \
+             chimeroid-app/build/outputs/apk/free/release/Chimeroid-${TAG}.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apk
-          path: chimeroid-app/build/outputs/apk/free/release/chimeroid-app-free-release.apk
+          name: Chimeroid-APK
+          path: chimeroid-app/build/outputs/apk/free/release/Chimeroid-*.apk
           if-no-files-found: error
 
-  publish_apk:
-    name: Publish APK on Github
+  release:
+    name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Download APK artifact
         uses: actions/download-artifact@v4
         with:
-          name: apk
+          name: Chimeroid-APK
           path: ./apk
 
-      - name: Create pre-release
-        uses: "marvinpinto/action-automatic-releases@latest"
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: true
-          title: "Pre-release ${{ github.ref_name }}"
-          files: ./apk/chimeroid-app-free-release.apk
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: Chimeroid ${{ github.event.inputs.tag || github.ref_name }}
+          prerelease: ${{ github.event.inputs.prerelease == 'true' || !startsWith(github.ref, 'refs/tags/') }}
+          generate_release_notes: true
+          files: ./apk/Chimeroid-*.apk
