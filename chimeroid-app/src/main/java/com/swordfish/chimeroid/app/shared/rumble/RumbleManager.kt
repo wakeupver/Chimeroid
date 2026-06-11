@@ -1,0 +1,106 @@
+package com.swordfish.chimeroid.app.shared.rumble
+
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.view.InputDevice
+import com.swordfish.chimeroid.app.mobile.feature.settings.SettingsManager
+import com.swordfish.chimeroid.app.shared.input.InputDeviceManager
+import com.swordfish.chimeroid.common.coroutines.safeCollect
+import com.swordfish.chimeroid.lib.library.SystemCoreConfig
+import com.swordfish.libretrodroid.RumbleEvent
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import kotlin.math.roundToInt
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class RumbleManager(
+    applicationContext: Context,
+    private val settingsManager: SettingsManager,
+    private val inputDeviceManager: InputDeviceManager,
+) {
+    private val deviceVibrator = applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+
+    // limitedParallelism(1) gives single-threaded ordering without leaking a permanent OS thread
+    // the way newSingleThreadContext("Rumble") did.
+    private val rumbleContext = kotlinx.coroutines.Dispatchers.Default.limitedParallelism(1)
+
+    suspend fun collectAndProcessRumbleEvents(
+        systemCoreConfig: SystemCoreConfig,
+        rumbleEventsObservable: Flow<RumbleEvent>,
+    ) {
+        val enableRumble = settingsManager.enableRumble()
+        val rumbleSupported = systemCoreConfig.rumbleSupported
+
+        // Skip the pipeline if the user disabled rumble OR the core does not support it.
+        // Previously this used && (AND) which would still run the pipeline when rumble is
+        // disabled for a core that doesn't support it at all — pure wasted work.
+        if (!enableRumble || !rumbleSupported) {
+            return
+        }
+
+        inputDeviceManager.getEnabledInputsObservable()
+            .map { getVibrators(it) }
+            .flatMapLatest { vibrators ->
+                rumbleEventsObservable
+                    .onEach { kotlin.runCatching { vibrate(vibrators[it.port], it) } }
+                    .onStart { stopAllVibrators(vibrators) }
+                    .onCompletion { stopAllVibrators(vibrators) }
+                    .flowOn(rumbleContext)
+            }
+            .safeCollect { }
+    }
+
+    private fun stopAllVibrators(vibrators: List<Vibrator>) {
+        vibrators.forEach {
+            kotlin.runCatching { it.cancel() }
+        }
+    }
+
+    private suspend fun getVibrators(gamePads: List<InputDevice>): List<Vibrator> {
+        val enableDeviceRumble = settingsManager.enableDeviceRumble()
+
+        return if (gamePads.isEmpty() && enableDeviceRumble) {
+            listOf(deviceVibrator)
+        } else {
+            gamePads.map { it.vibrator }
+        }
+    }
+
+    private fun vibrate(
+        vibrator: Vibrator?,
+        rumbleEvent: RumbleEvent,
+    ) {
+        if (vibrator == null) return
+
+        vibrator.cancel()
+
+        val amplitude = computeAmplitude(rumbleEvent)
+
+        if (amplitude == 0) return
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && vibrator.hasAmplitudeControl()) {
+            vibrator.vibrate(VibrationEffect.createOneShot(MAX_RUMBLE_DURATION_MS, amplitude))
+        } else if (amplitude > LEGACY_MIN_RUMBLE_STRENGTH) {
+            vibrator.vibrate(MAX_RUMBLE_DURATION_MS)
+        }
+    }
+
+    private fun computeAmplitude(rumbleEvent: RumbleEvent): Int {
+        val strength = rumbleEvent.strengthStrong * 0.66f + rumbleEvent.strengthWeak * 0.33f
+        return (DEFAULT_RUMBLE_STRENGTH * (strength) * 255).roundToInt()
+    }
+
+    companion object {
+        const val MAX_RUMBLE_DURATION_MS = 1000L
+        const val DEFAULT_RUMBLE_STRENGTH = 0.5f
+        const val LEGACY_MIN_RUMBLE_STRENGTH = 100
+    }
+}

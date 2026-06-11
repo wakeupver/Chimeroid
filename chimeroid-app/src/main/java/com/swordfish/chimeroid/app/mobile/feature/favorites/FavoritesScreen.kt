@@ -1,0 +1,50 @@
+package com.swordfish.chimeroid.app.mobile.feature.favorites
+
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.paging.compose.collectAsLazyPagingItems
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidEmptyView
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidGameCard
+import com.swordfish.chimeroid.lib.library.db.entity.Game
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun FavoritesScreen(
+    modifier: Modifier = Modifier,
+    viewModel: FavoritesViewModel,
+    onGameClick: (Game) -> Unit,
+    onGameLongClick: (Game) -> Unit,
+) {
+    val games = viewModel.favorites.collectAsLazyPagingItems()
+
+    if (games.itemCount == 0) {
+        ChimeroidEmptyView()
+        return
+    }
+
+    // Adaptive(120.dp) → 3 columns on most phones, more on larger screens
+    LazyVerticalGrid(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(14.dp),
+        columns = GridCells.Adaptive(120.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        items(games.itemCount, key = { games[it]?.id ?: it }) { index ->
+            val game = games[index] ?: return@items
+            ChimeroidGameCard(
+                modifier = Modifier.animateItem(),
+                game = game,
+                onClick = { onGameClick(game) },
+                onLongClick = { onGameLongClick(game) },
+            )
+        }
+    }
+}

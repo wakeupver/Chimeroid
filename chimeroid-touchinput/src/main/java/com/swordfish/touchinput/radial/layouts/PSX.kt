@@ -1,0 +1,58 @@
+package com.swordfish.touchinput.radial.layouts
+
+import android.view.KeyEvent
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.swordfish.touchinput.controller.R
+import com.swordfish.touchinput.radial.controls.ChimeroidControlCross
+import com.swordfish.touchinput.radial.layouts.shared.ComposeTouchLayouts
+import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonL1
+import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonL2
+import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonMenu
+import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonMenuPlaceholder
+import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonR1
+import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonR2
+import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonSelect
+import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonStart
+import com.swordfish.touchinput.radial.layouts.shared.PSXFaceButtons
+import com.swordfish.touchinput.radial.settings.TouchControllerSettingsManager
+import gg.padkit.PadKitScope
+import gg.padkit.ids.Id
+
+@Composable
+fun PadKitScope.PSXLeft(
+    modifier: Modifier = Modifier,
+    settings: TouchControllerSettingsManager.Settings,
+) {
+    BaseLayoutLeft(
+        settings = settings,
+        modifier = modifier,
+        primaryDial = { ChimeroidControlCross(id = Id.DiscreteDirection(ComposeTouchLayouts.MOTION_SOURCE_DPAD)) },
+        secondaryDials = {
+            SecondaryButtonL1()
+            SecondaryButtonL2()
+            SecondaryButtonSelect(position = 2)
+            SecondaryButtonMenuPlaceholder(settings)
+        },
+    )
+}
+
+@Composable
+fun PadKitScope.PSXRight(
+    modifier: Modifier = Modifier,
+    settings: TouchControllerSettingsManager.Settings,
+) {
+    BaseLayoutRight(
+        settings = settings,
+        modifier = modifier,
+        primaryDial = {
+            PSXFaceButtons()
+        },
+        secondaryDials = {
+            SecondaryButtonR1()
+            SecondaryButtonR2()
+            SecondaryButtonStart(position = 2)
+            SecondaryButtonMenu(settings)
+        },
+    )
+}

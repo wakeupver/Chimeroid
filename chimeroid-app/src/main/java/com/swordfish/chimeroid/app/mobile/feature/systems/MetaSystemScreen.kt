@@ -1,0 +1,59 @@
+package com.swordfish.chimeroid.app.mobile.feature.systems
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidEmptyView
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidSystemCard
+import com.swordfish.chimeroid.app.shared.systems.MetaSystemInfo
+
+@Composable
+fun MetaSystemsScreen(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    viewModel: MetaSystemsViewModel,
+) {
+    val metaSystems = viewModel.availableMetaSystems.collectAsState(emptyList())
+    MetaSystemsScreen(
+        modifier = modifier,
+        metaSystems = metaSystems.value,
+        onSystemClicked = { navController.navigate("systems/${it.metaSystem.name}") },
+    )
+}
+
+@Composable
+private fun MetaSystemsScreen(
+    modifier: Modifier = Modifier,
+    metaSystems: List<MetaSystemInfo>,
+    onSystemClicked: (MetaSystemInfo) -> Unit,
+) {
+    if (metaSystems.isEmpty()) {
+        ChimeroidEmptyView()
+        return
+    }
+
+    // Adaptive(160.dp) → clean 2-col layout on phones, 3-col on large screens/tablets
+    LazyVerticalGrid(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(14.dp),
+        columns = GridCells.Adaptive(160.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        items(metaSystems.size, key = { metaSystems[it].metaSystem }) { index ->
+            val system = metaSystems[index]
+            ChimeroidSystemCard(
+                modifier = Modifier.animateItem(),
+                system = system,
+                onClick = { onSystemClicked(system) },
+            )
+        }
+    }
+}

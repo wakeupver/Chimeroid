@@ -1,0 +1,397 @@
+/*
+ * GameLibrary.kt
+ *
+ * Copyright (C) 2017 Retrograde Project
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.swordfish.chimeroid.lib.library
+
+import com.swordfish.chimeroid.common.coroutines.batchWithSizeAndTime
+import com.swordfish.chimeroid.lib.bios.BiosManager
+import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
+import com.swordfish.chimeroid.lib.library.db.entity.DataFile
+import com.swordfish.chimeroid.lib.library.db.entity.Game
+import com.swordfish.chimeroid.lib.library.metadata.GameMetadata
+import com.swordfish.chimeroid.lib.library.metadata.GameMetadataProvider
+import com.swordfish.chimeroid.lib.storage.BaseStorageFile
+import com.swordfish.chimeroid.lib.storage.GroupedStorageFiles
+import com.swordfish.chimeroid.lib.storage.RomFiles
+import com.swordfish.chimeroid.lib.library.GameSystem
+import com.swordfish.chimeroid.lib.storage.StorageFile
+import com.swordfish.chimeroid.lib.storage.StorageProvider
+import com.swordfish.chimeroid.lib.storage.StorageProviderRegistry
+import dagger.Lazy
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.mapNotNull
+import timber.log.Timber
+
+class ChimeroidLibrary(
+    private val retrogradedb: RetrogradeDatabase,
+    private val storageProviderRegistry: Lazy<StorageProviderRegistry>,
+    private val gameMetadataProvider: Lazy<GameMetadataProvider>,
+    private val biosManager: BiosManager,
+) {
+    suspend fun indexLibrary() {
+        val startedAtMs = System.currentTimeMillis()
+
+        try {
+            indexProviders(startedAtMs)
+        } catch (e: Throwable) {
+            Timber.e("Library indexing stopped due to exception", e)
+        } finally {
+            cleanUp(startedAtMs)
+        }
+
+        val executionTime = System.currentTimeMillis() - startedAtMs
+        Timber.i("Library indexing completed in: $executionTime ms")
+    }
+
+    @OptIn(FlowPreview::class)
+    private suspend fun indexProviders(startedAtMs: Long) {
+        val gameMetadata = gameMetadataProvider.get()
+        val enabledProviders = storageProviderRegistry.get().enabledProviders
+        enabledProviders.asFlow()
+            .flatMapMerge(PROVIDER_CONCURRENCY) { indexSingleProvider(it, startedAtMs, gameMetadata) }
+            .collect()
+    }
+
+    @OptIn(FlowPreview::class)
+    private fun indexSingleProvider(
+        provider: StorageProvider,
+        startedAtMs: Long,
+        gameMetadata: GameMetadataProvider,
+    ): Flow<Unit> {
+        return provider.listBaseStorageFiles()
+            .flatMapMerge(SCAN_CONCURRENCY) { StorageFilesMerger.mergeDataFiles(provider, it).asFlow() }
+            .batchWithSizeAndTime(MAX_BUFFER_SIZE, MAX_TIME)
+            .flatMapMerge(BATCH_CONCURRENCY) { processBatch(it, provider, startedAtMs, gameMetadata) }
+    }
+
+    private suspend fun processBatch(
+        batch: List<GroupedStorageFiles>,
+        provider: StorageProvider,
+        startedAtMs: Long,
+        gameMetadata: GameMetadataProvider,
+    ) = flow<Unit> {
+        // ── Optimisation 1: single batch DB query instead of N individual queries ──
+        val uris = batch.map { it.primaryFile.uri.toString() }
+        val existingGamesByUri =
+            retrogradedb.gameDao()
+                .selectByFileUris(uris)
+                .associateBy { it.fileUri }
+
+        val entries = batch.map { buildScanEntry(it, existingGamesByUri[it.primaryFile.uri.toString()]) }
+
+        val existingEntries = entries.filterIsInstance<ScanEntry.GameFile>()
+        handleExistingEntries(existingEntries, startedAtMs)
+
+        // ── Optimisation 2: build metadata for new entries in parallel ──
+        val newEntries =
+            coroutineScope {
+                entries.filterIsInstance<ScanEntry.File>()
+                    .map { entry ->
+                        async {
+                            buildEntryFromMetadata(entry.file, provider, gameMetadata, startedAtMs)
+                        }
+                    }
+                    .awaitAll()
+            }
+
+        handleNewEntries(newEntries, startedAtMs, provider)
+    }
+
+    private fun buildScanEntry(
+        storageFile: GroupedStorageFiles,
+        game: Game?,
+    ): ScanEntry {
+        return if (game != null) {
+            ScanEntry.GameFile(storageFile, game)
+        } else {
+            ScanEntry.File(storageFile)
+        }
+    }
+
+    private fun handleExistingEntries(
+        entries: List<ScanEntry.GameFile>,
+        startedAtMs: Long,
+    ) {
+        updateGames(entries, startedAtMs)
+        updateDataFiles(entries, startedAtMs)
+    }
+
+    private fun updateGames(
+        entries: List<ScanEntry.GameFile>,
+        startedAtMs: Long,
+    ) {
+        val updatedGames =
+            entries
+                .map { it.game.copy(lastIndexedAt = startedAtMs) }
+
+        updatedGames
+            .forEach { Timber.d("Updating game: $it") }
+
+        retrogradedb.gameDao().update(updatedGames)
+    }
+
+    private fun updateDataFiles(
+        entries: List<ScanEntry.GameFile>,
+        startedAtMs: Long,
+    ) {
+        val dataFiles =
+            entries.flatMap { (storageFile, game) ->
+                storageFile.dataFiles.map { convertIntoDataFile(game.id, it, startedAtMs) }
+            }
+
+        dataFiles
+            .forEach { Timber.d("Updating data file: $it") }
+
+        retrogradedb.dataFileDao().insert(dataFiles)
+    }
+
+    private fun convertIntoDataFile(
+        gameId: Int,
+        baseStorageFile: BaseStorageFile,
+        startedAtMs: Long,
+    ): DataFile {
+        return DataFile(
+            gameId = gameId,
+            fileUri = baseStorageFile.uri.toString(),
+            fileName = baseStorageFile.name,
+            lastIndexedAt = startedAtMs,
+            path = baseStorageFile.path,
+        )
+    }
+
+    private fun handleNewEntries(
+        entries: List<ScanEntry>,
+        startedAtMs: Long,
+        provider: StorageProvider,
+    ) {
+        val gameFiles =
+            entries
+                .filterIsInstance<ScanEntry.GameFile>()
+
+        val unknownFiles =
+            entries
+                .filterIsInstance<ScanEntry.File>()
+                .flatMap { it.file.allFiles() }
+
+        handleNewGames(gameFiles, startedAtMs)
+        handleUnknownFiles(provider, unknownFiles, startedAtMs)
+    }
+
+    private fun handleNewGames(
+        pairs: List<ScanEntry.GameFile>,
+        startedAtMs: Long,
+    ) {
+        val games =
+            pairs
+                .map { it.game }
+
+        games.forEach { Timber.d("Insert: $it") }
+
+        val gameIds = retrogradedb.gameDao().insert(games)
+        val dataFiles =
+            pairs
+                .map { it.file.dataFiles }
+                .zip(gameIds)
+                .flatMap { (files, gameId) ->
+                    files.map {
+                        convertIntoDataFile(gameId.toInt(), it, startedAtMs)
+                    }
+                }
+
+        retrogradedb.dataFileDao().insert(dataFiles)
+    }
+
+    private fun handleUnknownFiles(
+        provider: StorageProvider,
+        files: List<BaseStorageFile>,
+        startedAtMs: Long,
+    ) {
+        files.forEach { baseStorageFile ->
+            val storageFile = safeStorageFile(provider, baseStorageFile)
+            val inputStream = storageFile?.uri?.let { provider.getInputStream(it) }
+
+            if (storageFile != null && inputStream != null) {
+                biosManager.tryAddBiosAfter(storageFile, inputStream, startedAtMs)
+            }
+        }
+    }
+
+    private suspend fun buildEntryFromMetadata(
+        groupedStorageFile: GroupedStorageFiles,
+        provider: StorageProvider,
+        metadataProvider: GameMetadataProvider,
+        startedAtMs: Long,
+    ): ScanEntry {
+        // ── Quick pre-check (zero I/O) ─────────────────────────────────────────────
+        // If the primary file has a unique extension (e.g. .gba, .nes, .sfc, .nds)
+        // we can build a lightweight StorageFile and ask the metadata provider right
+        // away. Only if that fails do we open the file for CRC / serial scanning.
+        val primaryFile = groupedStorageFile.primaryFile
+        val quickStorageFile = quickStorageFileOrNull(primaryFile)
+        if (quickStorageFile != null) {
+            val quickMetadata = runCatching { metadataProvider.retrieveMetadata(quickStorageFile) }.getOrNull()
+            if (quickMetadata != null) {
+                val game = convertGameMetadataToGame(groupedStorageFile, quickStorageFile, quickMetadata, startedAtMs)
+                if (game != null) return ScanEntry.GameFile(groupedStorageFile, game)
+            }
+        }
+
+        // ── Full scan (opens file for CRC / serial if needed) ─────────────────────
+        val game =
+            sortedFilesForScanning(groupedStorageFile).asFlow()
+                .mapNotNull { safeStorageFile(provider, it) }
+                .mapNotNull { storageFile ->
+                    val metadata = metadataProvider.retrieveMetadata(storageFile)
+                    convertGameMetadataToGame(groupedStorageFile, storageFile, metadata, startedAtMs)
+                }
+                .firstOrNull()
+
+        return buildScanEntry(groupedStorageFile, game)
+    }
+
+    /**
+     * Returns a lightweight [StorageFile] built purely from the file name and
+     * size — no stream is opened. Returns null when the extension is not unique
+     * (i.e. can't be reliably identified without reading the file).
+     */
+    private fun quickStorageFileOrNull(baseStorageFile: BaseStorageFile): StorageFile? {
+        val system = GameSystem.findByUniqueFileExtension(baseStorageFile.extension)
+            ?: return null
+        return StorageFile(
+            name = baseStorageFile.name,
+            size = baseStorageFile.size,
+            crc = null,
+            serial = null,
+            uri = baseStorageFile.uri,
+            path = baseStorageFile.uri.path,
+            systemID = system.id,
+        )
+    }
+
+    private fun safeStorageFile(
+        provider: StorageProvider,
+        baseStorageFile: BaseStorageFile,
+    ): StorageFile? {
+        return runCatching { provider.getStorageFile(baseStorageFile) }
+            .getOrNull()
+    }
+
+    private fun cleanUp(startedAtMs: Long) {
+        kotlin.runCatching {
+            removeDeletedBios(startedAtMs)
+        }
+        kotlin.runCatching {
+            removeDeletedGames(startedAtMs)
+        }
+        kotlin.runCatching {
+            removeDeletedDataFiles(startedAtMs)
+        }
+    }
+
+    private fun removeDeletedBios(startedAtMs: Long) {
+        biosManager.deleteBiosBefore(startedAtMs)
+    }
+
+    private fun sortedFilesForScanning(groupedStorageFile: GroupedStorageFiles): List<BaseStorageFile> {
+        return groupedStorageFile.dataFiles.sortedBy { it.name } + listOf(groupedStorageFile.primaryFile)
+    }
+
+    private fun convertGameMetadataToGame(
+        groupedStorageFile: GroupedStorageFiles,
+        storageFile: StorageFile,
+        gameMetadata: GameMetadata?,
+        lastIndexedAt: Long,
+    ): Game? {
+        if (gameMetadata == null) {
+            return null
+        }
+
+        val gameSystem = GameSystem.findById(gameMetadata.system!!)
+
+        // If the databased matched a data file (as with bin/cue) we force link the primary filename
+        val fileName =
+            if (groupedStorageFile.dataFiles.isNotEmpty()) {
+                groupedStorageFile.primaryFile.name
+            } else {
+                storageFile.name
+            }
+
+        return Game(
+            fileName = fileName,
+            fileUri = groupedStorageFile.primaryFile.uri.toString(),
+            title = gameMetadata.name ?: groupedStorageFile.primaryFile.name,
+            systemId = gameSystem.id.dbname,
+            developer = gameMetadata.developer,
+            coverFrontUrl = gameMetadata.thumbnail,
+            lastIndexedAt = lastIndexedAt,
+        )
+    }
+
+    private fun removeDeletedDataFiles(startedAtMs: Long) {
+        Timber.d("Deleting data files from db before: $startedAtMs")
+        val dataFiles = retrogradedb.dataFileDao().selectByLastIndexedAtLessThan(startedAtMs)
+        retrogradedb.dataFileDao().delete(dataFiles)
+    }
+
+    private fun removeDeletedGames(startedAtMs: Long) {
+        Timber.d("Deleting games from db before: $startedAtMs")
+        val games = retrogradedb.gameDao().selectByLastIndexedAtLessThan(startedAtMs)
+        retrogradedb.gameDao().delete(games)
+    }
+
+    fun getGameFiles(
+        game: Game,
+        dataFiles: List<DataFile>,
+        allowVirtualFiles: Boolean,
+    ): RomFiles {
+        val provider = storageProviderRegistry.get()
+        return provider.getProvider(game).getGameRomFiles(game, dataFiles, allowVirtualFiles)
+    }
+
+    private sealed class ScanEntry {
+        data class GameFile(val file: GroupedStorageFiles, val game: Game) : ScanEntry()
+
+        data class File(val file: GroupedStorageFiles) : ScanEntry()
+    }
+
+    companion object {
+        const val MAX_BUFFER_SIZE = 200
+        const val MAX_TIME = 1000
+
+        // Number of directory groups scanned in parallel.
+        // Keeps all CPU cores busy during the I/O-bound metadata retrieval phase
+        // without overwhelming the ContentResolver.
+        const val SCAN_CONCURRENCY = 4
+
+        // How many batches can be processed concurrently (I/O bound, so > CPU count is fine)
+        const val BATCH_CONCURRENCY = 4
+
+        // Parallel provider indexing (usually only 1-2 providers exist)
+        const val PROVIDER_CONCURRENCY = 2
+    }
+}

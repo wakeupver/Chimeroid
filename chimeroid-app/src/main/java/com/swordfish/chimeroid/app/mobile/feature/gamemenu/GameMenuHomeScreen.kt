@@ -1,0 +1,253 @@
+package com.swordfish.chimeroid.app.mobile.feature.gamemenu
+
+import android.content.Intent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.alorma.compose.settings.storage.memory.rememberMemoryBooleanSettingState
+import com.alorma.compose.settings.storage.memory.rememberMemoryIntSettingState
+import com.swordfish.chimeroid.R
+import com.swordfish.chimeroid.app.mobile.feature.gamemenu.tilt.TiltConfigurationMenuEntry
+import com.swordfish.chimeroid.app.shared.GameMenuContract
+import com.swordfish.chimeroid.app.utils.android.settings.ChimeroidSettingsList
+import com.swordfish.chimeroid.app.utils.android.settings.ChimeroidSettingsMenuLink
+import com.swordfish.chimeroid.app.utils.android.settings.ChimeroidSettingsSwitch
+import kotlin.reflect.KFunction1
+
+@Composable
+fun GameMenuHomeScreen(
+    navController: NavController,
+    gameMenuRequest: GameMenuActivity.GameMenuRequest,
+    onResult: KFunction1<Intent.() -> Unit, Unit>,
+) {
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        // ── SAVE STATES ──────────────────────────────────────────────────────
+        if (gameMenuRequest.coreConfig.statesSupported) {
+            MenuSection(stringResource(R.string.game_menu_section_states)) {
+                ChimeroidSettingsMenuLink(
+                    title = { Text(text = stringResource(id = R.string.game_menu_save)) },
+                    icon = {
+                        Icon(
+                            painterResource(R.drawable.ic_menu_save),
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = { navController.navigateToRoute(GameMenuRoute.SAVE) },
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                ChimeroidSettingsMenuLink(
+                    title = { Text(text = stringResource(id = R.string.game_menu_load)) },
+                    icon = {
+                        Icon(
+                            painterResource(R.drawable.ic_menu_load),
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = { navController.navigateToRoute(GameMenuRoute.LOAD) },
+                )
+            }
+        }
+
+        // ── PLAYBACK ─────────────────────────────────────────────────────────
+        MenuSection(stringResource(R.string.game_menu_section_playback)) {
+            ChimeroidSettingsSwitch(
+                title = { Text(text = stringResource(id = R.string.game_menu_mute_audio)) },
+                icon = {
+                    Icon(
+                        painterResource(R.drawable.ic_menu_mute),
+                        contentDescription = null,
+                    )
+                },
+                state = rememberMemoryBooleanSettingState(!gameMenuRequest.audioEnabled),
+                onCheckedChange = {
+                    onResult { putExtra(GameMenuContract.RESULT_ENABLE_AUDIO, !it) }
+                },
+            )
+
+            if (gameMenuRequest.fastForwardSupported) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                ChimeroidSettingsSwitch(
+                    title = { Text(text = stringResource(id = R.string.game_menu_fast_forward)) },
+                    icon = {
+                        Icon(
+                            painterResource(R.drawable.ic_menu_fast_forward),
+                            contentDescription = null,
+                        )
+                    },
+                    state = rememberMemoryBooleanSettingState(gameMenuRequest.fastForwardEnabled),
+                    onCheckedChange = {
+                        onResult { putExtra(GameMenuContract.RESULT_ENABLE_FAST_FORWARD, it) }
+                    },
+                )
+            }
+
+            if (gameMenuRequest.numDisks > 1) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                ChimeroidSettingsList(
+                    title = { Text(text = stringResource(id = R.string.game_menu_change_disk_button)) },
+                    items = (1..gameMenuRequest.numDisks).map { stringResource(R.string.game_menu_change_disk_disk, it) },
+                    useSelectedValueAsSubtitle = false,
+                    icon = {
+                        Icon(
+                            painterResource(R.drawable.ic_menu_disk),
+                            contentDescription = null,
+                        )
+                    },
+                    state = rememberMemoryIntSettingState(gameMenuRequest.currentDisk),
+                    onItemSelected = { index, _ ->
+                        onResult { putExtra(GameMenuContract.RESULT_CHANGE_DISK, index) }
+                    },
+                )
+            }
+
+            if (gameMenuRequest.allTiltConfigurations.isNotEmpty()) {
+                val tiltEntries = gameMenuRequest.allTiltConfigurations
+                    .map { TiltConfigurationMenuEntry.fromTiltConfiguration(it) }
+                val selectedIndex = gameMenuRequest.allTiltConfigurations
+                    .indexOf(gameMenuRequest.currentTiltConfiguration)
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                ChimeroidSettingsList(
+                    title = { Text(text = stringResource(id = R.string.game_menu_tilt_sensor)) },
+                    items = tiltEntries.map { stringResource(it.descriptionId) },
+                    useSelectedValueAsSubtitle = false,
+                    icon = {
+                        Icon(imageVector = Icons.Default.Sensors, contentDescription = null)
+                    },
+                    state = rememberMemoryIntSettingState(selectedIndex),
+                    onItemSelected = { index, _ ->
+                        onResult {
+                            putExtra(
+                                GameMenuContract.RESULT_CHANGE_TILT_CONFIG,
+                                tiltEntries[index].configuration,
+                            )
+                        }
+                    },
+                )
+            }
+        }
+
+        // ── OPTIONS ──────────────────────────────────────────────────────────
+        MenuSection(stringResource(R.string.game_menu_section_options)) {
+            // Edit Controls — kembali ke dalam card OPTIONS
+            ChimeroidSettingsMenuLink(
+                title = { Text(text = stringResource(id = R.string.game_menu_edit_touch_controls)) },
+                icon = {
+                    Icon(
+                        painterResource(R.drawable.ic_menu_controls),
+                        contentDescription = null,
+                    )
+                },
+                onClick = {
+                    onResult { putExtra(GameMenuContract.RESULT_EDIT_TOUCH_CONTROLS, true) }
+                },
+            )
+
+            if (gameMenuRequest.advancedCoreOptions.isNotEmpty() || gameMenuRequest.coreOptions.isNotEmpty()) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                ChimeroidSettingsMenuLink(
+                    title = { Text(text = stringResource(id = R.string.game_menu_settings)) },
+                    icon = {
+                        Icon(
+                            painterResource(R.drawable.ic_menu_settings),
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = { navController.navigateToRoute(GameMenuRoute.OPTIONS) },
+                )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            ChimeroidSettingsMenuLink(
+                title = { Text(text = stringResource(id = R.string.game_menu_patch_codes)) },
+                icon = {
+                    Icon(imageVector = Icons.Default.Code, contentDescription = null)
+                },
+                onClick = { navController.navigateToRoute(GameMenuRoute.PATCH_CODES) },
+            )
+        }
+
+        // ── ACTIONS (destructive) ─────────────────────────────────────────────
+        MenuSection(stringResource(R.string.game_menu_section_actions)) {
+            ChimeroidSettingsMenuLink(
+                title = { Text(text = stringResource(id = R.string.game_menu_restart)) },
+                icon = {
+                    Icon(
+                        painterResource(R.drawable.ic_menu_restart),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.tertiary,
+                    )
+                },
+                onClick = {
+                    onResult { putExtra(GameMenuContract.RESULT_RESET, true) }
+                },
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            ChimeroidSettingsMenuLink(
+                title = {
+                    Text(
+                        text = stringResource(id = R.string.game_menu_quit),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                },
+                icon = {
+                    Icon(
+                        painterResource(R.drawable.ic_menu_quit),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                },
+                onClick = {
+                    onResult { putExtra(GameMenuContract.RESULT_QUIT, true) }
+                },
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+// ── MENU SECTION ──────────────────────────────────────────────────────────────
+
+@Composable
+private fun MenuSection(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
+        )
+        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+            content()
+        }
+    }
+}
