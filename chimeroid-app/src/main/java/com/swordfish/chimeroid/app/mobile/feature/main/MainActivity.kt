@@ -443,7 +443,7 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                 retrogradeDb: RetrogradeDatabase,
                 shortcutsGenerator: ShortcutsGenerator,
                 gameLauncher: GameLauncher,
-            ) = GameInteractor(activity, retrogradeDb, false, shortcutsGenerator, gameLauncher)
+            ) = GameInteractor(activity, retrogradeDb, shortcutsGenerator, gameLauncher)
         }
     }
 }

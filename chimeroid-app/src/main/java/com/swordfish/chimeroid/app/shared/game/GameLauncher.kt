@@ -20,7 +20,6 @@ class GameLauncher(
         activity: Activity,
         game: Game,
         loadSave: Boolean,
-        leanback: Boolean,
     ): Boolean {
         if (GameProcessLock.isHeldByAnotherProcess(activity.applicationContext)) {
             activity.displayToast(R.string.game_process_another_game_running)
@@ -31,7 +30,7 @@ class GameLauncher(
             val system = GameSystem.findById(game.systemId)
             val coreConfig = coresSelection.getCoreConfigForSystem(system)
             gameLaunchTaskHandler.handleGameStart(activity.applicationContext)
-            BaseGameActivity.launchGame(activity, coreConfig, game, loadSave, leanback)
+            BaseGameActivity.launchGame(activity, coreConfig, game, loadSave)
         }
 
         return true

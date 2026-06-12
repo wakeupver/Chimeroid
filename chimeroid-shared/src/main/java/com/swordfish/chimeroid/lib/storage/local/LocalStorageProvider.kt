@@ -22,7 +22,6 @@ package com.swordfish.chimeroid.lib.storage.local
 import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
-import androidx.leanback.preference.LeanbackPreferenceFragment
 import com.swordfish.chimeroid.common.kotlin.extractEntryToFile
 import com.swordfish.chimeroid.common.kotlin.isZipped
 import com.swordfish.chimeroid.lib.R
@@ -50,7 +49,7 @@ class LocalStorageProvider(
 
     override val uriSchemes = listOf("file")
 
-    override val prefsFragmentClass: Class<LeanbackPreferenceFragment>? = null
+    override val prefsFragmentClass: Class<out androidx.fragment.app.Fragment>? = null
 
     override val enabledByDefault = true
 

@@ -16,7 +16,6 @@ object deps {
         const val work            = "2.9.0"
         const val navigation      = "2.5.2"
         const val lifecycle       = "2.6.1"
-        const val leanback        = "1.1.0-rc01"
         const val googleApiClient = "1.32.1"
         const val paging          = "3.2.1"
         const val room            = "2.6.1"
@@ -39,12 +38,6 @@ object deps {
                 const val appcompat = "androidx.appcompat:appcompat:1.4.2"
                 const val recyclerView = "androidx.recyclerview:recyclerview:1.2.1"
                 const val constraintLayout = "androidx.constraintlayout:constraintlayout:2.1.4"
-            }
-            object leanback {
-                const val leanback = "androidx.leanback:leanback:${versions.leanback}"
-                const val leanbackPreference = "androidx.leanback:leanback-preference:${versions.leanback}"
-                const val leanbackPaging = "androidx.leanback:leanback-paging:1.1.0-alpha07"
-                const val tvProvider = "androidx.tvprovider:tvprovider:1.0.0"
             }
             object ktx {
                 const val core = "androidx.core:core-ktx:1.8.0"

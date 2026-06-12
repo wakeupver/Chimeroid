@@ -10,8 +10,6 @@ import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.shared.ImmersiveActivity
 import com.swordfish.chimeroid.app.shared.library.PendingOperationsMonitor
 import com.swordfish.chimeroid.app.shared.main.GameLaunchTaskHandler
-import com.swordfish.chimeroid.app.tv.channel.ChannelUpdateWork
-import com.swordfish.chimeroid.app.tv.shared.TVHelper
 import com.swordfish.chimeroid.app.utils.android.displayErrorDialog
 import com.swordfish.chimeroid.common.animationDuration
 import com.swordfish.chimeroid.common.coroutines.launchOnState
@@ -96,7 +94,6 @@ class ExternalGameLauncherActivity : ImmersiveActivity() {
                 this,
                 game,
                 true,
-                TVHelper.isTV(applicationContext),
             )
 
         if (!gameLaunchSuccessful) {
@@ -127,12 +124,8 @@ class ExternalGameLauncherActivity : ImmersiveActivity() {
 
         when (requestCode) {
             BaseGameActivity.REQUEST_PLAY_GAME -> {
-                val isLeanback = data?.extras?.getBoolean(BaseGameActivity.PLAY_GAME_RESULT_LEANBACK) == true
 
                 GlobalScope.safeLaunch {
-                    if (isLeanback) {
-                        ChannelUpdateWork.enqueue(applicationContext)
-                    }
                     gameLaunchTaskHandler.handleGameFinish(false, this@ExternalGameLauncherActivity, resultCode, data)
                     finish()
                 }

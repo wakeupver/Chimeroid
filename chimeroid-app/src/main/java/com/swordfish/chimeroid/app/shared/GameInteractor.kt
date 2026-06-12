@@ -17,7 +17,6 @@ import kotlinx.coroutines.launch
 class GameInteractor(
     private val activity: BusyActivity,
     private val retrogradeDb: RetrogradeDatabase,
-    private val useLeanback: Boolean,
     private val shortcutsGenerator: ShortcutsGenerator,
     private val gameLauncher: GameLauncher,
 ) {
@@ -28,7 +27,7 @@ class GameInteractor(
         if (!ensureNotificationsPermissionAvailable()) {
             return
         }
-        gameLauncher.launchGameAsync(activity.activity(), game, true, useLeanback)
+        gameLauncher.launchGameAsync(activity.activity(), game, true)
     }
 
     fun onGameRestart(game: Game) {
@@ -38,7 +37,7 @@ class GameInteractor(
         if (!ensureNotificationsPermissionAvailable()) {
             return
         }
-        gameLauncher.launchGameAsync(activity.activity(), game, false, useLeanback)
+        gameLauncher.launchGameAsync(activity.activity(), game, false)
     }
 
     fun onFavoriteToggle(
@@ -61,7 +60,7 @@ class GameInteractor(
     }
 
     private fun ensureNotificationsPermissionAvailable(): Boolean {
-        if (useLeanback || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             return true
         }
 

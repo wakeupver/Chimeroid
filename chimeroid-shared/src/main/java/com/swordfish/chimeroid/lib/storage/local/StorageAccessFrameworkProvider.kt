@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
-import androidx.leanback.preference.LeanbackPreferenceFragment
 import com.swordfish.chimeroid.common.kotlin.extractEntryToFile
 import com.swordfish.chimeroid.common.kotlin.isZipped
 import com.swordfish.chimeroid.lib.R
@@ -32,7 +31,7 @@ class StorageAccessFrameworkProvider(private val context: Context) : StorageProv
 
     override val uriSchemes = listOf("content")
 
-    override val prefsFragmentClass: Class<LeanbackPreferenceFragment>? = null
+    override val prefsFragmentClass: Class<out androidx.fragment.app.Fragment>? = null
 
     override val enabledByDefault = true
 

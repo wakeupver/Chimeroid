@@ -20,7 +20,6 @@
 package com.swordfish.chimeroid.lib.storage
 
 import android.net.Uri
-import androidx.leanback.preference.LeanbackPreferenceFragment
 import com.swordfish.chimeroid.lib.library.db.entity.DataFile
 import com.swordfish.chimeroid.lib.library.db.entity.Game
 import kotlinx.coroutines.flow.Flow
@@ -33,7 +32,7 @@ interface StorageProvider {
 
     val uriSchemes: List<String>
 
-    val prefsFragmentClass: Class<out LeanbackPreferenceFragment>?
+    val prefsFragmentClass: Class<out androidx.fragment.app.Fragment>?
 
     val enabledByDefault: Boolean
 

@@ -6,10 +6,6 @@ import android.net.Uri
 import com.swordfish.chimeroid.lib.library.db.entity.Game
 
 object DeepLink {
-    fun openLeanbackUri(appContext: Context): Uri {
-        return Uri.parse("chimeroid://${appContext.packageName}/open-leanback")
-    }
-
     private fun uriForGame(
         appContext: Context,
         game: Game,

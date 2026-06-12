@@ -24,7 +24,6 @@ import com.swordfish.chimeroid.app.shared.game.viewmodel.GameViewModelSideEffect
 import com.swordfish.chimeroid.app.shared.input.InputDeviceManager
 import com.swordfish.chimeroid.app.shared.rumble.RumbleManager
 import com.swordfish.chimeroid.app.shared.settings.ControllerConfigsManager
-import com.swordfish.chimeroid.app.tv.game.TVGameActivity
 import com.swordfish.chimeroid.common.animationDuration
 import com.swordfish.chimeroid.common.coroutines.launchOnState
 import com.swordfish.chimeroid.common.displayToast
@@ -280,7 +279,6 @@ abstract class BaseGameActivity : ImmersiveActivity() {
             Intent().apply {
                 putExtra(PLAY_GAME_RESULT_SESSION_DURATION, System.currentTimeMillis() - startGameTime)
                 putExtra(PLAY_GAME_RESULT_GAME, intent.getSerializableExtra(EXTRA_GAME))
-                putExtra(PLAY_GAME_RESULT_LEANBACK, intent.getBooleanExtra(EXTRA_LEANBACK, false))
             }
         setResult(RESULT_OK, resultIntent)
         finishAndExitProcess()
@@ -405,13 +403,11 @@ abstract class BaseGameActivity : ImmersiveActivity() {
 
         private const val EXTRA_GAME = "GAME"
         private const val EXTRA_LOAD_SAVE = "LOAD_SAVE"
-        private const val EXTRA_LEANBACK = "LEANBACK"
         private const val EXTRA_SYSTEM_CORE_CONFIG = "EXTRA_SYSTEM_CORE_CONFIG"
 
         const val REQUEST_PLAY_GAME = 1001
         const val PLAY_GAME_RESULT_SESSION_DURATION = "PLAY_GAME_RESULT_SESSION_DURATION"
         const val PLAY_GAME_RESULT_GAME = "PLAY_GAME_RESULT_GAME"
-        const val PLAY_GAME_RESULT_LEANBACK = "PLAY_GAME_RESULT_LEANBACK"
         const val PLAY_GAME_RESULT_ERROR = "PLAY_GAME_RESULT_ERROR"
 
         const val RESULT_ERROR = Activity.RESULT_FIRST_USER + 2
@@ -422,15 +418,12 @@ abstract class BaseGameActivity : ImmersiveActivity() {
             systemCoreConfig: SystemCoreConfig,
             game: Game,
             loadSave: Boolean,
-            useLeanback: Boolean,
         ) {
-            val gameActivity =
-                if (useLeanback) TVGameActivity::class.java else GameActivity::class.java
+            val gameActivity = GameActivity::class.java
             activity.startActivityForResult(
                 Intent(activity, gameActivity).apply {
                     putExtra(EXTRA_GAME, game)
                     putExtra(EXTRA_LOAD_SAVE, loadSave)
-                    putExtra(EXTRA_LEANBACK, useLeanback)
                     putExtra(EXTRA_SYSTEM_CORE_CONFIG, systemCoreConfig)
                 },
                 REQUEST_PLAY_GAME,

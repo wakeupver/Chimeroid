@@ -72,7 +72,7 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-DEBUG"
-            resValue("string", "chimeroid_name", "LemuroiDebug")
+            resValue("string", "chimeroid_name", "ChimeroidDebug")
         }
     }
 
@@ -101,8 +101,6 @@ dependencies {
     implementation(project(":chimeroid-metadata-libretro-db"))
     implementation(project(":chimeroid-touchinput"))
 
-
-
     "freeImplementation"(project(":chimeroid-app-ext-free"))
 
     implementation(deps.libs.androidx.navigation.navigationFragment)
@@ -123,7 +121,6 @@ dependencies {
     implementation(deps.libs.androidx.lifecycle.reactiveStreams)
 
     kapt(deps.libs.androidx.lifecycle.processor)
-
 
     implementation(deps.libs.androidx.appcompat.recyclerView)
     implementation(deps.libs.androidx.paging.common)
