@@ -47,6 +47,7 @@ import com.swordfish.chimeroid.app.mobile.feature.settings.inputdevices.InputDev
 import com.swordfish.chimeroid.app.mobile.feature.settings.inputdevices.InputDevicesSettingsViewModel
 import com.swordfish.chimeroid.app.mobile.feature.settings.savesync.SaveSyncSettingsScreen
 import com.swordfish.chimeroid.app.mobile.feature.settings.savesync.SaveSyncSettingsViewModel
+import com.swordfish.chimeroid.app.mobile.feature.onboarding.OnboardingScreen
 import com.swordfish.chimeroid.app.mobile.feature.shortcuts.ShortcutsGenerator
 import com.swordfish.chimeroid.app.mobile.feature.systems.MetaSystemsScreen
 import com.swordfish.chimeroid.app.mobile.feature.systems.MetaSystemsViewModel
@@ -125,20 +126,34 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
 
         setContent {
             val navController = rememberNavController()
-            MainScreen(navController)
+            val onboardingCompleted =
+                remember {
+                    mutableStateOf(
+                        SharedPreferencesHelper.getLegacySharedPreferences(applicationContext)
+                            .getBoolean(getString(R.string.pref_key_onboarding_completed), false),
+                    )
+                }
+            AppTheme {
+                if (!onboardingCompleted.value) {
+                    OnboardingScreen(
+                        onComplete = { onboardingCompleted.value = true },
+                    )
+                } else {
+                    MainScreen(navController)
+                }
+            }
         }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun MainScreen(navController: NavHostController) {
-        AppTheme {
-            val navBackStackEntry = navController.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry.value?.destination
-            val currentRoute =
-                currentDestination?.route
-                    ?.let { MainRoute.findByRoute(it) }
-                    ?: MainRoute.HOME
+        val navBackStackEntry = navController.currentBackStackEntryAsState()
+        val currentDestination = navBackStackEntry.value?.destination
+        val currentRoute =
+            currentDestination?.route
+                ?.let { MainRoute.findByRoute(it) }
+                ?: MainRoute.HOME
 
             val infoDialogDisplayed =
                 remember {
@@ -391,7 +406,6 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                     confirmButton = { },
                 )
             }
-        }
     }
 
     override fun activity(): Activity = this
