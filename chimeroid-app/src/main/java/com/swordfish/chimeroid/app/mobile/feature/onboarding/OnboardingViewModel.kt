@@ -17,14 +17,19 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+// Top-level constants so OnboardingUiState can reference them as defaults
+const val ONBOARDING_TOTAL_PAGES = 5
+const val ONBOARDING_PROFILE_SAFE = 0
+const val ONBOARDING_PROFILE_FAST = 1
+
 data class OnboardingUiState(
-    val performanceProfile: Int = PROFILE_SAFE,
+    val performanceProfile: Int = ONBOARDING_PROFILE_SAFE,
     val romsDirectoryUri: String? = null,
     val romsDirectoryValid: Boolean = false,
     val allFilesAccessGranted: Boolean = false,
     val canContinue: Boolean = false,
     val currentPage: Int = 0,
-    val totalPages: Int = TOTAL_PAGES,
+    val totalPages: Int = ONBOARDING_TOTAL_PAGES,
 )
 
 class OnboardingViewModel(application: Application) : AndroidViewModel(application) {
@@ -35,7 +40,7 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
     init {
-        // Restore already-selected ROMs folder from preferences (e.g. user re-opens app mid-onboarding)
+        // Restore already-selected ROMs folder (e.g. user re-opens app mid-onboarding)
         viewModelScope.launch(Dispatchers.IO) {
             val app = getApplication<Application>()
             val prefs = SharedPreferencesHelper.getLegacySharedPreferences(app)
@@ -110,7 +115,7 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
             // Apply performance profile → direct game load setting
             val directLoadKey = app.getString(R.string.pref_key_allow_direct_game_load)
             prefs.edit()
-                .putBoolean(directLoadKey, _uiState.value.performanceProfile == PROFILE_FAST)
+                .putBoolean(directLoadKey, _uiState.value.performanceProfile == ONBOARDING_PROFILE_FAST)
                 .apply()
 
             // Mark onboarding completed
@@ -139,14 +144,14 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
             allFilesAccessGranted = allFilesAccessGranted,
             canContinue = romsDirectoryValid && allFilesAccessGranted,
             currentPage = currentPage,
-            totalPages = TOTAL_PAGES,
+            totalPages = ONBOARDING_TOTAL_PAGES,
         )
     }
 
     companion object {
-        const val TOTAL_PAGES = 5
-        const val PROFILE_SAFE = 0
-        const val PROFILE_FAST = 1
+        // Expose via companion for use in OnboardingScreen
+        const val PROFILE_SAFE = ONBOARDING_PROFILE_SAFE
+        const val PROFILE_FAST = ONBOARDING_PROFILE_FAST
 
         fun hasAllFilesAccess(): Boolean =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
