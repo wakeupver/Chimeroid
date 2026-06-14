@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.shared.library.LibraryIndexScheduler
 import com.swordfish.chimeroid.lib.preferences.SharedPreferencesHelper
+import com.swordfish.chimeroid.lib.storage.DirectoriesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,15 +18,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// Top-level constants so OnboardingUiState can reference them as defaults
-const val ONBOARDING_TOTAL_PAGES = 5
-const val ONBOARDING_PROFILE_SAFE = 0
-const val ONBOARDING_PROFILE_FAST = 1
+// Top-level constants — must be outside the class so OnboardingUiState defaults can reference them
+const val ONBOARDING_TOTAL_PAGES = 4
 
 data class OnboardingUiState(
-    val performanceProfile: Int = ONBOARDING_PROFILE_SAFE,
     val romsDirectoryUri: String? = null,
     val romsDirectoryValid: Boolean = false,
+    val baseDirectoryPath: String? = null,
+    val baseDirectoryValid: Boolean = false,
     val allFilesAccessGranted: Boolean = false,
     val canContinue: Boolean = false,
     val currentPage: Int = 0,
@@ -40,20 +40,29 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
     init {
-        // Restore already-selected ROMs folder (e.g. user re-opens app mid-onboarding)
         viewModelScope.launch(Dispatchers.IO) {
             val app = getApplication<Application>()
+
+            // Restore ROMs folder
             val prefs = SharedPreferencesHelper.getLegacySharedPreferences(app)
-            val prefKey = app.getString(com.swordfish.chimeroid.lib.R.string.pref_key_extenral_folder)
-            val savedUri = prefs.getString(prefKey, null)
-            if (savedUri != null) {
-                updateState(romsDirectoryUri = savedUri, romsDirectoryValid = true)
-            }
+            val romsKey = app.getString(com.swordfish.chimeroid.lib.R.string.pref_key_extenral_folder)
+            val savedRomsUri = prefs.getString(romsKey, null)
+
+            // Restore base directory
+            val dm = DirectoriesManager(app)
+            val baseDirConfigured = dm.isBaseDirConfigured()
+
+            updateState(
+                romsDirectoryUri = savedRomsUri,
+                romsDirectoryValid = savedRomsUri != null,
+                baseDirectoryPath = if (baseDirConfigured) dm.getBaseDirDisplay() else null,
+                baseDirectoryValid = baseDirConfigured,
+            )
         }
     }
 
     // -------------------------------------------------------------------------
-    // ROMs directory
+    // ROMs directory (SAF URI)
     // -------------------------------------------------------------------------
 
     fun setRomsDirectory(uri: Uri) {
@@ -66,15 +75,25 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
                     .forEach { app.contentResolver.releasePersistableUriPermission(it.uri, flags) }
                 app.contentResolver.takePersistableUriPermission(uri, flags)
             }
-
             val prefs = SharedPreferencesHelper.getLegacySharedPreferences(app)
-            val prefKey = app.getString(com.swordfish.chimeroid.lib.R.string.pref_key_extenral_folder)
-            prefs.edit().putString(prefKey, uri.toString()).apply()
-
+            val romsKey = app.getString(com.swordfish.chimeroid.lib.R.string.pref_key_extenral_folder)
+            prefs.edit().putString(romsKey, uri.toString()).apply()
             LibraryIndexScheduler.scheduleLibrarySync(app)
-
             updateState(romsDirectoryUri = uri.toString(), romsDirectoryValid = true)
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Base directory (resolved real path via StorageBaseDirPicker)
+    // -------------------------------------------------------------------------
+
+    fun refreshBaseDirectory() {
+        val app = getApplication<Application>()
+        val dm = DirectoriesManager(app)
+        updateState(
+            baseDirectoryPath = if (dm.isBaseDirConfigured()) dm.getBaseDirDisplay() else null,
+            baseDirectoryValid = dm.isBaseDirConfigured(),
+        )
     }
 
     // -------------------------------------------------------------------------
@@ -83,14 +102,6 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
 
     fun refreshAllFilesAccess() {
         updateState(allFilesAccessGranted = hasAllFilesAccess())
-    }
-
-    // -------------------------------------------------------------------------
-    // Performance profile
-    // -------------------------------------------------------------------------
-
-    fun setPerformanceProfile(profile: Int) {
-        updateState(performanceProfile = profile)
     }
 
     // -------------------------------------------------------------------------
@@ -107,40 +118,32 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
 
     fun completeOnboarding(onFinished: () -> Unit) {
         if (!_uiState.value.canContinue) return
-
         viewModelScope.launch(Dispatchers.IO) {
             val app = getApplication<Application>()
-            val prefs = SharedPreferencesHelper.getLegacySharedPreferences(app)
-
-            // Apply performance profile → direct game load setting
-            val directLoadKey = app.getString(R.string.pref_key_allow_direct_game_load)
-            prefs.edit()
-                .putBoolean(directLoadKey, _uiState.value.performanceProfile == ONBOARDING_PROFILE_FAST)
-                .apply()
-
-            // Mark onboarding completed
             val onboardingKey = app.getString(R.string.pref_key_onboarding_completed)
-            prefs.edit().putBoolean(onboardingKey, true).apply()
-
+            SharedPreferencesHelper.getLegacySharedPreferences(app)
+                .edit().putBoolean(onboardingKey, true).apply()
             withContext(Dispatchers.Main) { onFinished() }
         }
     }
 
     // -------------------------------------------------------------------------
-    // Internal helpers
+    // Internal
     // -------------------------------------------------------------------------
 
     private fun updateState(
-        performanceProfile: Int = _uiState.value.performanceProfile,
         romsDirectoryUri: String? = _uiState.value.romsDirectoryUri,
         romsDirectoryValid: Boolean = _uiState.value.romsDirectoryValid,
+        baseDirectoryPath: String? = _uiState.value.baseDirectoryPath,
+        baseDirectoryValid: Boolean = _uiState.value.baseDirectoryValid,
         allFilesAccessGranted: Boolean = _uiState.value.allFilesAccessGranted,
         currentPage: Int = _uiState.value.currentPage,
     ) {
         _uiState.value = OnboardingUiState(
-            performanceProfile = performanceProfile,
             romsDirectoryUri = romsDirectoryUri,
             romsDirectoryValid = romsDirectoryValid,
+            baseDirectoryPath = baseDirectoryPath,
+            baseDirectoryValid = baseDirectoryValid,
             allFilesAccessGranted = allFilesAccessGranted,
             canContinue = romsDirectoryValid && allFilesAccessGranted,
             currentPage = currentPage,
@@ -149,15 +152,11 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     companion object {
-        // Expose via companion for use in OnboardingScreen
-        const val PROFILE_SAFE = ONBOARDING_PROFILE_SAFE
-        const val PROFILE_FAST = ONBOARDING_PROFILE_FAST
-
         fun hasAllFilesAccess(): Boolean =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 Environment.isExternalStorageManager()
             } else {
-                true // pre-Android 11: legacy permission is enough
+                true
             }
     }
 }

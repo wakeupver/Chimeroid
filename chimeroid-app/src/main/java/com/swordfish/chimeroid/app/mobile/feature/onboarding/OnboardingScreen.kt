@@ -19,11 +19,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -52,8 +54,7 @@ import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Gamepad
-import androidx.compose.material.icons.rounded.RadioButtonChecked
-import androidx.compose.material.icons.rounded.RadioButtonUnchecked
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.SmartDisplay
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -91,8 +92,11 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.swordfish.chimeroid.R
+import com.swordfish.chimeroid.app.shared.settings.StorageBaseDirPicker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+private val ReadyColor = Color(0xFF1B8A5A)
 
 @OptIn(ExperimentalFoundationApi::class)
 @SuppressLint("ConfigurationScreenWidthHeight")
@@ -105,70 +109,77 @@ fun OnboardingScreen(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
 
     val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp &&
         configuration.screenWidthDp >= 600
+
     var isCompleting by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     val pagerState = rememberPagerState(pageCount = { uiState.totalPages })
 
-    // Sync pager ↔ viewModel page
+    // Sync pager ↔ viewModel
     LaunchedEffect(pagerState.currentPage) {
-        if (pagerState.currentPage != uiState.currentPage) {
-            viewModel.setCurrentPage(pagerState.currentPage)
-        }
+        if (pagerState.currentPage != uiState.currentPage) viewModel.setCurrentPage(pagerState.currentPage)
     }
     LaunchedEffect(uiState.currentPage) {
-        if (pagerState.currentPage != uiState.currentPage) {
-            pagerState.animateScrollToPage(uiState.currentPage)
-        }
+        if (pagerState.currentPage != uiState.currentPage) pagerState.animateScrollToPage(uiState.currentPage)
     }
 
-    // Folder picker
-    val folderPicker = rememberLauncherForActivityResult(
+    // ROMs folder picker (SAF)
+    val romsFolderPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
     ) { uri: Uri? -> uri?.let(viewModel::setRomsDirectory) }
 
+    // Base directory picker (StorageBaseDirPicker activity)
+    val baseDirLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+    ) { viewModel.refreshBaseDirectory() }
+
     // All-files access launcher
-    val allFilesAccessLauncher = rememberLauncherForActivityResult(
+    val allFilesLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
     ) { viewModel.refreshAllFilesAccess() }
 
-    // Refresh all-files access on every ON_RESUME (user returning from settings)
+    // Refresh on every ON_RESUME (returning from settings)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) viewModel.refreshAllFilesAccess()
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshAllFilesAccess()
+                viewModel.refreshBaseDirectory()
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Click handlers (single-shot guard via isCompleting)
-    val launchFolderPicker = { folderPicker.launch(null) }
-    val launchAllFilesAccess = {
+    // Action lambdas
+    val launchAllFilesAccess: () -> Unit = {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             viewModel.refreshAllFilesAccess()
         } else {
             val pkg = Uri.parse("package:${context.packageName}")
             try {
-                allFilesAccessLauncher.launch(
+                allFilesLauncher.launch(
                     Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, pkg),
                 )
             } catch (_: ActivityNotFoundException) {
-                allFilesAccessLauncher.launch(
-                    Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION),
-                )
+                allFilesLauncher.launch(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
             }
         }
     }
 
+    val launchBaseDirPicker: () -> Unit = {
+        baseDirLauncher.launch(Intent(context, StorageBaseDirPicker::class.java))
+    }
+
+    val launchRomsFolderPicker: () -> Unit = { romsFolderPicker.launch(null) }
+
     val goToPage: (Int) -> Unit = { page ->
-        val target = page.coerceIn(0, uiState.totalPages - 1)
         scope.launch {
-            pagerState.animateScrollToPage(target)
-            viewModel.setCurrentPage(target)
+            pagerState.animateScrollToPage(page.coerceIn(0, uiState.totalPages - 1))
+            viewModel.setCurrentPage(page)
         }
     }
     val onNext = { goToPage(pagerState.currentPage + 1) }
@@ -177,53 +188,37 @@ fun OnboardingScreen(
         if (!isCompleting && uiState.canContinue) {
             isCompleting = true
             scope.launch {
-                delay(280)
+                delay(260)
                 viewModel.completeOnboarding(onComplete)
             }
         }
     }
 
-    // Animated alpha/offset during completion fade-out
+    // Fade-out during completion
     val contentAlpha by animateFloatAsState(
-        targetValue = if (isCompleting) 0.34f else 1f,
+        targetValue = if (isCompleting) 0.3f else 1f,
         animationSpec = tween(280),
         label = "onboarding-alpha",
     )
     val contentOffset by animateFloatAsState(
-        targetValue = if (isCompleting) -32f else 0f,
-        animationSpec = tween(320),
+        targetValue = if (isCompleting) -28f else 0f,
+        animationSpec = tween(300),
         label = "onboarding-offset",
     )
 
-    // Floating background orbs
-    val bgMotion = rememberInfiniteTransition(label = "bg-motion")
-    val orb1X by bgMotion.animateFloat(
-        initialValue = -18f, targetValue = 42f,
-        animationSpec = infiniteRepeatable(tween(5200), RepeatMode.Reverse),
-        label = "orb1x",
-    )
-    val orb1Y by bgMotion.animateFloat(
-        initialValue = -12f, targetValue = 34f,
-        animationSpec = infiniteRepeatable(tween(6100), RepeatMode.Reverse),
-        label = "orb1y",
-    )
-    val orb2X by bgMotion.animateFloat(
-        initialValue = 20f, targetValue = -56f,
-        animationSpec = infiniteRepeatable(tween(6800), RepeatMode.Reverse),
-        label = "orb2x",
-    )
-    val orb2Y by bgMotion.animateFloat(
-        initialValue = 0f, targetValue = 58f,
-        animationSpec = infiniteRepeatable(tween(5600), RepeatMode.Reverse),
-        label = "orb2y",
-    )
+    // Background orb animation
+    val bgMotion = rememberInfiniteTransition(label = "bg")
+    val orb1X by bgMotion.animateFloat(-18f, 42f, infiniteRepeatable(tween(5200), RepeatMode.Reverse), label = "o1x")
+    val orb1Y by bgMotion.animateFloat(-12f, 34f, infiniteRepeatable(tween(6100), RepeatMode.Reverse), label = "o1y")
+    val orb2X by bgMotion.animateFloat(20f, -56f, infiniteRepeatable(tween(6800), RepeatMode.Reverse), label = "o2x")
+    val orb2Y by bgMotion.animateFloat(0f, 58f, infiniteRepeatable(tween(5600), RepeatMode.Reverse), label = "o2y")
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(
+                    listOf(
                         MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
                         MaterialTheme.colorScheme.background,
                         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
@@ -231,7 +226,7 @@ fun OnboardingScreen(
                 ),
             ),
     ) {
-        // Decorative background orbs
+        // Decorative orbs
         Box(
             modifier = Modifier
                 .padding(start = 28.dp)
@@ -250,206 +245,41 @@ fun OnboardingScreen(
                 .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.10f)),
         )
 
-        if (isLandscape) {
-            // ---- Landscape layout ----
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .imePadding()
-                    .graphicsLayer { alpha = contentAlpha; translationY = contentOffset },
-            ) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize(),
-                ) { page ->
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    ) {
-                        // Left: hero illustration + title
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxSize()
-                                .statusBarsPadding()
-                                .displayCutoutPadding()
-                                .padding(start = 24.dp, bottom = 12.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            when {
-                                page < 3 -> OnboardingHero(page = page, showSubtitle = false)
-                                page == 3 -> OnboardingHeroProfile(showSubtitle = false)
-                                else -> OnboardingHeroSetup(showSubtitle = false)
-                            }
-                        }
-                        // Right: content
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxSize()
-                                .padding(bottom = 106.dp + bottomInset),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            when {
-                                page < 3 -> {
-                                    val subtitleRes = when (page) {
-                                        0 -> R.string.onboarding_page_1_subtitle
-                                        1 -> R.string.onboarding_page_2_subtitle
-                                        else -> R.string.onboarding_page_3_subtitle
-                                    }
-                                    Text(
-                                        text = stringResource(subtitleRes),
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            lineHeight = 28.sp,
-                                            fontWeight = FontWeight.Normal,
-                                            letterSpacing = 0.sp,
-                                        ),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 40.dp)
-                                            .statusBarsPadding()
-                                            .padding(top = 32.dp),
-                                    )
-                                }
-                                page == 3 -> Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .verticalScroll(rememberScrollState()),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center,
-                                ) {
-                                    OnboardingPerformanceProfileContent(
-                                        selectedProfile = uiState.performanceProfile,
-                                        onSelectProfile = viewModel::setPerformanceProfile,
-                                        modifier = Modifier.padding(horizontal = 32.dp),
-                                    )
-                                }
-                                else -> Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .verticalScroll(rememberScrollState()),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Top,
-                                ) {
-                                    Spacer(modifier = Modifier.statusBarsPadding().height(24.dp))
-                                    OnboardingSetupContent(
-                                        romsDirectoryUri = uiState.romsDirectoryUri,
-                                        romsDirectoryValid = uiState.romsDirectoryValid,
-                                        allFilesAccessGranted = uiState.allFilesAccessGranted,
-                                        onPickFolder = launchFolderPicker,
-                                        onGrantAllFiles = launchAllFilesAccess,
-                                        modifier = Modifier.padding(horizontal = 32.dp),
-                                    )
-                                    Spacer(modifier = Modifier.height(24.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Bottom nav + indicator
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 32.dp, bottom = 16.dp + bottomInset)
-                        .widthIn(max = 420.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    OnboardingPageIndicator(
-                        currentPage = pagerState.currentPage,
-                        totalPages = uiState.totalPages,
-                        modifier = Modifier.padding(bottom = 16.dp),
-                    )
-                    OnboardingNavigation(
-                        currentPage = pagerState.currentPage,
-                        totalPages = uiState.totalPages,
-                        canContinue = uiState.canContinue,
-                        onNext = onNext,
-                        onPrevious = onPrevious,
-                        onGetStarted = onGetStarted,
-                    )
-                }
-            }
-        } else {
-            // ---- Portrait layout ----
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .imePadding()
-                    .graphicsLayer { alpha = contentAlpha; translationY = contentOffset },
-            ) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize(),
-                ) { page ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .statusBarsPadding()
-                            .padding(
-                                start = 24.dp,
-                                end = 24.dp,
-                                top = 48.dp,
-                                bottom = 160.dp + bottomInset,
-                            ),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        when (page) {
-                            0, 1, 2 -> OnboardingHero(page = page)
-                            3 -> {
-                                OnboardingHeroProfile()
-                                Spacer(modifier = Modifier.height(32.dp))
-                                OnboardingPerformanceProfileContent(
-                                    selectedProfile = uiState.performanceProfile,
-                                    onSelectProfile = viewModel::setPerformanceProfile,
-                                )
-                            }
-                            4 -> {
-                                OnboardingHeroSetup()
-                                Spacer(modifier = Modifier.height(32.dp))
-                                OnboardingSetupContent(
-                                    romsDirectoryUri = uiState.romsDirectoryUri,
-                                    romsDirectoryValid = uiState.romsDirectoryValid,
-                                    allFilesAccessGranted = uiState.allFilesAccessGranted,
-                                    onPickFolder = launchFolderPicker,
-                                    onGrantAllFiles = launchAllFilesAccess,
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Fixed bottom: indicator + navigation
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(bottom = 24.dp + bottomInset)
-                        .padding(horizontal = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    OnboardingPageIndicator(
-                        currentPage = pagerState.currentPage,
-                        totalPages = uiState.totalPages,
-                        modifier = Modifier.padding(bottom = 24.dp),
-                    )
-                    OnboardingNavigation(
-                        currentPage = pagerState.currentPage,
-                        totalPages = uiState.totalPages,
-                        canContinue = uiState.canContinue,
-                        onNext = onNext,
-                        onPrevious = onPrevious,
-                        onGetStarted = onGetStarted,
-                    )
-                }
+        // Main content
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .imePadding()
+                .graphicsLayer { alpha = contentAlpha; translationY = contentOffset },
+        ) {
+            if (isLandscape) {
+                LandscapeContent(
+                    uiState = uiState,
+                    pagerState = pagerState,
+                    bottomInset = bottomInset,
+                    onNext = onNext,
+                    onPrevious = onPrevious,
+                    onGetStarted = onGetStarted,
+                    onGrantAllFiles = launchAllFilesAccess,
+                    onPickBaseDir = launchBaseDirPicker,
+                    onPickRomsFolder = launchRomsFolderPicker,
+                )
+            } else {
+                PortraitContent(
+                    uiState = uiState,
+                    pagerState = pagerState,
+                    bottomInset = bottomInset,
+                    onNext = onNext,
+                    onPrevious = onPrevious,
+                    onGetStarted = onGetStarted,
+                    onGrantAllFiles = launchAllFilesAccess,
+                    onPickBaseDir = launchBaseDirPicker,
+                    onPickRomsFolder = launchRomsFolderPicker,
+                )
             }
         }
 
-        // Completion overlay
+        // Completing overlay
         AnimatedVisibility(
             visible = isCompleting,
             modifier = Modifier.align(Alignment.Center),
@@ -470,7 +300,6 @@ fun OnboardingScreen(
                     Text(
                         text = stringResource(R.string.onboarding_finishing),
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
@@ -479,7 +308,179 @@ fun OnboardingScreen(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hero composables (pages 0–2, profile page 3, setup page 4)
+// Portrait layout
+// ─────────────────────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PortraitContent(
+    uiState: OnboardingUiState,
+    pagerState: androidx.compose.foundation.pager.PagerState,
+    bottomInset: androidx.compose.ui.unit.Dp,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit,
+    onGetStarted: () -> Unit,
+    onGrantAllFiles: () -> Unit,
+    onPickBaseDir: () -> Unit,
+    onPickRomsFolder: () -> Unit,
+) {
+    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .statusBarsPadding()
+                .padding(
+                    start = 24.dp, end = 24.dp,
+                    top = 48.dp, bottom = 160.dp + bottomInset,
+                ),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            when (page) {
+                0, 1, 2 -> OnboardingHero(page = page)
+                3 -> {
+                    OnboardingHeroSetup()
+                    Spacer(Modifier.height(32.dp))
+                    OnboardingSetupContent(
+                        uiState = uiState,
+                        onGrantAllFiles = onGrantAllFiles,
+                        onPickBaseDir = onPickBaseDir,
+                        onPickRomsFolder = onPickRomsFolder,
+                    )
+                }
+            }
+        }
+    }
+
+    // Fixed bottom: indicator + nav
+    Column(
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .padding(bottom = 24.dp + bottomInset)
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        OnboardingPageIndicator(
+            currentPage = pagerState.currentPage,
+            totalPages = uiState.totalPages,
+            modifier = Modifier.padding(bottom = 24.dp),
+        )
+        OnboardingNavigation(
+            currentPage = pagerState.currentPage,
+            totalPages = uiState.totalPages,
+            canContinue = uiState.canContinue,
+            onNext = onNext,
+            onPrevious = onPrevious,
+            onGetStarted = onGetStarted,
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Landscape layout
+// ─────────────────────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun LandscapeContent(
+    uiState: OnboardingUiState,
+    pagerState: androidx.compose.foundation.pager.PagerState,
+    bottomInset: androidx.compose.ui.unit.Dp,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit,
+    onGetStarted: () -> Unit,
+    onGrantAllFiles: () -> Unit,
+    onPickBaseDir: () -> Unit,
+    onPickRomsFolder: () -> Unit,
+) {
+    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+        Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(32.dp)) {
+            // Left pane: hero
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .displayCutoutPadding()
+                    .padding(start = 24.dp, bottom = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                when (page) {
+                    0, 1, 2 -> OnboardingHero(page = page, showSubtitle = false)
+                    3 -> OnboardingHeroSetup(showSubtitle = false)
+                }
+            }
+            // Right pane: content / subtitle
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .padding(bottom = 106.dp + bottomInset),
+                contentAlignment = Alignment.Center,
+            ) {
+                when (page) {
+                    0, 1, 2 -> {
+                        val subtitleRes = when (page) {
+                            0 -> R.string.onboarding_page_1_subtitle
+                            1 -> R.string.onboarding_page_2_subtitle
+                            else -> R.string.onboarding_page_3_subtitle
+                        }
+                        Text(
+                            text = stringResource(subtitleRes),
+                            style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 28.sp, letterSpacing = 0.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp).statusBarsPadding().padding(top = 32.dp),
+                        )
+                    }
+                    3 -> Column(
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Spacer(Modifier.height(24.dp))
+                        OnboardingSetupContent(
+                            uiState = uiState,
+                            onGrantAllFiles = onGrantAllFiles,
+                            onPickBaseDir = onPickBaseDir,
+                            onPickRomsFolder = onPickRomsFolder,
+                            modifier = Modifier.padding(horizontal = 32.dp),
+                        )
+                        Spacer(Modifier.height(24.dp))
+                    }
+                }
+            }
+        }
+    }
+
+    // Bottom nav
+    Column(
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(end = 32.dp, bottom = 16.dp + bottomInset)
+            .widthIn(max = 420.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        OnboardingPageIndicator(
+            currentPage = pagerState.currentPage,
+            totalPages = uiState.totalPages,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+        OnboardingNavigation(
+            currentPage = pagerState.currentPage,
+            totalPages = uiState.totalPages,
+            canContinue = uiState.canContinue,
+            onNext = onNext,
+            onPrevious = onPrevious,
+            onGetStarted = onGetStarted,
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hero sections
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -489,25 +490,11 @@ private fun OnboardingHero(
     showSubtitle: Boolean = true,
 ) {
     data class PageContent(val titleRes: Int, val subtitleRes: Int, val icon: ImageVector)
-
     val content = when (page) {
-        0 -> PageContent(
-            R.string.onboarding_page_1_title,
-            R.string.onboarding_page_1_subtitle,
-            Icons.Rounded.Gamepad,
-        )
-        1 -> PageContent(
-            R.string.onboarding_page_2_title,
-            R.string.onboarding_page_2_subtitle,
-            Icons.Rounded.SmartDisplay,
-        )
-        else -> PageContent(
-            R.string.onboarding_page_3_title,
-            R.string.onboarding_page_3_subtitle,
-            Icons.AutoMirrored.Rounded.LibraryBooks,
-        )
+        0 -> PageContent(R.string.onboarding_page_1_title, R.string.onboarding_page_1_subtitle, Icons.Rounded.Gamepad)
+        1 -> PageContent(R.string.onboarding_page_2_title, R.string.onboarding_page_2_subtitle, Icons.Rounded.SmartDisplay)
+        else -> PageContent(R.string.onboarding_page_3_title, R.string.onboarding_page_3_subtitle, Icons.AutoMirrored.Rounded.LibraryBooks)
     }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.widthIn(max = 480.dp),
@@ -519,58 +506,19 @@ private fun OnboardingHero(
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = content.icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(56.dp),
-            )
+            Icon(content.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(56.dp))
         }
-        Spacer(modifier = Modifier.height(36.dp))
+        Spacer(Modifier.height(36.dp))
         Text(
             text = stringResource(content.titleRes),
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.5).sp,
-            ),
+            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
         if (showSubtitle) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
             Text(
                 text = stringResource(content.subtitleRes),
-                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 8.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun OnboardingHeroProfile(
-    modifier: Modifier = Modifier,
-    showSubtitle: Boolean = true,
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.widthIn(max = 480.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.onboarding_profile_title),
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.5).sp,
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
-        if (showSubtitle) {
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = stringResource(R.string.onboarding_profile_subtitle),
                 style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -585,21 +533,15 @@ private fun OnboardingHeroSetup(
     modifier: Modifier = Modifier,
     showSubtitle: Boolean = true,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.widthIn(max = 480.dp),
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier.widthIn(max = 480.dp)) {
         Text(
             text = stringResource(R.string.onboarding_title),
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.5).sp,
-            ),
+            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
         if (showSubtitle) {
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
             Text(
                 text = stringResource(R.string.onboarding_subtitle),
                 style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
@@ -616,23 +558,11 @@ private fun OnboardingHeroSetup(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun OnboardingPageIndicator(
-    currentPage: Int,
-    totalPages: Int,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+private fun OnboardingPageIndicator(currentPage: Int, totalPages: Int, modifier: Modifier = Modifier) {
+    Row(modifier = modifier, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
         for (page in 0 until totalPages) {
             val isSelected = page == currentPage
-            val width by animateFloatAsState(
-                targetValue = if (isSelected) 22f else 8f,
-                animationSpec = tween(300),
-                label = "indicator-width",
-            )
+            val width by animateFloatAsState(if (isSelected) 22f else 8f, tween(300), label = "ind-$page")
             Box(
                 modifier = Modifier
                     .padding(horizontal = 4.dp)
@@ -649,7 +579,7 @@ private fun OnboardingPageIndicator(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Navigation row (Back / Next / Get Started)
+// Navigation row
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -663,45 +593,29 @@ private fun OnboardingNavigation(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Back button
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (currentPage > 0) {
                 OutlinedButton(
                     onClick = onPrevious,
                     modifier = Modifier.height(44.dp),
                     shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                    ),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
                     Text(
-                        text = stringResource(R.string.onboarding_back),
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.Medium,
-                            letterSpacing = 0.sp,
-                        ),
+                        stringResource(R.string.onboarding_back),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium, letterSpacing = 0.sp),
                     )
                 }
             }
         }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // Next / Get Started button
+        Spacer(Modifier.width(12.dp))
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
             if (currentPage < totalPages - 1) {
                 Button(
@@ -709,21 +623,14 @@ private fun OnboardingNavigation(
                     modifier = Modifier.height(44.dp),
                     shape = RoundedCornerShape(12.dp),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.onboarding_next),
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.Medium,
-                            letterSpacing = 0.sp,
-                        ),
+                        stringResource(R.string.onboarding_next),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium, letterSpacing = 0.sp),
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
+                    Spacer(Modifier.width(6.dp))
+                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
                 }
             } else {
                 Button(
@@ -731,25 +638,14 @@ private fun OnboardingNavigation(
                     enabled = canContinue,
                     modifier = Modifier.height(44.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.onboarding_get_started),
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.sp,
-                        ),
+                        stringResource(R.string.onboarding_get_started),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.sp),
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
+                    Spacer(Modifier.width(8.dp))
+                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -757,141 +653,77 @@ private fun OnboardingNavigation(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Performance profile cards (page 3)
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun OnboardingPerformanceProfileContent(
-    selectedProfile: Int,
-    onSelectProfile: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        ProfileCard(
-            title = stringResource(R.string.onboarding_profile_safe_title),
-            description = stringResource(R.string.onboarding_profile_safe_desc),
-            selected = selectedProfile == OnboardingViewModel.PROFILE_SAFE,
-            onClick = { onSelectProfile(OnboardingViewModel.PROFILE_SAFE) },
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        ProfileCard(
-            title = stringResource(R.string.onboarding_profile_fast_title),
-            description = stringResource(R.string.onboarding_profile_fast_desc),
-            selected = selectedProfile == OnboardingViewModel.PROFILE_FAST,
-            onClick = { onSelectProfile(OnboardingViewModel.PROFILE_FAST) },
-        )
-    }
-}
-
-@Composable
-private fun ProfileCard(
-    title: String,
-    description: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-        tonalElevation = if (selected) 6.dp else 2.dp,
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-        ),
-        onClick = onClick,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = if (selected) Icons.Rounded.RadioButtonChecked else Icons.Rounded.RadioButtonUnchecked,
-                contentDescription = null,
-                tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Setup content (page 4) — ROMs folder + All-files access
+// Setup content — 3 cards: grant access, base dir, ROMs folder
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun OnboardingSetupContent(
-    romsDirectoryUri: String?,
-    romsDirectoryValid: Boolean,
-    allFilesAccessGranted: Boolean,
-    onPickFolder: () -> Unit,
+    uiState: OnboardingUiState,
     onGrantAllFiles: () -> Unit,
+    onPickBaseDir: () -> Unit,
+    onPickRomsFolder: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val completionProgress = listOf(romsDirectoryValid, allFilesAccessGranted).count { it }
-    val readyColor = Color(0xFF1B8A5A)
+    val requiredCount = listOf(uiState.allFilesAccessGranted, uiState.romsDirectoryValid).count { it }
 
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        // ROMs folder card
+    Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+
+        // 1. Grant full file access — FIRST
         SetupCard(
-            icon = Icons.Rounded.FolderOpen,
-            title = stringResource(R.string.onboarding_roms_title),
-            description = if (romsDirectoryUri == null) {
-                stringResource(R.string.onboarding_roms_desc)
-            } else {
-                Uri.parse(romsDirectoryUri).lastPathSegment
-                    ?.substringAfterLast(':')
-                    ?: stringResource(R.string.onboarding_roms_desc)
-            },
-            status = when {
-                romsDirectoryUri == null -> stringResource(R.string.onboarding_status_required)
-                romsDirectoryValid -> stringResource(R.string.onboarding_status_ready)
-                else -> stringResource(R.string.onboarding_status_invalid_folder)
-            },
-            statusColor = when {
-                romsDirectoryUri == null -> MaterialTheme.colorScheme.tertiary
-                romsDirectoryValid -> readyColor
-                else -> MaterialTheme.colorScheme.error
-            },
-            onClick = onPickFolder,
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // All-files access card
-        SetupCard(
-            icon = Icons.Rounded.CheckCircle,
+            icon = Icons.Rounded.Lock,
             title = stringResource(R.string.onboarding_all_files_title),
             description = stringResource(R.string.onboarding_all_files_desc),
-            status = if (allFilesAccessGranted) {
-                stringResource(R.string.onboarding_status_ready)
-            } else {
-                stringResource(R.string.onboarding_status_required)
-            },
-            statusColor = if (allFilesAccessGranted) readyColor else MaterialTheme.colorScheme.tertiary,
+            status = if (uiState.allFilesAccessGranted) stringResource(R.string.onboarding_status_ready)
+                     else stringResource(R.string.onboarding_status_required),
+            statusColor = if (uiState.allFilesAccessGranted) ReadyColor
+                          else MaterialTheme.colorScheme.tertiary,
             onClick = onGrantAllFiles,
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
 
-        // Progress summary card
+        // 2. Choose base directory
+        SetupCard(
+            icon = Icons.Rounded.FolderOpen,
+            title = stringResource(R.string.onboarding_base_dir_title),
+            description = uiState.baseDirectoryPath?.let { "…/${it.substringAfterLast('/')}" }
+                ?: stringResource(R.string.onboarding_base_dir_desc),
+            status = when {
+                uiState.baseDirectoryValid -> stringResource(R.string.onboarding_status_ready)
+                else -> stringResource(R.string.onboarding_status_optional)
+            },
+            statusColor = when {
+                uiState.baseDirectoryValid -> ReadyColor
+                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            },
+            onClick = onPickBaseDir,
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        // 3. Choose ROMs folder
+        SetupCard(
+            icon = Icons.Rounded.FolderOpen,
+            title = stringResource(R.string.onboarding_roms_title),
+            description = uiState.romsDirectoryUri
+                ?.let { Uri.parse(it).lastPathSegment?.substringAfterLast(':') }
+                ?: stringResource(R.string.onboarding_roms_desc),
+            status = when {
+                uiState.romsDirectoryUri == null -> stringResource(R.string.onboarding_status_required)
+                uiState.romsDirectoryValid -> stringResource(R.string.onboarding_status_ready)
+                else -> stringResource(R.string.onboarding_status_invalid_folder)
+            },
+            statusColor = when {
+                uiState.romsDirectoryUri == null -> MaterialTheme.colorScheme.tertiary
+                uiState.romsDirectoryValid -> ReadyColor
+                else -> MaterialTheme.colorScheme.error
+            },
+            onClick = onPickRomsFolder,
+        )
+
+        Spacer(Modifier.height(10.dp))
+
+        // Summary card
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
@@ -899,21 +731,17 @@ private fun OnboardingSetupContent(
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Rounded.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(10.dp))
                     Text(
-                        text = stringResource(R.string.onboarding_hint_title),
+                        stringResource(R.string.onboarding_hint_title),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    text = stringResource(R.string.onboarding_hint_body, completionProgress),
+                    stringResource(R.string.onboarding_hint_body, requiredCount),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -921,6 +749,10 @@ private fun OnboardingSetupContent(
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Setup card
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun SetupCard(
@@ -932,23 +764,15 @@ private fun SetupCard(
     onClick: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         shape = RoundedCornerShape(32.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
         tonalElevation = 2.dp,
         onClick = onClick,
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Box(
                     modifier = Modifier
                         .size(52.dp)
@@ -956,45 +780,24 @@ private fun SetupCard(
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(26.dp),
-                    )
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(2.dp))
+                    Text(description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Surface(
-                shape = CircleShape,
-                color = statusColor.copy(alpha = 0.12f),
-            ) {
+            Spacer(Modifier.height(16.dp))
+            Surface(shape = CircleShape, color = statusColor.copy(alpha = 0.12f)) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(statusColor),
-                    )
+                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(statusColor))
                     Text(
-                        text = status,
+                        status,
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = statusColor,
                     )
