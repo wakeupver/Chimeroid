@@ -324,57 +324,59 @@ private fun PortraitContent(
     onPickBaseDir: () -> Unit,
     onPickRomsFolder: () -> Unit,
 ) {
-    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .statusBarsPadding()
-                .padding(
-                    start = 24.dp, end = 24.dp,
-                    top = 48.dp, bottom = 160.dp + bottomInset,
-                ),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            when (page) {
-                0, 1, 2 -> OnboardingHero(page = page)
-                3 -> {
-                    OnboardingHeroSetup()
-                    Spacer(Modifier.height(32.dp))
-                    OnboardingSetupContent(
-                        uiState = uiState,
-                        onGrantAllFiles = onGrantAllFiles,
-                        onPickBaseDir = onPickBaseDir,
-                        onPickRomsFolder = onPickRomsFolder,
-                    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .statusBarsPadding()
+                    .padding(
+                        start = 24.dp, end = 24.dp,
+                        top = 48.dp, bottom = 160.dp + bottomInset,
+                    ),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                when (page) {
+                    0, 1, 2 -> OnboardingHero(page = page)
+                    3 -> {
+                        OnboardingHeroSetup()
+                        Spacer(Modifier.height(32.dp))
+                        OnboardingSetupContent(
+                            uiState = uiState,
+                            onGrantAllFiles = onGrantAllFiles,
+                            onPickBaseDir = onPickBaseDir,
+                            onPickRomsFolder = onPickRomsFolder,
+                        )
+                    }
                 }
             }
         }
-    }
 
-    // Fixed bottom: indicator + nav
-    Column(
-        modifier = Modifier
-            .align(Alignment.BottomCenter)
-            .fillMaxWidth()
-            .padding(bottom = 24.dp + bottomInset)
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        OnboardingPageIndicator(
-            currentPage = pagerState.currentPage,
-            totalPages = uiState.totalPages,
-            modifier = Modifier.padding(bottom = 24.dp),
-        )
-        OnboardingNavigation(
-            currentPage = pagerState.currentPage,
-            totalPages = uiState.totalPages,
-            canContinue = uiState.canContinue,
-            onNext = onNext,
-            onPrevious = onPrevious,
-            onGetStarted = onGetStarted,
-        )
+        // Fixed bottom: indicator + nav
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(bottom = 24.dp + bottomInset)
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            OnboardingPageIndicator(
+                currentPage = pagerState.currentPage,
+                totalPages = uiState.totalPages,
+                modifier = Modifier.padding(bottom = 24.dp),
+            )
+            OnboardingNavigation(
+                currentPage = pagerState.currentPage,
+                totalPages = uiState.totalPages,
+                canContinue = uiState.canContinue,
+                onNext = onNext,
+                onPrevious = onPrevious,
+                onGetStarted = onGetStarted,
+            )
+        }
     }
 }
 
@@ -395,8 +397,9 @@ private fun LandscapeContent(
     onPickBaseDir: () -> Unit,
     onPickRomsFolder: () -> Unit,
 ) {
-    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
-        Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(32.dp)) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+            Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(32.dp)) {
             // Left pane: hero
             Box(
                 modifier = Modifier
@@ -477,6 +480,7 @@ private fun LandscapeContent(
             onGetStarted = onGetStarted,
         )
     }
+    } // close Box
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
