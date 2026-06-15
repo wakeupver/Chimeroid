@@ -2,9 +2,11 @@ package com.swordfish.chimeroid.app.mobile.feature.onboarding
 
 import android.app.Application
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.swordfish.chimeroid.R
@@ -27,6 +29,8 @@ data class OnboardingUiState(
     val baseDirectoryPath: String? = null,
     val baseDirectoryValid: Boolean = false,
     val allFilesAccessGranted: Boolean = false,
+    val notificationGranted: Boolean = false,
+    val microphoneGranted: Boolean = false,
     val canContinue: Boolean = false,
     val currentPage: Int = 0,
     val totalPages: Int = ONBOARDING_TOTAL_PAGES,
@@ -35,7 +39,11 @@ data class OnboardingUiState(
 class OnboardingViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(
-        OnboardingUiState(allFilesAccessGranted = hasAllFilesAccess()),
+        OnboardingUiState(
+            allFilesAccessGranted = hasAllFilesAccess(),
+            notificationGranted = hasNotificationPermission(application),
+            microphoneGranted = hasMicrophonePermission(application),
+        ),
     )
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
@@ -105,6 +113,22 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     // -------------------------------------------------------------------------
+    // Notification permission
+    // -------------------------------------------------------------------------
+
+    fun refreshNotificationPermission() {
+        updateState(notificationGranted = hasNotificationPermission(getApplication()))
+    }
+
+    // -------------------------------------------------------------------------
+    // Microphone permission
+    // -------------------------------------------------------------------------
+
+    fun refreshMicrophonePermission() {
+        updateState(microphoneGranted = hasMicrophonePermission(getApplication()))
+    }
+
+    // -------------------------------------------------------------------------
     // Pager navigation
     // -------------------------------------------------------------------------
 
@@ -137,6 +161,8 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
         baseDirectoryPath: String? = _uiState.value.baseDirectoryPath,
         baseDirectoryValid: Boolean = _uiState.value.baseDirectoryValid,
         allFilesAccessGranted: Boolean = _uiState.value.allFilesAccessGranted,
+        notificationGranted: Boolean = _uiState.value.notificationGranted,
+        microphoneGranted: Boolean = _uiState.value.microphoneGranted,
         currentPage: Int = _uiState.value.currentPage,
     ) {
         _uiState.value = OnboardingUiState(
@@ -145,6 +171,8 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
             baseDirectoryPath = baseDirectoryPath,
             baseDirectoryValid = baseDirectoryValid,
             allFilesAccessGranted = allFilesAccessGranted,
+            notificationGranted = notificationGranted,
+            microphoneGranted = microphoneGranted,
             canContinue = romsDirectoryValid && allFilesAccessGranted,
             currentPage = currentPage,
             totalPages = ONBOARDING_TOTAL_PAGES,
@@ -158,5 +186,21 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
             } else {
                 true
             }
+
+        fun hasNotificationPermission(context: android.content.Context): Boolean =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                PackageManager.PERMISSION_GRANTED ==
+                    ContextCompat.checkSelfPermission(
+                        context, android.Manifest.permission.POST_NOTIFICATIONS,
+                    )
+            } else {
+                true // Granted implicitly on API < 33
+            }
+
+        fun hasMicrophonePermission(context: android.content.Context): Boolean =
+            PackageManager.PERMISSION_GRANTED ==
+                ContextCompat.checkSelfPermission(
+                    context, android.Manifest.permission.RECORD_AUDIO,
+                )
     }
 }

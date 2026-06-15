@@ -1,5 +1,6 @@
 package com.swordfish.chimeroid.app.mobile.feature.onboarding
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -55,6 +56,8 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Gamepad
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.SmartDisplay
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -142,12 +145,24 @@ fun OnboardingScreen(
         contract = ActivityResultContracts.StartActivityForResult(),
     ) { viewModel.refreshAllFilesAccess() }
 
+    // Notification permission launcher
+    val notificationLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { viewModel.refreshNotificationPermission() }
+
+    // Microphone permission launcher
+    val microphoneLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { viewModel.refreshMicrophonePermission() }
+
     // Refresh on every ON_RESUME (returning from settings)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.refreshAllFilesAccess()
                 viewModel.refreshBaseDirectory()
+                viewModel.refreshNotificationPermission()
+                viewModel.refreshMicrophonePermission()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -168,6 +183,18 @@ fun OnboardingScreen(
                 allFilesLauncher.launch(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
             }
         }
+    }
+
+    val launchNotificationPermission: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            viewModel.refreshNotificationPermission()
+        }
+    }
+
+    val launchMicrophonePermission: () -> Unit = {
+        microphoneLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
 
     val launchBaseDirPicker: () -> Unit = {
@@ -261,6 +288,8 @@ fun OnboardingScreen(
                     onPrevious = onPrevious,
                     onGetStarted = onGetStarted,
                     onGrantAllFiles = launchAllFilesAccess,
+                    onGrantNotification = launchNotificationPermission,
+                    onGrantMicrophone = launchMicrophonePermission,
                     onPickBaseDir = launchBaseDirPicker,
                     onPickRomsFolder = launchRomsFolderPicker,
                 )
@@ -273,6 +302,8 @@ fun OnboardingScreen(
                     onPrevious = onPrevious,
                     onGetStarted = onGetStarted,
                     onGrantAllFiles = launchAllFilesAccess,
+                    onGrantNotification = launchNotificationPermission,
+                    onGrantMicrophone = launchMicrophonePermission,
                     onPickBaseDir = launchBaseDirPicker,
                     onPickRomsFolder = launchRomsFolderPicker,
                 )
@@ -321,6 +352,8 @@ private fun PortraitContent(
     onPrevious: () -> Unit,
     onGetStarted: () -> Unit,
     onGrantAllFiles: () -> Unit,
+    onGrantNotification: () -> Unit,
+    onGrantMicrophone: () -> Unit,
     onPickBaseDir: () -> Unit,
     onPickRomsFolder: () -> Unit,
 ) {
@@ -346,6 +379,8 @@ private fun PortraitContent(
                         OnboardingSetupContent(
                             uiState = uiState,
                             onGrantAllFiles = onGrantAllFiles,
+                            onGrantNotification = onGrantNotification,
+                            onGrantMicrophone = onGrantMicrophone,
                             onPickBaseDir = onPickBaseDir,
                             onPickRomsFolder = onPickRomsFolder,
                         )
@@ -394,6 +429,8 @@ private fun LandscapeContent(
     onPrevious: () -> Unit,
     onGetStarted: () -> Unit,
     onGrantAllFiles: () -> Unit,
+    onGrantNotification: () -> Unit,
+    onGrantMicrophone: () -> Unit,
     onPickBaseDir: () -> Unit,
     onPickRomsFolder: () -> Unit,
 ) {
@@ -447,6 +484,8 @@ private fun LandscapeContent(
                         OnboardingSetupContent(
                             uiState = uiState,
                             onGrantAllFiles = onGrantAllFiles,
+                            onGrantNotification = onGrantNotification,
+                            onGrantMicrophone = onGrantMicrophone,
                             onPickBaseDir = onPickBaseDir,
                             onPickRomsFolder = onPickRomsFolder,
                             modifier = Modifier.padding(horizontal = 32.dp),
@@ -664,6 +703,8 @@ private fun OnboardingNavigation(
 private fun OnboardingSetupContent(
     uiState: OnboardingUiState,
     onGrantAllFiles: () -> Unit,
+    onGrantNotification: () -> Unit,
+    onGrantMicrophone: () -> Unit,
     onPickBaseDir: () -> Unit,
     onPickRomsFolder: () -> Unit,
     modifier: Modifier = Modifier,
@@ -672,7 +713,7 @@ private fun OnboardingSetupContent(
 
     Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
 
-        // 1. Grant full file access — FIRST
+        // 1. Grant full file access — Required
         SetupCard(
             icon = Icons.Rounded.Lock,
             title = stringResource(R.string.onboarding_all_files_title),
@@ -686,26 +727,50 @@ private fun OnboardingSetupContent(
 
         Spacer(Modifier.height(8.dp))
 
-        // 2. Choose base directory
+        // 2. Allow notifications — Optional
+        SetupCard(
+            icon = Icons.Rounded.Notifications,
+            title = stringResource(R.string.onboarding_notification_title),
+            description = stringResource(R.string.onboarding_notification_desc),
+            status = if (uiState.notificationGranted) stringResource(R.string.onboarding_status_ready)
+                     else stringResource(R.string.onboarding_status_optional),
+            statusColor = if (uiState.notificationGranted) ReadyColor
+                          else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            onClick = onGrantNotification,
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        // 3. Allow microphone — Optional
+        SetupCard(
+            icon = Icons.Rounded.Mic,
+            title = stringResource(R.string.onboarding_microphone_title),
+            description = stringResource(R.string.onboarding_microphone_desc),
+            status = if (uiState.microphoneGranted) stringResource(R.string.onboarding_status_ready)
+                     else stringResource(R.string.onboarding_status_optional),
+            statusColor = if (uiState.microphoneGranted) ReadyColor
+                          else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            onClick = onGrantMicrophone,
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        // 4. Choose base directory — Optional
         SetupCard(
             icon = Icons.Rounded.FolderOpen,
             title = stringResource(R.string.onboarding_base_dir_title),
             description = uiState.baseDirectoryPath?.let { "…/${it.substringAfterLast('/')}" }
                 ?: stringResource(R.string.onboarding_base_dir_desc),
-            status = when {
-                uiState.baseDirectoryValid -> stringResource(R.string.onboarding_status_ready)
-                else -> stringResource(R.string.onboarding_status_optional)
-            },
-            statusColor = when {
-                uiState.baseDirectoryValid -> ReadyColor
-                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            },
+            status = if (uiState.baseDirectoryValid) stringResource(R.string.onboarding_status_ready)
+                     else stringResource(R.string.onboarding_status_optional),
+            statusColor = if (uiState.baseDirectoryValid) ReadyColor
+                          else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             onClick = onPickBaseDir,
         )
 
         Spacer(Modifier.height(8.dp))
 
-        // 3. Choose ROMs folder
+        // 5. Choose ROMs folder — Required
         SetupCard(
             icon = Icons.Rounded.FolderOpen,
             title = stringResource(R.string.onboarding_roms_title),
