@@ -85,10 +85,10 @@ class PPSSPPAssetsManager : CoreID.AssetsManager {
     }
 
     companion object {
-        const val PPSSPP_ASSETS_VERSION = "1.15"
+        const val PPSSPP_ASSETS_VERSION = "1.17.0"
 
         val PPSSPP_ASSETS_URL: Uri =
-            Uri.parse("https://github.com/Swordfish90/ChimeroidCores/")
+            Uri.parse("https://github.com/wakeupver/Cores")
                 .buildUpon()
                 .appendEncodedPath("raw/$PPSSPP_ASSETS_VERSION/assets/ppsspp.zip")
                 .build()

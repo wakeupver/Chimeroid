@@ -18,7 +18,7 @@
 #ifndef LIBRETRODROID_VIDEO_H
 #define LIBRETRODROID_VIDEO_H
 
-#include <GLES2/gl2.h>
+#include <GLES3/gl3.h>
 #include <optional>
 #include <array>
 
@@ -63,6 +63,8 @@ public:
         Rect viewportRect,
         ImmersiveMode::Config immersiveModeConfig
     );
+
+    ~Video();
 
     VideoLayout& getLayout() { return videoLayout; }
 
@@ -116,6 +118,12 @@ private:
     VideoLayout videoLayout;
 
     Renderer* renderer;
+
+    // VBO used for rendering quads. Prevents GLES 3.0 issues where a raw
+    // float* passed to glVertexAttribPointer is misinterpreted as a VBO
+    // offset when a foreign VBO is still bound from a HW-accelerated core.
+    GLuint quadVbo = 0;
+    bool useES3    = false;
 };
 
 }

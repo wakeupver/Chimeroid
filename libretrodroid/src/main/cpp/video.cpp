@@ -15,7 +15,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <GLES2/gl2.h>
+#include <GLES3/gl3.h>
 #include <EGL/egl.h>
 #include <cstdlib>
 #include <string>
@@ -99,6 +99,14 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 
+Video::~Video() {
+    if (quadVbo) {
+        glDeleteBuffers(1, &quadVbo);
+        quadVbo = 0;
+    }
+    delete renderer;
+}
+
 void Video::updateProgram() {
     if (loadedShaderType.has_value() && loadedShaderType.value() == requestedShaderConfig) {
         return;
@@ -141,6 +149,29 @@ void Video::renderFrame() {
     if (skipDuplicateFrames && !isDirty) return;
     isDirty = false;
 
+    // ── GL state reset ────────────────────────────────────────────────────────
+    // HW-accelerated cores (PPSSPP, SwanStation, etc.) can leave VAOs, VBOs,
+    // and index buffers bound after their retro_run() frame.
+    //
+    // In GLES 3.0, when a VBO is bound to GL_ARRAY_BUFFER, the "pointer"
+    // argument of glVertexAttribPointer() is treated as a byte offset into that
+    // VBO — not as a CPU memory address.  With a stale foreign VBO still bound,
+    // passing our raw float* would be misinterpreted as an offset, producing
+    // blank or garbage output.
+    //
+    // Similarly, a bound VAO causes glVertexAttribPointer() to modify *that*
+    // VAO's attribute state instead of the global default, so our vertex setup
+    // has no effect on the draw call.
+    //
+    // Resetting all three bindings here (and using a VBO for our own draws
+    // below) makes rendering correct and robust regardless of what the core left
+    // behind — mirroring RetroArch's gl3_renderchain pattern.
+    if (useES3) {
+        glBindVertexArray(0);                 // unbind any core VAO
+    }
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind any core index buffer
+    glBindBuffer(GL_ARRAY_BUFFER, 0);         // defensive; we'll rebind per-pass
+
     glDisable(GL_DEPTH_TEST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -159,10 +190,11 @@ void Video::renderFrame() {
     }
 
     updateProgram();
-    for (int i = 0; i < shadersChain.size(); ++i) {
-        auto shader = shadersChain[i];
-        auto passData = renderer->getPassData(i);
-        auto isLastPass = i == shadersChain.size() - 1;
+
+    for (int i = 0; i < (int)shadersChain.size(); ++i) {
+        auto  shader    = shadersChain[i];
+        auto  passData  = renderer->getPassData(i);
+        bool  isLastPass = (i == (int)shadersChain.size() - 1);
 
         glBindFramebuffer(GL_FRAMEBUFFER, passData.framebuffer.value_or(0));
 
@@ -175,14 +207,33 @@ void Video::renderFrame() {
 
         glUseProgram(shader.gProgram);
 
-        auto vertices = isLastPass ? videoLayout.getForegroundVertices() : videoLayout.getFramebufferVertices();
-        glVertexAttribPointer(shader.gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
+        // ── VBO-backed vertex upload ──────────────────────────────────────────
+        // Pack positions (12 floats) then UVs (12 floats) into a single stream
+        // VBO.  glVertexAttribPointer() then receives byte offsets into that
+        // VBO, which is the only correct usage in GLES 3.0.
+        auto& vertices    = isLastPass
+            ? videoLayout.getForegroundVertices()
+            : videoLayout.getFramebufferVertices();
+        auto& coordinates = videoLayout.getTextureCoordinates();
+
+        constexpr GLsizeiptr kVerts    = 12;                        // floats
+        constexpr GLsizeiptr kPosBytes = kVerts * sizeof(float);    // 48 B
+        constexpr GLsizeiptr kUvBytes  = kVerts * sizeof(float);    // 48 B
+
+        glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
+        glBufferData(GL_ARRAY_BUFFER, kPosBytes + kUvBytes, nullptr, GL_STREAM_DRAW);
+        glBufferSubData(GL_ARRAY_BUFFER, 0,        kPosBytes, vertices.data());
+        glBufferSubData(GL_ARRAY_BUFFER, kPosBytes, kUvBytes,  coordinates.data());
+
+        glVertexAttribPointer(shader.gvPositionHandle,   2, GL_FLOAT, GL_FALSE, 0,
+            reinterpret_cast<void*>(static_cast<uintptr_t>(0)));
         glEnableVertexAttribArray(shader.gvPositionHandle);
 
-        auto coordinates = videoLayout.getTextureCoordinates();
-        glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, coordinates.data());
+        glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0,
+            reinterpret_cast<void*>(static_cast<uintptr_t>(kPosBytes)));
         glEnableVertexAttribArray(shader.gvCoordinateHandle);
 
+        // ── Textures & uniforms ───────────────────────────────────────────────
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
         glUniform1i(shader.gTextureHandle, 0);
@@ -193,12 +244,12 @@ void Video::renderFrame() {
             glUniform1i(shader.gPreviousPassTextureHandle, 1);
         }
 
-        glUniform2f(shader.gTextureSizeHandle, getTextureWidth(), getTextureHeight());
-
-        glUniform1f(shader.gScreenDensityHandle, getScreenDensity());
+        glUniform2f(shader.gTextureSizeHandle,    getTextureWidth(), getTextureHeight());
+        glUniform1f(shader.gScreenDensityHandle,  getScreenDensity());
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
+        // ── Per-pass cleanup (matches RetroArch gl3 pattern) ─────────────────
         glDisableVertexAttribArray(shader.gvPositionHandle);
         glDisableVertexAttribArray(shader.gvCoordinateHandle);
 
@@ -209,8 +260,12 @@ void Video::renderFrame() {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
         glUseProgram(0);
     }
+
+    // Ensure default framebuffer is bound after all passes.
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 float Video::getScreenDensity() {
@@ -280,6 +335,15 @@ Video::Video(
     glViewport(0, 0, videoLayout.getScreenWidth(), videoLayout.getScreenHeight());
 
     glUseProgram(0);
+
+    // Store ES version so renderFrame() can issue the VAO reset guard.
+    useES3 = renderingOptions.openglESVersion >= 3;
+
+    // Allocate the persistent quad VBO used in renderFrame().
+    // This ensures glVertexAttribPointer() always references VBO offsets,
+    // which is the only valid usage in GLES 3.0 and avoids corruption when
+    // a HW core leaves a foreign VBO bound after its retro_run() call.
+    glGenBuffers(1, &quadVbo);
 
     initializeRenderer(renderingOptions);
 }
