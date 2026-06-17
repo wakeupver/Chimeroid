@@ -56,6 +56,14 @@ bool Audio::initializeStream() {
         fifoBuffer = std::make_unique<oboe::FifoBuffer>(2, audioBufferSize);
         temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[audioBufferSize]);
         latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
+
+        // Reset PI controller state and resampler on every (re-)init so stale
+        // errorIntegral / framesToSubmit values from a previous stream session
+        // don't cause speed overshoot or underrun spikes on the new stream.
+        errorIntegral = 0.0;
+        framesToSubmit = 0.0;
+        resampler.reset();
+
         return true;
     } else {
         LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
@@ -106,14 +114,40 @@ void Audio::setPlaybackSpeed(const double newPlaybackSpeed) {
 }
 
 oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
-    double dynamicBufferFactor = computeDynamicBufferConversionFactor(0.001 * numFrames);
+    // Fix: dt must be the real callback period in seconds.
+    // The original code used "0.001 * numFrames" which assumed a 1 kHz stream
+    // rate; the actual period is numFrames / sampleRate (~48 kHz), so the
+    // integral was accumulating ~48x too fast.  ki has been scaled up in
+    // audio.h to maintain the same convergence speed with the correct dt.
+    double dt = static_cast<double>(numFrames) / oboeStream->getSampleRate();
+    double dynamicBufferFactor = computeDynamicBufferConversionFactor(dt);
     double finalConversionFactor = baseConversionFactor * dynamicBufferFactor * playbackSpeed;
 
-    // When using low-latency stream, numFrames is very low (~100) and the dynamic buffer scaling doesn't work with rounding.
-    // By keeping track of the "fractional" frames we can keep the error smaller.
+    // Accumulate fractional frames to avoid rounding error at low numFrames
+    // (common with low-latency AAudio streams where numFrames ≈ 100).
     framesToSubmit += numFrames * finalConversionFactor;
     int32_t currentFramesToSubmit = std::round(framesToSubmit);
     framesToSubmit -= currentFramesToSubmit;
+
+    // Safety clamp: temporaryAudioBuffer holds audioBufferSize int16 values,
+    // i.e. audioBufferSize/2 stereo frames.  The FIFO is sized the same way
+    // (bytesPerFrame=2, capacity=audioBufferSize), so capacity/2 is the hard
+    // upper bound for a single read.
+    int32_t maxSafeFrames = static_cast<int32_t>(fifoBuffer->getBufferCapacityInFrames()) / 2;
+    currentFramesToSubmit = std::clamp(currentFramesToSubmit, 1, maxSafeFrames);
+
+    // Underrun guard: when the FIFO has less data than we need, output silence
+    // and reset the resampler's cross-callback state.  This avoids two crackle
+    // sources that readNow() zero-fill creates:
+    //   1. A hard 0-sample block fed into the resampler (waveform discontinuity)
+    //   2. Stale lastL/lastR being interpolated against real audio on recovery
+    int64_t framesAvailable = fifoBuffer->getFullFramesAvailable();
+    if (framesAvailable < static_cast<int64_t>(currentFramesToSubmit) * 2) {
+        std::memset(audioData, 0, numFrames * 2 * sizeof(int16_t));
+        resampler.reset();
+        latencyTuner->tune();
+        return oboe::DataCallbackResult::Continue;
+    }
 
     fifoBuffer->readNow(temporaryAudioBuffer.get(), currentFramesToSubmit * 2);
 

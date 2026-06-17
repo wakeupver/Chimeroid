@@ -25,6 +25,8 @@ namespace libretrodroid {
 class Resampler {
 public:
     virtual void resample(const int16_t* source, int32_t inputFrames, int16_t* sink, int32_t sinkFrames) = 0;
+    // Reset inter-callback state (call after underrun/silence to avoid interpolating stale samples)
+    virtual void reset() {}
     virtual ~Resampler() = default;
 };
 }

@@ -66,7 +66,11 @@ private:
 
 private:
     const double kp = 0.006;
-    const double ki = 0.00002;
+    // ki was 0.00002 when dt was computed as "0.001 * numFrames" (effectively
+    // assuming a 1 kHz stream rate).  The correct dt = numFrames / sampleRate
+    // is ~48x smaller, so ki is scaled up proportionally to keep the same
+    // integral convergence speed as the original tuning.
+    const double ki = 0.001;
     const double maxp = 0.003;
     const double maxi = 0.02;
 

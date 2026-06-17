@@ -25,8 +25,20 @@ namespace libretrodroid {
 class LinearResampler : public Resampler {
 public:
     void resample(const int16_t *source, int32_t inputFrames, int16_t *sink, int32_t sinkFrames) override;
+    void reset() override;
     LinearResampler() = default;
     virtual ~LinearResampler() = default;
+
+private:
+    // Cross-callback interpolation state
+    // lastL/lastR: last stereo sample from the previous resample() call, used to
+    //              smooth the boundary when savedPhase < 0 (i.e. the next output
+    //              should still partially come from the previous block's last frame).
+    int16_t lastL = 0;
+    int16_t lastR = 0;
+    // savedPhase: fractional input-sample offset to carry into the next call.
+    //             Typically very close to 0; lives in the range (-1, 0].
+    double savedPhase = 0.0;
 };
 
 } //namespace libretrodroid
