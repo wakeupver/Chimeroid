@@ -6,7 +6,7 @@ import com.swordfish.chimeroid.metadata.libretrodb.db.entity.LibretroRom
 
 @Dao
 interface GameDao {
-    @Query("SELECT * FROM games WHERE romName LIKE :romName")
+    @Query("SELECT * FROM games WHERE romName LIKE '%' || :romName || '%'")
     suspend fun findByName(romName: String): List<LibretroRom>?
 
     @Query("SELECT * FROM games WHERE romName = :romName LIMIT 1")

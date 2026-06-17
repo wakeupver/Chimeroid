@@ -327,11 +327,13 @@ class ChimeroidLibrary(
         gameMetadata: GameMetadata?,
         lastIndexedAt: Long,
     ): Game? {
-        if (gameMetadata == null) {
+        if (gameMetadata == null) return null
+
+        val systemId = gameMetadata.system ?: return null
+        val gameSystem = GameSystem.findByIdOrNull(systemId) ?: run {
+            Timber.w("Skipping game with unrecognised system id: $systemId")
             return null
         }
-
-        val gameSystem = GameSystem.findById(gameMetadata.system!!)
 
         // If the databased matched a data file (as with bin/cue) we force link the primary filename
         val fileName =

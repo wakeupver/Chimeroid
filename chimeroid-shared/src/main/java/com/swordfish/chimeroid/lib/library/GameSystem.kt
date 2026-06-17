@@ -1312,6 +1312,9 @@ data class GameSystem(
 
         fun findById(id: String): GameSystem = byIdCache.getValue(id)
 
+        /** Returns null instead of throwing when [id] is not a known system. */
+        fun findByIdOrNull(id: String): GameSystem? = byIdCache[id]
+
         fun all() = SYSTEMS
 
         fun getSupportedExtensions(): List<String> {

@@ -66,13 +66,14 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         return metadata
     }
 
-    private fun convertToGameMetadata(rom: LibretroRom): GameMetadata {
-        val system = GameSystem.findById(rom.system!!)
+    private fun convertToGameMetadata(rom: LibretroRom): GameMetadata? {
+        val systemId = rom.system ?: return null
+        val system = GameSystem.findByIdOrNull(systemId) ?: return null
         return GameMetadata(
             name = rom.name,
             romName = rom.romName,
             thumbnail = computeCoverUrl(system, rom.name),
-            system = rom.system,
+            system = systemId,
             developer = rom.developer,
         )
     }
@@ -96,7 +97,7 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         file: StorageFile,
     ): GameMetadata? {
         return cachedFindByFileName(db, file.name)
-            .filterNullable { extractGameSystem(it).scanOptions.scanByFilename }
+            .filterNullable { extractGameSystemOrNull(it)?.scanOptions?.scanByFilename == true }
             ?.let { convertToGameMetadata(it) }
     }
 
@@ -106,8 +107,11 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
     ): GameMetadata? {
         // Re-uses the cache — no extra DB hit even when called right after findByFilename.
         return cachedFindByFileName(db, file.name)
-            .filterNullable { extractGameSystem(it).scanOptions.scanByPathAndFilename }
-            .filterNullable { parentContainsSystem(file.path, extractGameSystem(it).id.dbname) }
+            .filterNullable { extractGameSystemOrNull(it)?.scanOptions?.scanByPathAndFilename == true }
+            .filterNullable { rom ->
+                extractGameSystemOrNull(rom)?.id?.dbname
+                    ?.let { parentContainsSystem(file.path, it) } == true
+            }
             ?.let { convertToGameMetadata(it) }
     }
 
@@ -142,7 +146,8 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         db: LibretroDatabase,
     ): GameMetadata? {
         if (file.crc == null || file.crc == "0") return null
-        return file.crc?.let { crc32 -> db.gameDao().findByCRC(crc32) }
+        // Libretro DB stores CRC as 8-char uppercase hex — normalise before querying.
+        return db.gameDao().findByCRC(file.crc.uppercase(Locale.US))
             ?.let { convertToGameMetadata(it) }
     }
 
@@ -151,7 +156,7 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         db: LibretroDatabase,
     ): GameMetadata? {
         if (file.serial == null) return null
-        return db.gameDao().findBySerial(file.serial!!)
+        return db.gameDao().findBySerial(file.serial)
             ?.let { convertToGameMetadata(it) }
     }
 
@@ -194,9 +199,12 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         return if (parts.size >= 3) "${parts[parts.size - 2]}.${parts[parts.size - 1]}" else null
     }
 
-    private fun extractGameSystem(rom: LibretroRom): GameSystem {
-        return GameSystem.findById(rom.system!!)
-    }
+    /**
+     * Returns the [GameSystem] for the given [rom], or null if [LibretroRom.system] is null or
+     * refers to a system not known to this build (e.g. a future DB addition).
+     */
+    private fun extractGameSystemOrNull(rom: LibretroRom): GameSystem? =
+        rom.system?.let { GameSystem.findByIdOrNull(it) }
 
     private fun computeCoverUrl(
         system: GameSystem,
