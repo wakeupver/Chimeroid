@@ -145,9 +145,10 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         file: StorageFile,
         db: LibretroDatabase,
     ): GameMetadata? {
-        if (file.crc == null || file.crc == "0") return null
+        // Capture to local var — Kotlin cannot smart-cast cross-module public val properties.
+        val crc = file.crc?.takeIf { it != "0" } ?: return null
         // Libretro DB stores CRC as 8-char uppercase hex — normalise before querying.
-        return db.gameDao().findByCRC(file.crc.uppercase(Locale.US))
+        return db.gameDao().findByCRC(crc.uppercase(Locale.US))
             ?.let { convertToGameMetadata(it) }
     }
 
@@ -155,8 +156,8 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         file: StorageFile,
         db: LibretroDatabase,
     ): GameMetadata? {
-        if (file.serial == null) return null
-        return db.gameDao().findBySerial(file.serial)
+        val serial = file.serial ?: return null
+        return db.gameDao().findBySerial(serial)
             ?.let { convertToGameMetadata(it) }
     }
 
