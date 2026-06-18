@@ -36,7 +36,7 @@ class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
         return withContext(Dispatchers.IO) { runSync() }
     }
 
-    private fun runSync(): Result {
+    private suspend fun runSync(): Result {
         val repository = CoverArtRepository(applicationContext)
         val httpClient = CoverArtFetcher.Factory(applicationContext).httpClient
 

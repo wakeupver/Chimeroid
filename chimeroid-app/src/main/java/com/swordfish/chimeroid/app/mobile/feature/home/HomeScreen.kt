@@ -454,6 +454,8 @@ private fun BentoContinuePlayingCard(
                 val fallbackPainter = rememberDrawablePainter(fallbackDrawable)
                 AsyncImage(
                     model = ImageRequest.Builder(context).data(CoverRequest(game)).build(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                     fallback = fallbackPainter,
                     error = fallbackPainter,
