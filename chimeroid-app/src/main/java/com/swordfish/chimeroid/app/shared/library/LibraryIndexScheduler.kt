@@ -2,6 +2,7 @@ package com.swordfish.chimeroid.app.shared.library
 
 import android.content.Context
 import androidx.work.ExistingWorkPolicy
+import com.swordfish.chimeroid.app.shared.covers.CoverArtSyncWorker
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 
@@ -35,5 +36,9 @@ object LibraryIndexScheduler {
 
     fun cancelCoreUpdate(applicationContext: Context) {
         WorkManager.getInstance(applicationContext).cancelUniqueWork(CORE_UPDATE_WORK_ID)
+    }
+
+    fun scheduleCoverArtSync(applicationContext: Context) {
+        CoverArtSyncWorker.schedule(applicationContext)
     }
 }

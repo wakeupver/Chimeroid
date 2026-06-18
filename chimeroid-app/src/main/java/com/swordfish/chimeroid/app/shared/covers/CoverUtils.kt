@@ -3,54 +3,55 @@ package com.swordfish.chimeroid.app.shared.covers
 import android.content.Context
 import android.widget.ImageView
 import coil.ImageLoader
-import coil.disk.DiskCache
 import coil.imageLoader
 import coil.load
 import coil.memory.MemoryCache
-import coil.request.CachePolicy
 import com.swordfish.chimeroid.common.drawable.TextDrawable
 import com.swordfish.chimeroid.common.graphics.ColorUtils
 import com.swordfish.chimeroid.lib.library.db.entity.Game
 import kotlinx.coroutines.Dispatchers
-import okhttp3.OkHttpClient
 
 object CoverUtils {
+
+    /**
+     * Loads a cover into [imageView] using the app-wide ImageLoader.
+     * Data is a [CoverRequest] so our [CoverArtFetcher] handles it.
+     */
     fun loadCover(
         game: Game,
         imageView: ImageView?,
     ) {
         if (imageView == null) return
-
-        imageView.load(game.coverFrontUrl, imageView.context.imageLoader) {
-            val fallbackDrawable = getFallbackDrawable(game)
-            fallback(fallbackDrawable)
-            error(fallbackDrawable)
+        imageView.load(CoverRequest(game), imageView.context.imageLoader) {
+            val fallback = getFallbackDrawable(game)
+            fallback(fallback)
+            error(fallback)
         }
     }
 
+    /**
+     * Builds the global Coil [ImageLoader].
+     *
+     * Cover art is handled entirely by [CoverArtFetcher]:
+     *   - local JPEG file → served directly (no network round-trip)
+     *   - missing         → download, compress to 512×512 JPEG, save, serve
+     *
+     * Coil's own DiskCache is disabled because we manage persistence ourselves
+     * (individual .jpg files + a single covers.zip pack).
+     */
     fun buildImageLoader(applicationContext: Context): ImageLoader {
+        val coverFetcherFactory = CoverArtFetcher.Factory(applicationContext)
         return ImageLoader.Builder(applicationContext)
-            .diskCache(
-                DiskCache.Builder()
-                    .directory(applicationContext.cacheDir.resolve("image_cache"))
-                    .maxSizePercent(0.20)
-                    .build(),
-            )
+            .components {
+                add(coverFetcherFactory)
+            }
             .memoryCache {
                 MemoryCache.Builder(applicationContext)
-                    .maxSizePercent(0.20)
-                    .build()
-            }
-            .okHttpClient {
-                OkHttpClient.Builder()
-                    .addNetworkInterceptor(ThrottleFailedThumbnailsInterceptor)
+                    .maxSizePercent(0.15)
                     .build()
             }
             .crossfade(true)
             .interceptorDispatcher(Dispatchers.IO)
-            .diskCachePolicy(CachePolicy.ENABLED)
-            .memoryCachePolicy(CachePolicy.ENABLED)
-            .respectCacheHeaders(false)
             .build()
     }
 

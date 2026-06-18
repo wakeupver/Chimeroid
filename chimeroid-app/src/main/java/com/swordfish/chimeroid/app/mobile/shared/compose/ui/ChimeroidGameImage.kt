@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
+import com.swordfish.chimeroid.app.shared.covers.CoverRequest
 import com.swordfish.chimeroid.app.shared.covers.CoverUtils
 import com.swordfish.chimeroid.lib.library.db.entity.Game
 
@@ -28,7 +29,7 @@ fun ChimeroidGameImage(
     AsyncImage(
         model =
             ImageRequest.Builder(LocalContext.current)
-                .data(game.coverFrontUrl)
+                .data(CoverRequest(game))
                 .build(),
         contentDescription = game.title,
         modifier =

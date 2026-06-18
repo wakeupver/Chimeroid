@@ -67,6 +67,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.swordfish.chimeroid.R
+import com.swordfish.chimeroid.app.shared.covers.CoverRequest
 import com.swordfish.chimeroid.app.shared.covers.CoverUtils
 import com.swordfish.chimeroid.app.utils.android.ComposableLifecycle
 import com.swordfish.chimeroid.app.utils.games.GameUtils
@@ -452,9 +453,7 @@ private fun BentoContinuePlayingCard(
                 val fallbackDrawable = remember(game) { CoverUtils.getFallbackDrawable(game) }
                 val fallbackPainter = rememberDrawablePainter(fallbackDrawable)
                 AsyncImage(
-                    model = ImageRequest.Builder(context).data(game.coverFrontUrl).build(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
+                    model = ImageRequest.Builder(context).data(CoverRequest(game)).build(),
                     contentScale = ContentScale.Crop,
                     fallback = fallbackPainter,
                     error = fallbackPainter,
@@ -621,7 +620,7 @@ private fun HomeGameListItem(
                 contentAlignment = Alignment.Center,
             ) {
                 AsyncImage(
-                    model = ImageRequest.Builder(context).data(game.coverFrontUrl).build(),
+                    model = ImageRequest.Builder(context).data(CoverRequest(game)).build(),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize().clip(CircleShape),
                     contentScale = ContentScale.Crop,

@@ -19,6 +19,7 @@
 
 package com.swordfish.chimeroid.app
 
+import com.swordfish.chimeroid.app.shared.covers.CoverArtSyncWorker
 import com.swordfish.chimeroid.app.shared.library.CoreUpdateWork
 import com.swordfish.chimeroid.app.shared.library.LibraryIndexWork
 import com.swordfish.chimeroid.app.shared.savesync.SaveSyncWork
@@ -38,6 +39,7 @@ import dagger.android.support.AndroidSupportInjectionModule
         SaveSyncWork.Module::class,
         CoreUpdateWork.Module::class,
         CacheCleanerWork.Module::class,
+        CoverArtSyncWorker.Module::class,
     ],
 )
 @PerApp

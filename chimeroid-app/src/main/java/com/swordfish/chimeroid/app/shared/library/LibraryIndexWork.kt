@@ -47,6 +47,7 @@ class LibraryIndexWork(context: Context, workerParams: WorkerParameters) :
         }
 
         LibraryIndexScheduler.scheduleCoreUpdate(applicationContext)
+        LibraryIndexScheduler.scheduleCoverArtSync(applicationContext)
 
         return Result.success()
     }
