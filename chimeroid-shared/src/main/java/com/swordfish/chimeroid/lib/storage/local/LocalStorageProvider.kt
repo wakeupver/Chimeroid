@@ -120,8 +120,9 @@ class LocalStorageProvider(
         return RomFiles.Standard(listOf(getGameRom(game)) + dataFiles.map { getDataFile(it) })
     }
 
-    override fun getInputStream(uri: Uri): InputStream {
-        return File(uri.path).inputStream()
+    override fun getInputStream(uri: Uri): InputStream? {
+        val path = uri.path ?: return null
+        return runCatching { File(path).inputStream() }.getOrNull()
     }
 
     companion object {

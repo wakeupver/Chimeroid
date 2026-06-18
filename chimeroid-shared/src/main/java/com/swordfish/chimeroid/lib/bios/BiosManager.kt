@@ -16,7 +16,11 @@ import java.io.InputStream
 
 class BiosManager(private val directoriesManager: DirectoriesManager) {
     private val crcLookup = SUPPORTED_BIOS.associateByNotNull { it.externalCRC32 }
-    private val nameLookup = SUPPORTED_BIOS.associateByNotNull { it.externalName }
+
+    // externalName is the user-facing filename (e.g. "nds_firmware.bin").
+    // For entries that have no externalName, fall back to libretroFileName so that
+    // standard filenames like "scph101.bin" / "lynxboot.img" are also matched by name.
+    private val nameLookup = SUPPORTED_BIOS.associateByNotNull { it.externalName ?: it.libretroFileName }
 
     fun getMissingBiosFiles(
         coreConfig: SystemCoreConfig,
@@ -75,16 +79,22 @@ class BiosManager(private val directoriesManager: DirectoriesManager) {
         inputStream: InputStream,
         timestampMs: Long,
     ): Boolean {
-        val bios = findByCRC(storageFile) ?: findByName(storageFile) ?: return false
+        val bios = findByCRC(storageFile) ?: findByName(storageFile) ?: run {
+            // Not a known BIOS — release the stream before returning.
+            runCatching { inputStream.close() }
+            return false
+        }
 
         Timber.i("Importing bios file: $bios")
 
         val biosFile = File(directoriesManager.getSystemDirectory(), bios.libretroFileName)
         if (biosFile.exists() && biosFile.setLastModified(normalizeTimestamp(timestampMs))) {
             Timber.d("Bios file already present. Updated last modification date.")
+            // writeToFile is not called, so we must close the stream ourselves.
+            runCatching { inputStream.close() }
         } else {
             Timber.d("Bios file not available. Copying new file.")
-            inputStream.writeToFile(biosFile)
+            inputStream.writeToFile(biosFile) // writeToFile closes the stream via .use {}
         }
         return true
     }

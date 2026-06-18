@@ -213,6 +213,11 @@ object DocumentFileParser {
         fileSize: Long,
     ): Boolean {
         if (fileSize <= 0 || entry.compressedSize <= 0) return false
+        // Reject entries whose extension is not a known game file type (e.g. large PDFs,
+        // cover images, READMEs) so they are not misidentified as ROM entries.
+        val ext = entry.name.substringAfterLast('.', "").lowercase()
+        if (ext.isEmpty() || ext == "zip") return false
+        if (!GameSystem.getSupportedExtensions().contains(ext)) return false
         return (entry.compressedSize.toFloat() / fileSize.toFloat()) > SINGLE_ARCHIVE_THRESHOLD
     }
 }
