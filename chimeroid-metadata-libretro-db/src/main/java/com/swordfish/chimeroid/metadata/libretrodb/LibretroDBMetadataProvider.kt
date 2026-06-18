@@ -1,5 +1,6 @@
 package com.swordfish.chimeroid.metadata.libretrodb
 
+import android.net.Uri
 import com.swordfish.chimeroid.common.kotlin.filterNullable
 import com.swordfish.chimeroid.lib.library.GameSystem
 import com.swordfish.chimeroid.lib.library.SystemID
@@ -49,12 +50,18 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
 
         val metadata =
             runCatching {
-                findByUniqueExtension(storageFile)
-                    ?: findByKnownSystem(storageFile)
-                    ?: findByFilename(db, storageFile)
+                // ── DB-based lookups (have thumbnail) ─────────────────────────────────
+                // Must be tried before the extension/system fast-paths which always
+                // return thumbnail = null. Previously findByUniqueExtension ran first
+                // and short-circuited everything, so coverFrontUrl was always null for
+                // unique-extension files (.sfc, .gba, .nes, .gb, …).
+                findByFilename(db, storageFile)
                     ?: findByPathAndFilename(db, storageFile)
                     ?: findBySerial(storageFile, db)
                     ?: findByCRC(storageFile, db)
+                    // ── Fallbacks: system-id only, no thumbnail ────────────────────────
+                    ?: findByUniqueExtension(storageFile)
+                    ?: findByKnownSystem(storageFile)
                     ?: findByPathAndSupportedExtension(storageFile)
             }.getOrElse {
                 Timber.e("Error in retrieving $storageFile metadata: $it... Skipping.")
@@ -226,6 +233,13 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
 
         val thumbGameName = name.replace(THUMB_REPLACE, "_")
 
-        return "https://thumbnails.libretro.com/$systemName/$imageType/$thumbGameName.png"
+        // Uri.encode() percent-encodes spaces and other illegal URL characters while
+        // leaving unreserved chars (A-Z a-z 0-9 _ - ! . ~ ' ( )) intact.
+        // Without this, system names like "Nintendo - Super Nintendo Entertainment System"
+        // produce invalid URLs that OkHttp rejects, silently breaking all cover downloads.
+        val encodedSystem = Uri.encode(systemName)
+        val encodedThumb  = Uri.encode(thumbGameName)
+
+        return "https://thumbnails.libretro.com/$encodedSystem/$imageType/$encodedThumb.png"
     }
 }
