@@ -150,33 +150,48 @@ void Video::renderFrame() {
     isDirty = false;
 
     // ── GL state reset ────────────────────────────────────────────────────────
-    // HW-accelerated cores (PPSSPP, SwanStation, etc.) can leave VAOs, VBOs,
-    // and index buffers bound after their retro_run() frame.
-    //
-    // In GLES 3.0, when a VBO is bound to GL_ARRAY_BUFFER, the "pointer"
-    // argument of glVertexAttribPointer() is treated as a byte offset into that
-    // VBO — not as a CPU memory address.  With a stale foreign VBO still bound,
-    // passing our raw float* would be misinterpreted as an offset, producing
-    // blank or garbage output.
-    //
-    // Similarly, a bound VAO causes glVertexAttribPointer() to modify *that*
-    // VAO's attribute state instead of the global default, so our vertex setup
-    // has no effect on the draw call.
-    //
-    // Resetting all three bindings here (and using a VBO for our own draws
-    // below) makes rendering correct and robust regardless of what the core left
-    // behind — mirroring RetroArch's gl3_renderchain pattern.
     if (useES3) {
-        glBindVertexArray(0);                 // unbind any core VAO
+        glBindVertexArray(0);
     }
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind any core index buffer
-    glBindBuffer(GL_ARRAY_BUFFER, 0);         // defensive; we'll rebind per-pass
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glDisable(GL_DEPTH_TEST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // ── Dual-screen: two single-pass draws, one per panel ────────────────────
+    if (dualCfg.enabled && !shadersChain.empty()) {
+        auto& shader = shadersChain.back(); // single-pass only in dual mode
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(
+            0, 0,
+            videoLayout.getScreenWidth(),
+            videoLayout.getScreenHeight()
+        );
+
+        // Primary (top) screen
+        auto primaryUV = buildUVQuad(
+            dualCfg.primaryUVxMin, dualCfg.primaryUVyMin,
+            dualCfg.primaryUVxMax, dualCfg.primaryUVyMax
+        );
+        drawQuadPass(videoLayout.getForegroundVertices(), primaryUV, shader);
+
+        // Secondary (bottom) screen
+        auto secondaryUV = buildUVQuad(
+            dualCfg.secondaryUVxMin, dualCfg.secondaryUVyMin,
+            dualCfg.secondaryUVxMax, dualCfg.secondaryUVyMax
+        );
+        drawQuadPass(secondaryLayout.getForegroundVertices(), secondaryUV, shader);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        return;
+    }
+
+    // ── Normal single-screen rendering ───────────────────────────────────────
 
     if (immersiveModeEnabled) {
         immersiveMode.renderBackground(
@@ -207,18 +222,14 @@ void Video::renderFrame() {
 
         glUseProgram(shader.gProgram);
 
-        // ── VBO-backed vertex upload ──────────────────────────────────────────
-        // Pack positions (12 floats) then UVs (12 floats) into a single stream
-        // VBO.  glVertexAttribPointer() then receives byte offsets into that
-        // VBO, which is the only correct usage in GLES 3.0.
         auto& vertices    = isLastPass
             ? videoLayout.getForegroundVertices()
             : videoLayout.getFramebufferVertices();
         auto& coordinates = videoLayout.getTextureCoordinates();
 
-        constexpr GLsizeiptr kVerts    = 12;                        // floats
-        constexpr GLsizeiptr kPosBytes = kVerts * sizeof(float);    // 48 B
-        constexpr GLsizeiptr kUvBytes  = kVerts * sizeof(float);    // 48 B
+        constexpr GLsizeiptr kVerts    = 12;
+        constexpr GLsizeiptr kPosBytes = kVerts * sizeof(float);
+        constexpr GLsizeiptr kUvBytes  = kVerts * sizeof(float);
 
         glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
         glBufferData(GL_ARRAY_BUFFER, kPosBytes + kUvBytes, nullptr, GL_STREAM_DRAW);
@@ -233,7 +244,6 @@ void Video::renderFrame() {
             reinterpret_cast<void*>(static_cast<uintptr_t>(kPosBytes)));
         glEnableVertexAttribArray(shader.gvCoordinateHandle);
 
-        // ── Textures & uniforms ───────────────────────────────────────────────
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
         glUniform1i(shader.gTextureHandle, 0);
@@ -249,7 +259,6 @@ void Video::renderFrame() {
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // ── Per-pass cleanup (matches RetroArch gl3 pattern) ─────────────────
         glDisableVertexAttribArray(shader.gvPositionHandle);
         glDisableVertexAttribArray(shader.gvCoordinateHandle);
 
@@ -264,8 +273,108 @@ void Video::renderFrame() {
         glUseProgram(0);
     }
 
-    // Ensure default framebuffer is bound after all passes.
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+// ── Dual-screen helpers ───────────────────────────────────────────────────────
+
+std::array<float, 12> Video::buildUVQuad(
+    float xMin, float yMin, float xMax, float yMax
+) const {
+    // When bottomLeftOrigin=true the texture's Y=0 is the bottom of the image.
+    // In that case we flip the Y so "visual top" still maps to the top panel.
+    float y0 = bottomLeftOrigin ? (1.0f - yMax) : yMin;
+    float y1 = bottomLeftOrigin ? (1.0f - yMin) : yMax;
+
+    return {
+        xMin, y0,   // TL
+        xMin, y1,   // BL
+        xMax, y0,   // TR
+        xMax, y0,   // TR (triangle 2)
+        xMin, y1,   // BL (triangle 2)
+        xMax, y1,   // BR
+    };
+}
+
+void Video::drawQuadPass(
+    const std::array<float, 12>& vertices,
+    const std::array<float, 12>& uvs,
+    const ShaderChainEntry&       shader
+) {
+    constexpr GLsizeiptr kVerts    = 12;
+    constexpr GLsizeiptr kPosBytes = kVerts * sizeof(float);
+    constexpr GLsizeiptr kUvBytes  = kVerts * sizeof(float);
+
+    glUseProgram(shader.gProgram);
+
+    glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
+    glBufferData(GL_ARRAY_BUFFER, kPosBytes + kUvBytes, nullptr, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0,        kPosBytes, vertices.data());
+    glBufferSubData(GL_ARRAY_BUFFER, kPosBytes, kUvBytes,  uvs.data());
+
+    glVertexAttribPointer(shader.gvPositionHandle,   2, GL_FLOAT, GL_FALSE, 0,
+        reinterpret_cast<void*>(static_cast<uintptr_t>(0)));
+    glEnableVertexAttribArray(shader.gvPositionHandle);
+
+    glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0,
+        reinterpret_cast<void*>(static_cast<uintptr_t>(kPosBytes)));
+    glEnableVertexAttribArray(shader.gvCoordinateHandle);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
+    glUniform1i(shader.gTextureHandle, 0);
+
+    glUniform2f(shader.gTextureSizeHandle,   getTextureWidth(), getTextureHeight());
+    glUniform1f(shader.gScreenDensityHandle, getScreenDensity());
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glDisableVertexAttribArray(shader.gvPositionHandle);
+    glDisableVertexAttribArray(shader.gvCoordinateHandle);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+}
+
+void Video::setDualScreenConfig(DualScreenCfg cfg) {
+    dualCfg = cfg;
+
+    if (!cfg.enabled) return;
+
+    // Compute per-panel aspect ratio from the actual game texture dimensions
+    // (e.g. 256×384 for NDS, 400×480 for 3DS default-top-bottom layout).
+    // Texture size may be 0 before the first frame — fall back to 4:3.
+    float texW = getTextureWidth();
+    float texH = getTextureHeight();
+
+    float primaryAR, secondaryAR;
+    if (texW > 0.f && texH > 0.f) {
+        float pUVW = cfg.primaryUVxMax   - cfg.primaryUVxMin;
+        float pUVH = cfg.primaryUVyMax   - cfg.primaryUVyMin;
+        float sUVW = cfg.secondaryUVxMax - cfg.secondaryUVxMin;
+        float sUVH = cfg.secondaryUVyMax - cfg.secondaryUVyMin;
+
+        primaryAR   = (pUVH > 0.f) ? (pUVW * texW) / (pUVH * texH) : 4.f / 3.f;
+        secondaryAR = (sUVH > 0.f) ? (sUVW * texW) / (sUVH * texH) : 4.f / 3.f;
+    } else {
+        primaryAR   = 4.f / 3.f;   // safe fallback (NDS-like)
+        secondaryAR = 4.f / 3.f;
+    }
+
+    videoLayout.updateViewportSize(
+        Rect(cfg.primaryVpX, cfg.primaryVpY, cfg.primaryVpW, cfg.primaryVpH)
+    );
+    videoLayout.updateAspectRatio(primaryAR);
+
+    secondaryLayout.updateScreenSize(
+        videoLayout.getScreenWidth(),
+        videoLayout.getScreenHeight()
+    );
+    secondaryLayout.updateViewportSize(
+        Rect(cfg.secondaryVpX, cfg.secondaryVpY, cfg.secondaryVpW, cfg.secondaryVpH)
+    );
+    secondaryLayout.updateAspectRatio(secondaryAR);
 }
 
 float Video::getScreenDensity() {
@@ -289,6 +398,7 @@ void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t
 
 void Video::updateScreenSize(unsigned width, unsigned height) {
     videoLayout.updateScreenSize(width, height);
+    secondaryLayout.updateScreenSize(width, height);
 }
 
 void Video::updateViewportSize(Rect viewportRect) {
@@ -322,7 +432,9 @@ Video::Video(
     skipDuplicateFrames(skipDuplicateFrames),
     immersiveModeEnabled(immersiveModeEnabled),
     immersiveMode(immersiveModeConfig),
-    videoLayout(bottomLeftOrigin, rotation, viewportRect) {
+    videoLayout(bottomLeftOrigin, rotation, viewportRect),
+    secondaryLayout(bottomLeftOrigin, rotation, Rect(0.f, 0.5f, 1.f, 0.5f)),
+    bottomLeftOrigin(bottomLeftOrigin) {
 
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);

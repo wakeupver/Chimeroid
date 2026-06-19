@@ -67,6 +67,54 @@ class GLRetroView(
         }
     }
 
+    /**
+     * Enables split dual-screen rendering for NDS / 3DS games.
+     *
+     * [primaryViewport] / [secondaryViewport] are 0-1 fractions of the GL surface
+     * (left, top, right, bottom — Android RectF convention).
+     * UV crop fields define which portion of the combined game frame maps to
+     * each panel.  Set to `null` to return to normal single-screen rendering.
+     */
+    data class DualScreenConfig(
+        val primaryViewport: RectF,      // top screen panel position on GL surface
+        val secondaryViewport: RectF,    // bottom screen panel position
+        // UV crop for each panel (0-1 fractions of the combined game texture)
+        val primaryUVxMin: Float   = 0f,
+        val primaryUVyMin: Float   = 0f,
+        val primaryUVxMax: Float   = 1f,
+        val primaryUVyMax: Float   = 0.5f,
+        val secondaryUVxMin: Float = 0f,
+        val secondaryUVyMin: Float = 0.5f,
+        val secondaryUVxMax: Float = 1f,
+        val secondaryUVyMax: Float = 1f,
+    )
+
+    var dualScreenConfig: DualScreenConfig? by Delegates.observable(null) { _, _, value ->
+        runOnEmulationThread(true) {
+            if (value != null) {
+                LibretroDroid.setDualScreenConfig(
+                    true,
+                    value.primaryViewport.left,   value.primaryViewport.top,
+                    value.primaryViewport.width(), value.primaryViewport.height(),
+                    value.secondaryViewport.left,   value.secondaryViewport.top,
+                    value.secondaryViewport.width(), value.secondaryViewport.height(),
+                    value.primaryUVxMin,   value.primaryUVyMin,
+                    value.primaryUVxMax,   value.primaryUVyMax,
+                    value.secondaryUVxMin, value.secondaryUVyMin,
+                    value.secondaryUVxMax, value.secondaryUVyMax,
+                )
+            } else {
+                LibretroDroid.setDualScreenConfig(
+                    false,
+                    0f, 0f, 1f, 1f,
+                    0f, 0f, 1f, 1f,
+                    0f, 0f, 1f, 0.5f,
+                    0f, 0.5f, 1f, 1f,
+                )
+            }
+        }
+    }
+
     private val openGLESVersion: Int
 
     private var isGameLoaded = false

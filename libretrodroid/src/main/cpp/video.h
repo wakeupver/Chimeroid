@@ -93,6 +93,35 @@ public:
         return renderer->rendersInVideoCallback();
     }
 
+    // ── Dual-screen support (NDS / 3DS) ─────────────────────────────────────
+    // Enables a two-pass render: primary panel gets the top UV slice,
+    // secondary panel gets the bottom UV slice.  Viewport coords are 0-1
+    // fractions of the GL surface.  UV coords are 0-1 fractions of the
+    // combined game texture (Y=0 is visual top for SW cores, Y=0 bottom for HW).
+    struct DualScreenCfg {
+        bool enabled                    = false;
+        // Panel viewport fractions (x, y, w, h) relative to the GL surface
+        float primaryVpX                = 0.f;
+        float primaryVpY                = 0.f;
+        float primaryVpW                = 1.f;
+        float primaryVpH                = 0.5f;
+        float secondaryVpX              = 0.f;
+        float secondaryVpY              = 0.5f;
+        float secondaryVpW              = 1.f;
+        float secondaryVpH              = 0.5f;
+        // UV crop rectangles for each panel
+        float primaryUVxMin             = 0.f;
+        float primaryUVyMin             = 0.f;
+        float primaryUVxMax             = 1.f;
+        float primaryUVyMax             = 0.5f;
+        float secondaryUVxMin           = 0.f;
+        float secondaryUVyMin           = 0.5f;
+        float secondaryUVxMax           = 1.f;
+        float secondaryUVyMax           = 1.f;
+    };
+
+    void setDualScreenConfig(DualScreenCfg cfg);
+
 private:
     void updateProgram();
 
@@ -101,6 +130,17 @@ private:
     float getTextureHeight();
 
     void initializeRenderer(RenderingOptions renderingOptions);
+
+    // Helper: draw one quad using given vertex positions and UV coordinates.
+    // Vertices are 12 floats (6 NDC xy pairs). UVs are 12 floats (6 st pairs).
+    void drawQuadPass(const std::array<float, 12>& vertices,
+                      const std::array<float, 12>& uvs,
+                      const ShaderChainEntry&       shader);
+
+    // Compute the UV quad (12 floats) for a crop rect [xMin,yMin,xMax,yMax].
+    // Handles bottomLeftOrigin Y-flip.
+    std::array<float, 12> buildUVQuad(float xMin, float yMin,
+                                      float xMax, float yMax) const;
 
 private:
     ShaderManager::Config requestedShaderConfig = ShaderManager::Config {
@@ -117,6 +157,9 @@ private:
     ImmersiveMode immersiveMode;
     VideoLayout videoLayout;
 
+    // Secondary layout used only in dual-screen mode.
+    VideoLayout secondaryLayout;
+
     Renderer* renderer;
 
     // VBO used for rendering quads. Prevents GLES 3.0 issues where a raw
@@ -124,6 +167,9 @@ private:
     // offset when a foreign VBO is still bound from a HW-accelerated core.
     GLuint quadVbo = 0;
     bool useES3    = false;
+
+    bool      bottomLeftOrigin = false;
+    DualScreenCfg dualCfg;
 };
 
 }

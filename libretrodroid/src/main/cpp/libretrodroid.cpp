@@ -245,6 +245,11 @@ void LibretroDroid::onSurfaceCreated() {
 
     video = std::unique_ptr<Video>(newVideo);
 
+    // Restore dual-screen config if it was active before the surface was recreated.
+    if (dualScreenCfg.enabled) {
+        video->setDualScreenConfig(dualScreenCfg);
+    }
+
     if (Environment::getInstance().getHwContextReset() != nullptr) {
         Environment::getInstance().getHwContextReset()();
     }
@@ -727,6 +732,39 @@ void LibretroDroid::setViewport(Rect viewportRect) {
 
     if (video != nullptr) {
         video->updateViewportSize(viewportRect);
+    }
+}
+
+void LibretroDroid::setDualScreenConfig(
+    bool   enabled,
+    float  primaryVpX, float primaryVpY, float primaryVpW, float primaryVpH,
+    float  secondaryVpX, float secondaryVpY, float secondaryVpW, float secondaryVpH,
+    float  primaryUVxMin, float primaryUVyMin, float primaryUVxMax, float primaryUVyMax,
+    float  secondaryUVxMin, float secondaryUVyMin, float secondaryUVxMax, float secondaryUVyMax
+) {
+    Video::DualScreenCfg cfg;
+    cfg.enabled         = enabled;
+    cfg.primaryVpX      = primaryVpX;
+    cfg.primaryVpY      = primaryVpY;
+    cfg.primaryVpW      = primaryVpW;
+    cfg.primaryVpH      = primaryVpH;
+    cfg.secondaryVpX    = secondaryVpX;
+    cfg.secondaryVpY    = secondaryVpY;
+    cfg.secondaryVpW    = secondaryVpW;
+    cfg.secondaryVpH    = secondaryVpH;
+    cfg.primaryUVxMin   = primaryUVxMin;
+    cfg.primaryUVyMin   = primaryUVyMin;
+    cfg.primaryUVxMax   = primaryUVxMax;
+    cfg.primaryUVyMax   = primaryUVyMax;
+    cfg.secondaryUVxMin = secondaryUVxMin;
+    cfg.secondaryUVyMin = secondaryUVyMin;
+    cfg.secondaryUVxMax = secondaryUVxMax;
+    cfg.secondaryUVyMax = secondaryUVyMax;
+
+    dualScreenCfg = cfg;
+
+    if (video != nullptr) {
+        video->setDualScreenConfig(cfg);
     }
 }
 

@@ -2,9 +2,11 @@ package com.swordfish.chimeroid.app.shared.game
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.RectF
 import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -54,7 +56,7 @@ class BaseGameScreenViewModel(
     settingsManager: SettingsManager,
     inputDeviceManager: InputDeviceManager,
     controllerConfigsManager: ControllerConfigsManager,
-    system: GameSystem,
+    private val system: GameSystem,
     systemCoreConfig: SystemCoreConfig,
     sharedPreferences: SharedPreferences,
     savesManager: SavesManager,
@@ -182,6 +184,27 @@ class BaseGameScreenViewModel(
     fun getGameState(): Flow<GameViewModelRetroGameView.GameState> = retroGameView.getGameState()
 
     fun getSideEffects(): Flow<GameViewModelSideEffects.UiEffect> = sideEffects.getUiEffects()
+
+    /** Returns the [GameSystem] for the currently running game. */
+    fun getSystem(): GameSystem = system
+
+    /**
+     * Applies a dual-screen panel layout to the live retro view.
+     * [fullPos] = GL surface bounds in screen pixels (Android RectF).
+     * [topPanelPos] / [bottomPanelPos] = Compose layout bounds in screen pixels.
+     */
+    fun applyDualScreenLayout(
+        fullPos: RectF,
+        topPanelPos: Rect,
+        bottomPanelPos: Rect,
+    ) {
+        retroGameView.applyDualScreenLayout(fullPos, topPanelPos, bottomPanelPos, system)
+    }
+
+    /** Returns to single-screen rendering (call on orientation change / exit). */
+    fun clearDualScreenLayout() {
+        retroGameView.clearDualScreenLayout()
+    }
 
     fun getTiltConfiguration(): Flow<TiltConfiguration> = tilt.getTiltConfiguration()
 

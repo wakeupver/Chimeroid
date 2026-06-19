@@ -38,7 +38,25 @@ data class GameSystem(
     val hasMultiDiskSupport: Boolean = false,
     val fastForwardSupport: Boolean = true,
     val hasTouchScreen: Boolean = false,
+    /** True for systems that render two physical screens (NDS, 3DS). */
+    val isDualScreen: Boolean = false,
+    /** UV crop config for dual-screen split. Null when isDualScreen = false. */
+    val dualScreenUVConfig: DualScreenUVConfig? = null,
 ) {
+    /**
+     * Describes how the combined game texture is split into two screen panels.
+     * All values are 0-1 fractions of the combined texture.
+     */
+    data class DualScreenUVConfig(
+        val primaryUVxMin: Float   = 0f,
+        val primaryUVyMin: Float   = 0f,
+        val primaryUVxMax: Float   = 1f,
+        val primaryUVyMax: Float   = 0.5f,
+        val secondaryUVxMin: Float = 0f,
+        val secondaryUVyMin: Float = 0.5f,
+        val secondaryUVxMax: Float = 1f,
+        val secondaryUVyMax: Float = 1f,
+    )
     companion object {
         private val SYSTEMS =
             listOf(
@@ -1023,6 +1041,13 @@ data class GameSystem(
                     ),
                     uniqueExtensions = listOf("nds"),
                     hasTouchScreen = true,
+                    isDualScreen = true,
+                    dualScreenUVConfig = GameSystem.DualScreenUVConfig(
+                        primaryUVxMin   = 0f,    primaryUVyMin   = 0f,
+                        primaryUVxMax   = 1f,    primaryUVyMax   = 0.5f,
+                        secondaryUVxMin = 0f,    secondaryUVyMin = 0.5f,
+                        secondaryUVxMax = 1f,    secondaryUVyMax = 1f,
+                    ),
                 ),
                 GameSystem(
                     SystemID.ATARI7800,
@@ -1296,6 +1321,15 @@ data class GameSystem(
                     ),
                     uniqueExtensions = listOf("3ds"),
                     hasTouchScreen = true,
+                    isDualScreen = true,
+                    dualScreenUVConfig = GameSystem.DualScreenUVConfig(
+                        // 3DS top: 400×240 (full combined width)
+                        primaryUVxMin   = 0f,    primaryUVyMin   = 0f,
+                        primaryUVxMax   = 1f,    primaryUVyMax   = 0.5f,
+                        // 3DS bottom: 320×240 centred in 400px → X offset 40/400 = 0.1
+                        secondaryUVxMin = 0.1f,  secondaryUVyMin = 0.5f,
+                        secondaryUVxMax = 0.9f,  secondaryUVyMax = 1f,
+                    ),
                 ),
             )
 

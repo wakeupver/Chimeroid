@@ -61,6 +61,16 @@ public:
 
     void setViewport(Rect viewportRect);
 
+    // Set dual-screen split layout for NDS / 3DS systems.
+    // Pass enabled=false to return to normal single-screen rendering.
+    void setDualScreenConfig(
+        bool   enabled,
+        float  primaryVpX, float primaryVpY, float primaryVpW, float primaryVpH,
+        float  secondaryVpX, float secondaryVpY, float secondaryVpW, float secondaryVpH,
+        float  primaryUVxMin, float primaryUVyMin, float primaryUVxMax, float primaryUVyMax,
+        float  secondaryUVxMin, float secondaryUVyMin, float secondaryUVxMax, float secondaryUVyMax
+    );
+
 private:
     LibretroDroid() {}
 
@@ -166,6 +176,7 @@ private:
     };
 
     Rect viewportRect = Rect(0.0F, 0.0F, 1.0F, 1.0F);
+    Video::DualScreenCfg dualScreenCfg;
     float screenRefreshRate = 60.0;
     int openglESVersion = 2;
     bool skipDuplicateFrames = false;

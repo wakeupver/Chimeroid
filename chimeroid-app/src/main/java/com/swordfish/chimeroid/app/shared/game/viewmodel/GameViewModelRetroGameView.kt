@@ -2,6 +2,8 @@ package com.swordfish.chimeroid.app.shared.game.viewmodel
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.RectF
+import androidx.compose.ui.geometry.Rect
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
@@ -270,6 +272,51 @@ class GameViewModelRetroGameView(
         retroView.getGLRetroEvents()
             .filterIsInstance<T>()
             .first()
+    }
+
+    /**
+     * Applies (or clears) the dual-screen split on the live [GLRetroView].
+     *
+     * Converts Compose pixel positions → 0-1 GL surface fractions, then
+     * pushes a [GLRetroView.DualScreenConfig] to the view.  Safe to call
+     * from the Compose thread; the observable property queues to the GL thread.
+     */
+    fun applyDualScreenLayout(
+        fullPos: RectF,
+        topPanelPos: Rect,
+        bottomPanelPos: Rect,
+        system: GameSystem,
+    ) {
+        val view = retroGameView ?: return
+        val uvCfg = system.dualScreenUVConfig ?: return
+
+        if (fullPos.width() == 0f || fullPos.height() == 0f) return
+
+        fun Rect.toGLViewport(): RectF {
+            val l = (left   - fullPos.left) / fullPos.width()
+            val t = (top    - fullPos.top)  / fullPos.height()
+            val r = (right  - fullPos.left) / fullPos.width()
+            val b = (bottom - fullPos.top)  / fullPos.height()
+            return RectF(l, t, r, b)
+        }
+
+        view.dualScreenConfig = GLRetroView.DualScreenConfig(
+            primaryViewport   = topPanelPos.toGLViewport(),
+            secondaryViewport = bottomPanelPos.toGLViewport(),
+            primaryUVxMin     = uvCfg.primaryUVxMin,
+            primaryUVyMin     = uvCfg.primaryUVyMin,
+            primaryUVxMax     = uvCfg.primaryUVxMax,
+            primaryUVyMax     = uvCfg.primaryUVyMax,
+            secondaryUVxMin   = uvCfg.secondaryUVxMin,
+            secondaryUVyMin   = uvCfg.secondaryUVyMin,
+            secondaryUVxMax   = uvCfg.secondaryUVxMax,
+            secondaryUVyMax   = uvCfg.secondaryUVyMax,
+        )
+    }
+
+    /** Disable dual-screen mode and return to normal rendering. */
+    fun clearDualScreenLayout() {
+        retroGameView?.dualScreenConfig = null
     }
 
     private fun buildRetroViewData(

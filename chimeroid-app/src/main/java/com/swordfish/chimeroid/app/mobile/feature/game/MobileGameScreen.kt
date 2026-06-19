@@ -153,6 +153,9 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
             val fullScreenPosition = remember { mutableStateOf<Rect?>(null) }
             val viewportPosition = remember { mutableStateOf<Rect?>(null) }
 
+            // Determine once whether this system uses dual-screen rendering
+            val isDualScreen = remember { viewModel.getSystem().isDualScreen }
+
             AndroidView(
                 modifier =
                     Modifier
@@ -166,7 +169,9 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
             val fullPos = fullScreenPosition.value
             val viewPos = viewportPosition.value
 
+            // Single-viewport path (non-dual-screen systems)
             LaunchedEffect(fullPos, viewPos) {
+                if (isDualScreen) return@LaunchedEffect   // handled by DualScreenPanels
                 val gameView = viewModel.retroGameView.retroGameViewFlow()
                 if (fullPos == null || viewPos == null) return@LaunchedEffect
                 val viewport =
@@ -177,6 +182,11 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                         (viewPos.bottom - fullPos.top) / fullPos.height,
                     )
                 gameView.viewport = viewport
+            }
+
+            // Clear dual-screen config on the GL layer when leaving
+            LaunchedEffect(isDualScreen) {
+                if (!isDualScreen) viewModel.clearDualScreenLayout()
             }
 
             ConstraintLayout(
@@ -193,7 +203,15 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                             .layoutId(GameScreenLayout.CONSTRAINTS_GAME_VIEW)
                             .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Top))
                             .onGloballyPositioned { viewportPosition.value = it.boundsInRoot() },
-                )
+                ) {
+                    // ── Dual-screen split panels (NDS / 3DS only) ───────────
+                    if (isDualScreen) {
+                        DualScreenPanels(
+                            fullScreenPosition = fullScreenPosition,
+                            viewModel = viewModel,
+                        )
+                    }
+                }
 
                 val isVisible =
                     touchControllerSettings != null &&
