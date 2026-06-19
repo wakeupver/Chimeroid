@@ -35,7 +35,7 @@ import com.swordfish.chimeroid.app.shared.game.BaseGameScreenViewModel
 private const val SPLIT_MIN     = 0.20f
 private const val SPLIT_MAX     = 0.80f
 private const val SPLIT_DEFAULT = 0.50f
-private val DIVIDER_H: Dp = 22.dp
+private val DIVIDER_H = 22.dp
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public composable – drop inside the GAME_VIEW Box in MobileGameScreen
