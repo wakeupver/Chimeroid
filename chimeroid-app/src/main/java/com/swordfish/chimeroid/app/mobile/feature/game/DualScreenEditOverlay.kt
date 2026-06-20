@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -34,18 +35,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.offset
 import com.swordfish.touchinput.controller.R
 import kotlin.math.roundToInt
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Public overlay composable
-// ─────────────────────────────────────────────────────────────────────────────
+private val HANDLE_SIZE = 44.dp
 
 /**
- * Full-screen drag-and-resize editor for the NDS / 3DS dual-screen layout.
- * Placed OUTSIDE PadKit so its touch gestures are not swallowed by the
- * touch-input system.  The game still runs underneath.
+ * Full-screen drag-and-resize editor for NDS / 3DS dual-screen layout.
+ * Placed OUTSIDE PadKit so gestures are not intercepted by the input system.
+ *
+ * FIX: the resize handle is rendered as a SIBLING of the panel body (not a
+ * child), so there is no parent–child gesture conflict in detectDragGestures.
  */
 @Composable
 fun DualScreenEditOverlay(
@@ -58,7 +58,7 @@ fun DualScreenEditOverlay(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.45f))
-            // Consume all raw touch events so nothing leaks to the game
+            // Consume every raw touch event so nothing reaches the game
             .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
@@ -72,73 +72,63 @@ fun DualScreenEditOverlay(
             val cW = constraints.maxWidth.toFloat()
             val cH = constraints.maxHeight.toFloat()
 
-            // ── Top screen (blue) ─────────────────────────────────────────
+            // Top screen panel + resize handle (both siblings inside BoxWithConstraints)
             EditablePanel(
-                label     = stringResource(R.string.dual_screen_top_label),
-                color     = MaterialTheme.colorScheme.primary,
-                panel     = layout.top,
-                containerW = cW,
-                containerH = cH,
-                onPanelChange = { onLayoutChange(layout.copy(top = it)) },
+                label          = stringResource(R.string.dual_screen_top_label),
+                color          = MaterialTheme.colorScheme.primary,
+                panel          = layout.top,
+                containerW     = cW,
+                containerH     = cH,
+                onPanelChange  = { onLayoutChange(layout.copy(top = it)) },
             )
 
-            // ── Bottom screen (teal) ──────────────────────────────────────
+            // Bottom screen panel + resize handle
             EditablePanel(
-                label     = stringResource(R.string.dual_screen_bottom_label),
-                color     = MaterialTheme.colorScheme.tertiary,
-                panel     = layout.bottom,
-                containerW = cW,
-                containerH = cH,
-                onPanelChange = { onLayoutChange(layout.copy(bottom = it)) },
+                label          = stringResource(R.string.dual_screen_bottom_label),
+                color          = MaterialTheme.colorScheme.tertiary,
+                panel          = layout.bottom,
+                containerW     = cW,
+                containerH     = cH,
+                onPanelChange  = { onLayoutChange(layout.copy(bottom = it)) },
             )
         }
 
-        // ── Top bar ───────────────────────────────────────────────────────
+        // Top bar title
         Surface(
-            modifier      = Modifier.align(Alignment.TopCenter).fillMaxWidth(),
-            color         = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+            modifier       = Modifier.align(Alignment.TopCenter).fillMaxWidth(),
+            color          = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
             tonalElevation = 4.dp,
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                modifier         = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text  = stringResource(R.string.dual_screen_edit_title),
-                    style = MaterialTheme.typography.titleSmall,
+                    text       = stringResource(R.string.dual_screen_edit_title),
+                    style      = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
         }
 
-        // ── Bottom bar ────────────────────────────────────────────────────
+        // Bottom bar buttons
         Surface(
-            modifier      = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-            color         = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+            modifier       = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            color          = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
             tonalElevation = 4.dp,
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                modifier            = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment   = Alignment.CenterVertically,
             ) {
                 OutlinedButton(onClick = onReset) {
-                    Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text(
-                        text     = stringResource(R.string.dual_screen_reset_ratio),
-                        modifier = Modifier.padding(start = 4.dp),
-                    )
+                    Icon(Icons.Default.RestartAlt, null, modifier = Modifier.size(16.dp))
+                    Text(stringResource(R.string.dual_screen_reset_ratio), modifier = Modifier.padding(start = 4.dp))
                 }
                 FilledTonalButton(onClick = onDone) {
-                    Icon(Icons.Default.Done, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text(
-                        text     = stringResource(R.string.touch_customize_button_done),
-                        modifier = Modifier.padding(start = 4.dp),
-                    )
+                    Icon(Icons.Default.Done, null, modifier = Modifier.size(16.dp))
+                    Text(stringResource(R.string.touch_customize_button_done), modifier = Modifier.padding(start = 4.dp))
                 }
             }
         }
@@ -146,7 +136,7 @@ fun DualScreenEditOverlay(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Single draggable / resizable panel
+// Panel body + resize handle emitted as TWO siblings in the parent Box
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -160,19 +150,23 @@ private fun EditablePanel(
 ) {
     val density = LocalDensity.current
 
-    val xPx = (panel.xFraction * containerW).roundToInt()
-    val yPx = (panel.yFraction * containerH).roundToInt()
-    val wDp = with(density) { (panel.widthFraction  * containerW).toDp() }
-    val hDp = with(density) { (panel.heightFraction * containerH).toDp() }
+    val xPx      = (panel.xFraction      * containerW).roundToInt()
+    val yPx      = (panel.yFraction      * containerH).roundToInt()
+    val wPx      = (panel.widthFraction  * containerW).roundToInt()
+    val hPx      = (panel.heightFraction * containerH).roundToInt()
+    val handlePx = with(density) { HANDLE_SIZE.toPx() }.roundToInt()
 
+    // ── 1. Panel body — draggable to move ────────────────────────────────────
     Box(
         modifier = Modifier
             .offset { IntOffset(xPx, yPx) }
-            .requiredSize(wDp, hDp)
+            .requiredSize(
+                with(density) { wPx.toDp() },
+                with(density) { hPx.toDp() },
+            )
             .clip(RoundedCornerShape(6.dp))
             .background(color.copy(alpha = 0.18f))
             .border(2.dp, color, RoundedCornerShape(6.dp))
-            // Drag whole panel to move
             .pointerInput(panel, containerW, containerH) {
                 detectDragGestures { _, drag ->
                     val newX = (panel.xFraction + drag.x / containerW)
@@ -183,39 +177,44 @@ private fun EditablePanel(
                 }
             },
     ) {
-        // Label (top-left)
         Text(
-            text     = label,
-            color    = color,
-            style    = MaterialTheme.typography.labelMedium,
+            text       = label,
+            color      = color,
+            style      = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(8.dp),
+            modifier   = Modifier.align(Alignment.TopStart).padding(8.dp),
         )
+    }
 
-        // Resize handle (bottom-right corner)
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .requiredSize(40.dp)
-                .pointerInput(panel, containerW, containerH) {
-                    detectDragGestures { _, drag ->
-                        val newW = (panel.widthFraction + drag.x / containerW)
-                            .coerceIn(PanelLayout.MIN_W, 1f - panel.xFraction)
-                        val newH = (panel.heightFraction + drag.y / containerH)
-                            .coerceIn(PanelLayout.MIN_H, 1f - panel.yFraction)
-                        onPanelChange(panel.copy(widthFraction = newW, heightFraction = newH))
-                    }
-                },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector       = Icons.Default.OpenInFull,
-                contentDescription = stringResource(R.string.dual_screen_drag_handle),
-                tint              = color,
-                modifier          = Modifier.size(20.dp),
-            )
-        }
+    // ── 2. Resize handle — SIBLING at bottom-right corner of panel ───────────
+    //    By being a sibling (not a child), there is no gesture conflict with
+    //    the panel body's detectDragGestures.
+    Box(
+        modifier = Modifier
+            .offset {
+                IntOffset(
+                    xPx + wPx - handlePx,
+                    yPx + hPx - handlePx,
+                )
+            }
+            .requiredSize(HANDLE_SIZE)
+            .background(color.copy(alpha = 0.55f), RoundedCornerShape(8.dp))
+            .pointerInput(panel, containerW, containerH) {
+                detectDragGestures { _, drag ->
+                    val newW = (panel.widthFraction  + drag.x / containerW)
+                        .coerceIn(PanelLayout.MIN_W, 1f - panel.xFraction)
+                    val newH = (panel.heightFraction + drag.y / containerH)
+                        .coerceIn(PanelLayout.MIN_H, 1f - panel.yFraction)
+                    onPanelChange(panel.copy(widthFraction = newW, heightFraction = newH))
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector        = Icons.Default.OpenInFull,
+            contentDescription = stringResource(R.string.dual_screen_drag_handle),
+            tint               = Color.White,
+            modifier           = Modifier.size(22.dp),
+        )
     }
 }

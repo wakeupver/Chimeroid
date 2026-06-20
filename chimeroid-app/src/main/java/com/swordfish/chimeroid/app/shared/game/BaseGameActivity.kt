@@ -228,6 +228,7 @@ abstract class BaseGameActivity : ImmersiveActivity() {
                 )
                 putExtra(GameMenuContract.EXTRA_CURRENT_TILT_CONFIG, currentTiltConfiguration)
                 putExtra(GameMenuContract.EXTRA_TILT_ALL_CONFIGS, tiltConfigurations.toTypedArray())
+                putExtra(GameMenuContract.EXTRA_IS_DUAL_SCREEN, system.isDualScreen)
             }
         startActivityForResult(intent, DIALOG_REQUEST)
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
@@ -382,6 +383,9 @@ abstract class BaseGameActivity : ImmersiveActivity() {
         }
         if (data?.getBooleanExtra(GameMenuContract.RESULT_EDIT_TOUCH_CONTROLS, false) == true) {
             baseGameScreenViewModel.showEditControls(true)
+        }
+        if (data?.getBooleanExtra(GameMenuContract.RESULT_EDIT_DUAL_SCREEN_LAYOUT, false) == true) {
+            baseGameScreenViewModel.startDualScreenEdit()
         }
         if (data?.hasExtra(GameMenuContract.RESULT_CHANGE_TILT_CONFIG) == true) {
             val tiltConfig =

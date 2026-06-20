@@ -606,38 +606,6 @@ private fun MenuEditTouchControls(
                     }
                 }
 
-                // ── Screen layout section (NDS / 3DS only) ────────────
-                if (viewModel.getSystem().isDualScreen) {
-                    HorizontalDivider()
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Text(
-                            text  = stringResource(R.string.dual_screen_layout_section).uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.showEditControls(false)
-                                viewModel.startDualScreenEdit()
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Icon(
-                                imageVector       = Icons.Default.Splitscreen,
-                                contentDescription = null,
-                                modifier          = Modifier.size(18.dp),
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = stringResource(R.string.dual_screen_edit_button))
-                        }
-                    }
-                }
-
                 } // end scrollable body
 
                 // ── Sticky footer: Reset / Done ────────────────────────
