@@ -8,8 +8,6 @@ import android.view.MotionEvent
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Density
-import com.swordfish.chimeroid.app.mobile.feature.game.DualScreenLayout
-import com.swordfish.chimeroid.app.mobile.feature.game.DualScreenLayoutManager
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
@@ -160,42 +158,6 @@ class BaseGameScreenViewModel(
 
     /** True while any blocking operation (save/load/reset) is in progress. */
     val loadingState = MutableStateFlow(false)
-
-    // ── Dual-screen layout (NDS / 3DS) ────────────────────────────────────────
-
-    private val dualScreenLayoutManager = DualScreenLayoutManager(
-        prefs        = sharedPreferences,
-        systemDbName = system.id.dbname,
-    )
-
-    private val dualScreenDefault: DualScreenLayout get() = when (system.id) {
-        com.swordfish.chimeroid.lib.library.SystemID.NINTENDO_3DS -> DualScreenLayout.N3DS_DEFAULT
-        else                                                       -> DualScreenLayout.NDS_DEFAULT
-    }
-
-    private val _dualScreenLayout = MutableStateFlow(
-        if (system.isDualScreen) dualScreenLayoutManager.load(dualScreenDefault)
-        else DualScreenLayout.NDS_DEFAULT,
-    )
-    val dualScreenLayout: kotlinx.coroutines.flow.StateFlow<DualScreenLayout> = _dualScreenLayout
-
-    private val _dualScreenEditMode = MutableStateFlow(false)
-    val dualScreenEditMode: kotlinx.coroutines.flow.StateFlow<Boolean> = _dualScreenEditMode
-
-    fun startDualScreenEdit() { _dualScreenEditMode.value = true }
-
-    fun stopDualScreenEdit() {
-        _dualScreenEditMode.value = false
-        dualScreenLayoutManager.save(_dualScreenLayout.value)
-    }
-
-    fun updateDualScreenLayout(layout: DualScreenLayout) {
-        _dualScreenLayout.value = layout
-    }
-
-    fun resetDualScreenLayout() {
-        _dualScreenLayout.value = dualScreenDefault
-    }
 
     /**
      * Guards [requestFinish] so that only the first call runs the save+finish sequence.

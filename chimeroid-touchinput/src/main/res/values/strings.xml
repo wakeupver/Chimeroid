@@ -26,9 +26,6 @@
     <!-- Dual-screen layout -->
     <string name="dual_screen_top_label">Top Screen</string>
     <string name="dual_screen_bottom_label">Bottom Screen</string>
-    <string name="dual_screen_drag_handle">Drag to resize</string>
-    <string name="dual_screen_reset_ratio">Reset</string>
-    <string name="dual_screen_edit_title">Edit Screen Layout</string>
-    <string name="dual_screen_edit_button">Edit Screen Layout</string>
-    <string name="dual_screen_layout_section">Screen Layout</string>
+    <string name="dual_screen_drag_handle">Drag to resize screens</string>
+    <string name="dual_screen_reset_ratio">Reset split</string>
 </resources>
