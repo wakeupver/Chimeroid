@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Height
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.OpenWith
 import androidx.compose.material.icons.filled.RotateLeft
+import androidx.compose.material.icons.filled.Splitscreen
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -140,6 +141,11 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                 HapticFeedbackMode.PRESS_RELEASE -> HapticFeedbackType.PRESS_RELEASE
             }
 
+        // ── Dual-screen state (NDS / 3DS) ──────────────────────────────────
+        val isDualScreen = remember { viewModel.getSystem().isDualScreen }
+        val dualLayout by viewModel.dualScreenLayout.collectAsState()
+        val dualScreenEditMode by viewModel.dualScreenEditMode.collectAsState()
+
         PadKit(
             modifier = Modifier.fillMaxSize(),
             onInputEvents = { viewModel.handleVirtualInputEvent(it) },
@@ -152,9 +158,6 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
 
             val fullScreenPosition = remember { mutableStateOf<Rect?>(null) }
             val viewportPosition = remember { mutableStateOf<Rect?>(null) }
-
-            // Determine once whether this system uses dual-screen rendering
-            val isDualScreen = remember { viewModel.getSystem().isDualScreen }
 
             AndroidView(
                 modifier =
@@ -171,7 +174,7 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
 
             // Single-viewport path (non-dual-screen systems)
             LaunchedEffect(fullPos, viewPos) {
-                if (isDualScreen) return@LaunchedEffect   // handled by DualScreenPanels
+                if (isDualScreen) return@LaunchedEffect
                 val gameView = viewModel.retroGameView.retroGameViewFlow()
                 if (fullPos == null || viewPos == null) return@LaunchedEffect
                 val viewport =
@@ -184,9 +187,18 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                 gameView.viewport = viewport
             }
 
-            // Clear dual-screen config on the GL layer when leaving
             LaunchedEffect(isDualScreen) {
                 if (!isDualScreen) viewModel.clearDualScreenLayout()
+            }
+
+            // ── Dual-screen invisible tracking panels ─────────────────────────
+            // Sibling of ConstraintLayout so panels can span the whole screen.
+            if (isDualScreen) {
+                DualScreenPanels(
+                    fullScreenPosition = fullScreenPosition,
+                    layout             = dualLayout,
+                    viewModel          = viewModel,
+                )
             }
 
             ConstraintLayout(
@@ -197,21 +209,14 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                         currentControllerConfig?.allowTouchOverlay ?: true,
                     ),
             ) {
+                // Game-view area — used only as a viewport reference for non-dual-screen.
                 Box(
                     modifier =
                         Modifier
                             .layoutId(GameScreenLayout.CONSTRAINTS_GAME_VIEW)
                             .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Top))
                             .onGloballyPositioned { viewportPosition.value = it.boundsInRoot() },
-                ) {
-                    // ── Dual-screen split panels (NDS / 3DS only) ───────────
-                    if (isDualScreen) {
-                        DualScreenPanels(
-                            fullScreenPosition = fullScreenPosition,
-                            viewModel = viewModel,
-                        )
-                    }
-                }
+                )
 
                 val isVisible =
                     touchControllerSettings != null &&
@@ -267,6 +272,16 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
         }
         if (macroEditMode && !editDialogShown) {
             MacroDragModeBanner(onDone = { viewModel.exitMacroDragMode() })
+        }
+
+        // ── Dual-screen edit overlay (NDS / 3DS only) ──────────────────────
+        if (isDualScreen && dualScreenEditMode) {
+            DualScreenEditOverlay(
+                layout        = dualLayout,
+                onLayoutChange = { viewModel.updateDualScreenLayout(it) },
+                onDone        = { viewModel.stopDualScreenEdit() },
+                onReset       = { viewModel.resetDualScreenLayout() },
+            )
         }
 
         val isLoading =
@@ -587,6 +602,38 @@ private fun MenuEditTouchControls(
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(stringResource(R.string.macro_position_button))
+                        }
+                    }
+                }
+
+                // ── Screen layout section (NDS / 3DS only) ────────────
+                if (viewModel.getSystem().isDualScreen) {
+                    HorizontalDivider()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text  = stringResource(R.string.dual_screen_layout_section).uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        OutlinedButton(
+                            onClick = {
+                                viewModel.showEditControls(false)
+                                viewModel.startDualScreenEdit()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(
+                                imageVector       = Icons.Default.Splitscreen,
+                                contentDescription = null,
+                                modifier          = Modifier.size(18.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = stringResource(R.string.dual_screen_edit_button))
                         }
                     }
                 }

@@ -1,139 +1,88 @@
 package com.swordfish.chimeroid.app.mobile.feature.game
 
 import android.graphics.RectF as AndroidRectF
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import com.swordfish.chimeroid.app.shared.game.BaseGameScreenViewModel
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-private const val SPLIT_MIN     = 0.20f
-private const val SPLIT_MAX     = 0.80f
-private const val SPLIT_DEFAULT = 0.50f
-private val DIVIDER_H = 22.dp
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Public composable – drop inside the GAME_VIEW Box in MobileGameScreen
-// ─────────────────────────────────────────────────────────────────────────────
+import kotlin.math.roundToInt
 
 /**
- * Renders two resizable panels (top = primary screen, bottom = secondary screen)
- * separated by a drag handle.  Tracks Compose layout bounds and pushes viewport
- * coordinates to the GL layer via [viewModel.applyDualScreenLayout].
- *
- * Designed to be placed inside the same Box that normally tracks the single
- * viewport, so it inherits the game-view area (above the touch pads).
- *
- * @param fullScreenPosition  Bounds of the full-screen GLRetroView surface,
- *                            tracked by the parent composable.
- * @param viewModel           Receives dual-screen layout updates.
+ * Invisible tracking panels for the dual-screen GL viewport.
+ * Must be placed as a direct child of the full-screen PadKit Box
+ * (sibling of ConstraintLayout, NOT inside the CONSTRAINTS_GAME_VIEW Box),
+ * so that panels can span the full surface including the controls area.
  */
 @Composable
 fun DualScreenPanels(
     fullScreenPosition: State<Rect?>,
+    layout: DualScreenLayout,
     viewModel: BaseGameScreenViewModel,
 ) {
-    // ── State ─────────────────────────────────────────────────────────────────
-    var splitFraction by remember { mutableFloatStateOf(SPLIT_DEFAULT) }
-
     val topPanelPos    = remember { mutableStateOf<Rect?>(null) }
     val bottomPanelPos = remember { mutableStateOf<Rect?>(null) }
 
-    // ── Push to GL whenever positions update ──────────────────────────────────
     val fullPos = fullScreenPosition.value
     val top     = topPanelPos.value
     val bot     = bottomPanelPos.value
 
     LaunchedEffect(fullPos, top, bot) {
         if (fullPos == null || top == null || bot == null) return@LaunchedEffect
-        val fullRectF = AndroidRectF(fullPos.left, fullPos.top, fullPos.right, fullPos.bottom)
-        viewModel.applyDualScreenLayout(fullRectF, top, bot)
+        viewModel.applyDualScreenLayout(
+            AndroidRectF(fullPos.left, fullPos.top, fullPos.right, fullPos.bottom),
+            top,
+            bot,
+        )
     }
 
-    // ── Layout ────────────────────────────────────────────────────────────────
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val totalPx = constraints.maxHeight.toFloat().coerceAtLeast(1f)
+        val containerW = constraints.maxWidth.toFloat()
+        val containerH = constraints.maxHeight.toFloat()
+        val density    = LocalDensity.current
 
-        Column(modifier = Modifier.fillMaxSize()) {
-
-            // Top screen panel
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(splitFraction)
-                    .onGloballyPositioned { topPanelPos.value = it.boundsInRoot() },
-            )
-
-            // Drag-handle divider
-            DualScreenDivider(
-                totalAvailablePx = totalPx,
-                onDrag = { delta ->
-                    splitFraction = (splitFraction + delta).coerceIn(SPLIT_MIN, SPLIT_MAX)
-                },
-            )
-
-            // Bottom screen panel
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight((1f - splitFraction).coerceAtLeast(SPLIT_MIN))
-                    .onGloballyPositioned { bottomPanelPos.value = it.boundsInRoot() },
-            )
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Divider / drag handle
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun DualScreenDivider(
-    totalAvailablePx: Float,
-    onDrag: (fractionDelta: Float) -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(DIVIDER_H)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.50f))
-            .pointerInput(totalAvailablePx) {
-                detectVerticalDragGestures { _, dragAmountPx ->
-                    onDrag(dragAmountPx / totalAvailablePx)
+        // Top screen tracking box
+        Box(
+            modifier = Modifier
+                .offset {
+                    IntOffset(
+                        (layout.top.xFraction * containerW).roundToInt(),
+                        (layout.top.yFraction * containerH).roundToInt(),
+                    )
                 }
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        // Visual pill
-        Surface(
-            modifier = Modifier.size(width = 48.dp, height = 5.dp),
-            shape = RoundedCornerShape(50),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-        ) {}
+                .requiredSize(
+                    with(density) { (layout.top.widthFraction  * containerW).toDp() },
+                    with(density) { (layout.top.heightFraction * containerH).toDp() },
+                )
+                .onGloballyPositioned { topPanelPos.value = it.boundsInRoot() },
+        )
+
+        // Bottom screen tracking box
+        Box(
+            modifier = Modifier
+                .offset {
+                    IntOffset(
+                        (layout.bottom.xFraction * containerW).roundToInt(),
+                        (layout.bottom.yFraction * containerH).roundToInt(),
+                    )
+                }
+                .requiredSize(
+                    with(density) { (layout.bottom.widthFraction  * containerW).toDp() },
+                    with(density) { (layout.bottom.heightFraction * containerH).toDp() },
+                )
+                .onGloballyPositioned { bottomPanelPos.value = it.boundsInRoot() },
+        )
     }
 }
