@@ -187,18 +187,12 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                 gameView.viewport = viewport
             }
 
-            LaunchedEffect(isDualScreen) {
-                if (!isDualScreen) viewModel.clearDualScreenLayout()
-            }
-
-            // ── Dual-screen invisible tracking panels ─────────────────────────
-            // Sibling of ConstraintLayout so panels can span the whole screen.
-            if (isDualScreen) {
-                DualScreenPanels(
-                    fullScreenPosition = fullScreenPosition,
-                    layout             = dualLayout,
-                    viewModel          = viewModel,
-                )
+            // Dual-screen: push layout fractions directly to GL whenever layout changes.
+            // This gives real-time rendering updates during drag/resize without
+            // waiting for tracking-box recomposition.
+            LaunchedEffect(isDualScreen, dualLayout) {
+                if (isDualScreen) viewModel.applyDualScreenGL(dualLayout)
+                else viewModel.clearDualScreenLayout()
             }
 
             ConstraintLayout(

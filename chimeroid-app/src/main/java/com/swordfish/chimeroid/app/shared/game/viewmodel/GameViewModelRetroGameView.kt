@@ -314,6 +314,43 @@ class GameViewModelRetroGameView(
         )
     }
 
+    /**
+     * Directly apply a [DualScreenLayout] to the live [GLRetroView] without
+     * going through tracking boxes.  The layout fractions are relative to the
+     * GL surface, so they map 1:1 to the GL viewport fractions.
+     * Suspends until the GLRetroView is ready.
+     */
+    suspend fun applyDualScreenLayoutDirect(
+        layout: DualScreenLayout,
+        uvCfg: com.swordfish.chimeroid.lib.library.GameSystem.DualScreenUVConfig,
+    ) {
+        val view = retroGameViewFlow()
+        val t = layout.top
+        val b = layout.bottom
+        view.dualScreenConfig = GLRetroView.DualScreenConfig(
+            primaryViewport   = RectF(
+                t.xFraction,
+                t.yFraction,
+                t.xFraction + t.widthFraction,
+                t.yFraction + t.heightFraction,
+            ),
+            secondaryViewport = RectF(
+                b.xFraction,
+                b.yFraction,
+                b.xFraction + b.widthFraction,
+                b.yFraction + b.heightFraction,
+            ),
+            primaryUVxMin   = uvCfg.primaryUVxMin,
+            primaryUVyMin   = uvCfg.primaryUVyMin,
+            primaryUVxMax   = uvCfg.primaryUVxMax,
+            primaryUVyMax   = uvCfg.primaryUVyMax,
+            secondaryUVxMin = uvCfg.secondaryUVxMin,
+            secondaryUVyMin = uvCfg.secondaryUVyMin,
+            secondaryUVxMax = uvCfg.secondaryUVxMax,
+            secondaryUVyMax = uvCfg.secondaryUVyMax,
+        )
+    }
+
     /** Disable dual-screen mode and return to normal rendering. */
     fun clearDualScreenLayout() {
         retroGameView?.dualScreenConfig = null

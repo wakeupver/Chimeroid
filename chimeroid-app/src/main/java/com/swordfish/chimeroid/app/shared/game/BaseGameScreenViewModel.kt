@@ -191,10 +191,20 @@ class BaseGameScreenViewModel(
 
     fun updateDualScreenLayout(layout: DualScreenLayout) {
         _dualScreenLayout.value = layout
+        // Push to GL immediately (don't wait for tracking-box recomposition)
+        viewModelScope.launch { applyDualScreenGL(layout) }
     }
 
     fun resetDualScreenLayout() {
-        _dualScreenLayout.value = dualScreenDefault
+        val def = dualScreenDefault
+        _dualScreenLayout.value = def
+        viewModelScope.launch { applyDualScreenGL(def) }
+    }
+
+    /** Applies [layout] fractions directly to the live GLRetroView. */
+    suspend fun applyDualScreenGL(layout: DualScreenLayout = _dualScreenLayout.value) {
+        val uvCfg = system.dualScreenUVConfig ?: return
+        retroGameView.applyDualScreenLayoutDirect(layout, uvCfg)
     }
 
     /**
