@@ -146,6 +146,19 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
         val dualLayout by viewModel.dualScreenLayout.collectAsState()
         val dualScreenEditMode by viewModel.dualScreenEditMode.collectAsState()
 
+        // Orientation change → load correct portrait/landscape layout + re-apply GL.
+        // Also handles initial GL apply after the view is ready.
+        LaunchedEffect(isDualScreen, isLandscape) {
+            if (isDualScreen) viewModel.onOrientationChanged(isLandscape)
+        }
+
+        // Fallback: if the view wasn't ready during the orientation LaunchedEffect,
+        // wait until the GL view is initialised then apply the current layout.
+        LaunchedEffect(isDualScreen, dualLayout) {
+            if (isDualScreen) viewModel.applyDualScreenGL(dualLayout)
+            else              viewModel.clearDualScreenLayout()
+        }
+
         PadKit(
             modifier = Modifier.fillMaxSize(),
             onInputEvents = { viewModel.handleVirtualInputEvent(it) },
@@ -185,14 +198,6 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                         (viewPos.bottom - fullPos.top) / fullPos.height,
                     )
                 gameView.viewport = viewport
-            }
-
-            // Dual-screen: push layout fractions directly to GL whenever layout changes.
-            // This gives real-time rendering updates during drag/resize without
-            // waiting for tracking-box recomposition.
-            LaunchedEffect(isDualScreen, dualLayout) {
-                if (isDualScreen) viewModel.applyDualScreenGL(dualLayout)
-                else viewModel.clearDualScreenLayout()
             }
 
             ConstraintLayout(

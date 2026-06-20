@@ -168,43 +168,84 @@ class BaseGameScreenViewModel(
         systemDbName = system.id.dbname,
     )
 
-    private val dualScreenDefault: DualScreenLayout get() = when (system.id) {
-        com.swordfish.chimeroid.lib.library.SystemID.NINTENDO_3DS -> DualScreenLayout.N3DS_DEFAULT
-        else                                                       -> DualScreenLayout.NDS_DEFAULT
+    // Current orientation — set via onOrientationChanged() from the Compose UI
+    private var currentIsLandscape: Boolean = false
+
+    private fun portraitDefault() = when (system.id) {
+        com.swordfish.chimeroid.lib.library.SystemID.NINTENDO_3DS -> DualScreenLayout.N3DS_PORTRAIT
+        else -> DualScreenLayout.NDS_PORTRAIT
+    }
+    private fun landscapeDefault() = when (system.id) {
+        com.swordfish.chimeroid.lib.library.SystemID.NINTENDO_3DS -> DualScreenLayout.N3DS_LANDSCAPE
+        else -> DualScreenLayout.NDS_LANDSCAPE
     }
 
     private val _dualScreenLayout = MutableStateFlow(
-        if (system.isDualScreen) dualScreenLayoutManager.load(dualScreenDefault)
-        else DualScreenLayout.NDS_DEFAULT,
+        if (system.isDualScreen)
+            dualScreenLayoutManager.load(portraitDefault(), isLandscape = false)
+        else DualScreenLayout.NDS_PORTRAIT,
     )
     val dualScreenLayout: kotlinx.coroutines.flow.StateFlow<DualScreenLayout> = _dualScreenLayout
 
     private val _dualScreenEditMode = MutableStateFlow(false)
     val dualScreenEditMode: kotlinx.coroutines.flow.StateFlow<Boolean> = _dualScreenEditMode
 
+    /**
+     * Called from Compose whenever the orientation changes.
+     * Loads the portrait or landscape layout from SharedPrefs and applies it.
+     */
+    fun onOrientationChanged(isLandscape: Boolean) {
+        if (!system.isDualScreen) return
+        if (currentIsLandscape == isLandscape && _dualScreenLayout.value != portraitDefault() &&
+            _dualScreenLayout.value != landscapeDefault()) {
+            // Already on the right orientation and user has customised — just re-apply
+            applyCurrentLayoutSync()
+            return
+        }
+        currentIsLandscape = isLandscape
+        val layout = dualScreenLayoutManager.load(
+            default     = if (isLandscape) landscapeDefault() else portraitDefault(),
+            isLandscape = isLandscape,
+        )
+        _dualScreenLayout.value = layout
+        applyCurrentLayoutSync()
+    }
+
     fun startDualScreenEdit() { _dualScreenEditMode.value = true }
 
     fun stopDualScreenEdit() {
         _dualScreenEditMode.value = false
-        dualScreenLayoutManager.save(_dualScreenLayout.value)
+        dualScreenLayoutManager.save(_dualScreenLayout.value, currentIsLandscape)
     }
 
+    /**
+     * Synchronous update — posts directly to the GL thread via the
+     * observable property setter.  Zero coroutine overhead, safe for rapid
+     * drag callbacks.
+     */
     fun updateDualScreenLayout(layout: DualScreenLayout) {
         _dualScreenLayout.value = layout
-        // Push to GL immediately (don't wait for tracking-box recomposition)
-        viewModelScope.launch { applyDualScreenGL(layout) }
+        applyCurrentLayoutSync()
     }
 
     fun resetDualScreenLayout() {
-        val def = dualScreenDefault
+        val def = if (currentIsLandscape) landscapeDefault() else portraitDefault()
         _dualScreenLayout.value = def
-        viewModelScope.launch { applyDualScreenGL(def) }
+        applyCurrentLayoutSync()
     }
 
-    /** Applies [layout] fractions directly to the live GLRetroView. */
+    private fun applyCurrentLayoutSync() {
+        val uvCfg = system.dualScreenUVConfig ?: return
+        retroGameView.applyDualScreenConfig(_dualScreenLayout.value, uvCfg)
+    }
+
+    /** Suspend fallback — waits for GLRetroView if not yet ready. */
     suspend fun applyDualScreenGL(layout: DualScreenLayout = _dualScreenLayout.value) {
         val uvCfg = system.dualScreenUVConfig ?: return
-        retroGameView.applyDualScreenLayoutDirect(layout, uvCfg)
+        // Try synchronous first; fall back to suspend if view not ready
+        if (!retroGameView.applyDualScreenConfig(layout, uvCfg)) {
+            retroGameView.applyDualScreenLayoutDirect(layout, uvCfg)
+        }
     }
 
     /**
