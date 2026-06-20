@@ -10,6 +10,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.swordfish.chimeroid.BuildConfig
 import com.swordfish.chimeroid.R
+import com.swordfish.chimeroid.app.mobile.feature.game.DualScreenLayout
 import com.swordfish.chimeroid.app.mobile.feature.settings.SettingsManager
 import com.swordfish.chimeroid.app.shared.game.ShaderChooser
 import com.swordfish.chimeroid.app.shared.rumble.RumbleManager
