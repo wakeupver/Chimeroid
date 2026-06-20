@@ -316,4 +316,7 @@
     <string name="onboarding_get_started">Get Started</string>
     <string name="onboarding_finishing">Setting up…</string>
 
+    <!-- Dual-screen layout (game menu) -->
+    <string name="dual_screen_edit_button">Edit Screen Layout</string>
+
 </resources>
