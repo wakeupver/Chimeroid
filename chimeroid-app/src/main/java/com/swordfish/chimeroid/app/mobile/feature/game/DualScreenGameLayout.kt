@@ -18,12 +18,15 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.app.shared.game.BaseGameScreenViewModel
@@ -36,21 +39,22 @@ private const val SPLIT_DEFAULT = 0.50f
 private val DIVIDER_H = 22.dp
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Public composable – drop inside the GAME_VIEW Box in MobileGameScreen
-// ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Renders two resizable panels separated by a drag handle, and immediately
- * pushes viewport coordinates to the GL layer via [viewModel.applyDualScreenLayout].
+ * Renders two resizable panels (top = primary screen, bottom = secondary)
+ * separated by a drag handle, pushing viewport coordinates to the GL layer.
  *
- * Panel positions are computed **mathematically** from [fullScreenPosition] +
- * [splitFraction] rather than waiting for individual Compose layout measurements.
- * This eliminates the 2-5 frame delay that caused a visible stutter/freeze at
- * game start: the GL dual-screen config is applied on the very first frame that
- * [fullScreenPosition] is non-null.
+ * Panel bounds are computed mathematically from the composable's own container
+ * bounds ([containerPos]) + [splitFraction], rather than waiting for each sub-panel
+ * to report via [onGloballyPositioned].  This means:
  *
- * @param fullScreenPosition  Bounds of the full-screen GLRetroView surface.
- * @param viewModel           Receives dual-screen layout updates.
+ * - **No startup stutter**: as soon as both [fullScreenPosition] and the container
+ *   position are known (same layout pass → same recomposition), the GL dual-screen
+ *   config is applied — no 2-5 frame delay waiting for sub-panels.
+ * - **Drag works correctly**: [splitFraction] changes trigger a recompose →
+ *   [SideEffect] runs with the new value → GL matches the visual split exactly.
+ * - **Accurate layout**: panel Y coordinates are derived from the container's
+ *   own height (not the full GL surface), so they match what Compose renders.
  */
 @Composable
 fun DualScreenPanels(
@@ -60,34 +64,46 @@ fun DualScreenPanels(
     val density = LocalDensity.current
     var splitFraction by remember { mutableFloatStateOf(SPLIT_DEFAULT) }
 
-    // ── Push to GL every recompose where fullPos is known ────────────────────
-    // SideEffect runs synchronously after each successful recomposition, so the
-    // GL config is updated on the same frame that splitFraction or fullPos change.
-    // No need to wait for onGloballyPositioned on each sub-panel.
-    val fullPos = fullScreenPosition.value
-    if (fullPos != null) {
-        SideEffect {
-            val dividerPx = with(density) { DIVIDER_H.toPx() }
-            val splitY    = fullPos.top + fullPos.height * splitFraction
+    // Track our own container bounds (set in the same layout pass as fullScreenPosition).
+    val containerPos = remember { mutableStateOf<Rect?>(null) }
 
-            val topPanel = Rect(fullPos.left, fullPos.top,        fullPos.right, splitY)
-            val botPanel = Rect(fullPos.left, splitY + dividerPx, fullPos.right, fullPos.bottom)
+    val fullPos   = fullScreenPosition.value
+    val container = containerPos.value
+
+    // ── Push to GL whenever fullPos, container, or splitFraction changes ──────
+    // Both fullPos and containerPos become non-null in the first layout pass,
+    // so SideEffect fires on the very first recomposition after that pass.
+    // SideEffect is synchronous (no coroutine overhead) and reads splitFraction
+    // at execution time, so drag updates are applied immediately each recompose.
+    if (fullPos != null && container != null) {
+        SideEffect {
+            val dividerPx  = with(density) { DIVIDER_H.toPx() }
+            // Column distributes (containerH - dividerH) across the two weight slots.
+            // Within SPLIT_MIN..SPLIT_MAX both weights sum to 1.0, so top panel height
+            // = splitFraction × availableH exactly.
+            val availableH = container.height - dividerPx
+            val topH       = splitFraction * availableH
+            val splitY     = container.top + topH
 
             viewModel.applyDualScreenLayout(
                 AndroidRectF(fullPos.left, fullPos.top, fullPos.right, fullPos.bottom),
-                topPanel,
-                botPanel,
+                Rect(container.left, container.top,        container.right, splitY),
+                Rect(container.left, splitY + dividerPx,  container.right, container.bottom),
             )
         }
     }
 
-    // ── Visual layout (divider + two weight-based boxes) ─────────────────────
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    // ── Visual layout ─────────────────────────────────────────────────────────
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { containerPos.value = it.boundsInRoot() },
+    ) {
         val totalPx = constraints.maxHeight.toFloat().coerceAtLeast(1f)
 
         Column(modifier = Modifier.fillMaxSize()) {
 
-            // Top screen panel (transparent — GLRetroView renders behind it)
+            // Top screen panel
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -133,7 +149,6 @@ private fun DualScreenDivider(
             },
         contentAlignment = Alignment.Center,
     ) {
-        // Visual pill
         Surface(
             modifier = Modifier.size(width = 48.dp, height = 5.dp),
             shape = RoundedCornerShape(50),
