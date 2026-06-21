@@ -13,7 +13,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Sensors
-import androidx.compose.material.icons.filled.Splitscreen
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -155,7 +154,7 @@ fun GameMenuHomeScreen(
 
         // ── OPTIONS ──────────────────────────────────────────────────────────
         MenuSection(stringResource(R.string.game_menu_section_options)) {
-            // Edit Controls
+            // Edit Controls — kembali ke dalam card OPTIONS
             ChimeroidSettingsMenuLink(
                 title = { Text(text = stringResource(id = R.string.game_menu_edit_touch_controls)) },
                 icon = {
@@ -168,23 +167,6 @@ fun GameMenuHomeScreen(
                     onResult { putExtra(GameMenuContract.RESULT_EDIT_TOUCH_CONTROLS, true) }
                 },
             )
-
-            // Edit Screen Layout — NDS / 3DS only
-            if (gameMenuRequest.isDualScreen) {
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                ChimeroidSettingsMenuLink(
-                    title = { Text(text = stringResource(id = R.string.dual_screen_edit_button)) },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Default.Splitscreen,
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = {
-                        onResult { putExtra(GameMenuContract.RESULT_EDIT_DUAL_SCREEN_LAYOUT, true) }
-                    },
-                )
-            }
 
             if (gameMenuRequest.advancedCoreOptions.isNotEmpty() || gameMenuRequest.coreOptions.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))

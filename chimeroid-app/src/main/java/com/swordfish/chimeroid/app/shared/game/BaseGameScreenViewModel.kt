@@ -8,10 +8,6 @@ import android.view.MotionEvent
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Density
-import com.swordfish.chimeroid.app.mobile.feature.game.DualScreenDefaults
-import com.swordfish.chimeroid.app.mobile.feature.game.DualScreenLayout
-import com.swordfish.chimeroid.app.mobile.feature.game.DualScreenLayoutManager
-import com.swordfish.chimeroid.app.mobile.feature.game.PanelLayout
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
@@ -162,86 +158,6 @@ class BaseGameScreenViewModel(
 
     /** True while any blocking operation (save/load/reset) is in progress. */
     val loadingState = MutableStateFlow(false)
-
-    // ── Dual-screen layout (NDS / 3DS) ────────────────────────────────────────
-
-    private val dualScreenLayoutManager = DualScreenLayoutManager(
-        prefs        = sharedPreferences,
-        systemDbName = system.id.dbname,
-    )
-
-    private val _dualScreenLayout = MutableStateFlow(
-        if (system.isDualScreen)
-            dualScreenLayoutManager.load() ?: DualScreenLayout(
-                top    = PanelLayout(0f, 0f,    1f, 0.35f),
-                bottom = PanelLayout(0f, 0.35f, 1f, 0.35f),
-            )
-        else DualScreenLayout(PanelLayout(), PanelLayout(yFraction = 0.5f)),
-    )
-    val dualScreenLayout: kotlinx.coroutines.flow.StateFlow<DualScreenLayout> = _dualScreenLayout
-
-    private val _dualScreenEditMode = MutableStateFlow(false)
-    val dualScreenEditMode: kotlinx.coroutines.flow.StateFlow<Boolean> = _dualScreenEditMode
-
-    /**
-     * Called once from Compose when the container dimensions are known.
-     * Computes the optimal Drastic-like layout if no saved layout exists.
-     */
-    fun initOptimalLayout(containerWidthDp: Float, containerHeightDp: Float) {
-        if (!system.isDualScreen) return
-        if (dualScreenLayoutManager.load() != null) {
-            // User has a saved layout — just apply it (no override)
-            applyCurrentLayoutSync()
-            return
-        }
-        val optimal = DualScreenDefaults.optimalPortrait(
-            containerWidthDp, containerHeightDp, system.id,
-        )
-        _dualScreenLayout.value = optimal
-        applyCurrentLayoutSync()
-    }
-
-    fun startDualScreenEdit() { _dualScreenEditMode.value = true }
-
-    fun stopDualScreenEdit() {
-        _dualScreenEditMode.value = false
-        dualScreenLayoutManager.save(_dualScreenLayout.value)
-    }
-
-    /**
-     * Synchronous update — posts to GL thread via the observable property,
-     * no coroutine overhead.  Safe for high-frequency drag callbacks.
-     */
-    fun updateDualScreenLayout(layout: DualScreenLayout) {
-        _dualScreenLayout.value = layout
-        applyCurrentLayoutSync()
-    }
-
-    fun resetDualScreenLayout(containerWidthDp: Float = 0f, containerHeightDp: Float = 0f) {
-        dualScreenLayoutManager.clear()
-        val layout = if (containerWidthDp > 0f && containerHeightDp > 0f)
-            DualScreenDefaults.optimalPortrait(containerWidthDp, containerHeightDp, system.id)
-        else
-            DualScreenLayout(
-                top    = PanelLayout(0f, 0f,    1f, 0.35f),
-                bottom = PanelLayout(0f, 0.35f, 1f, 0.35f),
-            )
-        _dualScreenLayout.value = layout
-        applyCurrentLayoutSync()
-    }
-
-    private fun applyCurrentLayoutSync() {
-        val uvCfg = system.dualScreenUVConfig ?: return
-        retroGameView.applyDualScreenConfig(_dualScreenLayout.value, uvCfg)
-    }
-
-    /** Suspend fallback — waits for GLRetroView if not ready yet. */
-    suspend fun applyDualScreenGL(layout: DualScreenLayout = _dualScreenLayout.value) {
-        val uvCfg = system.dualScreenUVConfig ?: return
-        if (!retroGameView.applyDualScreenConfig(layout, uvCfg)) {
-            retroGameView.applyDualScreenLayoutDirect(layout, uvCfg)
-        }
-    }
 
     /**
      * Guards [requestFinish] so that only the first call runs the save+finish sequence.

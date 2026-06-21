@@ -10,7 +10,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.swordfish.chimeroid.BuildConfig
 import com.swordfish.chimeroid.R
-import com.swordfish.chimeroid.app.mobile.feature.game.DualScreenLayout
 import com.swordfish.chimeroid.app.mobile.feature.settings.SettingsManager
 import com.swordfish.chimeroid.app.shared.game.ShaderChooser
 import com.swordfish.chimeroid.app.shared.rumble.RumbleManager
@@ -312,75 +311,6 @@ class GameViewModelRetroGameView(
             secondaryUVyMin   = uvCfg.secondaryUVyMin,
             secondaryUVxMax   = uvCfg.secondaryUVxMax,
             secondaryUVyMax   = uvCfg.secondaryUVyMax,
-        )
-    }
-
-    /**
-     * Synchronous (no suspend) — sets dualScreenConfig directly on the live
-     * GLRetroView if it is already available.  Safe to call from the main
-     * thread; the setter posts to the GL thread internally.
-     * Returns false if the view is not yet ready.
-     */
-    fun applyDualScreenConfig(
-        layout: DualScreenLayout,
-        uvCfg: com.swordfish.chimeroid.lib.library.GameSystem.DualScreenUVConfig,
-    ): Boolean {
-        val view = retroGameView ?: return false
-        val t = layout.top
-        val b = layout.bottom
-        view.dualScreenConfig = GLRetroView.DualScreenConfig(
-            primaryViewport   = RectF(
-                t.xFraction, t.yFraction,
-                t.xFraction + t.widthFraction,
-                t.yFraction + t.heightFraction,
-            ),
-            secondaryViewport = RectF(
-                b.xFraction, b.yFraction,
-                b.xFraction + b.widthFraction,
-                b.yFraction + b.heightFraction,
-            ),
-            primaryUVxMin   = uvCfg.primaryUVxMin,
-            primaryUVyMin   = uvCfg.primaryUVyMin,
-            primaryUVxMax   = uvCfg.primaryUVxMax,
-            primaryUVyMax   = uvCfg.primaryUVyMax,
-            secondaryUVxMin = uvCfg.secondaryUVxMin,
-            secondaryUVyMin = uvCfg.secondaryUVyMin,
-            secondaryUVxMax = uvCfg.secondaryUVxMax,
-            secondaryUVyMax = uvCfg.secondaryUVyMax,
-        )
-        return true
-    }
-
-    /**
-     * Suspend version — waits for the GLRetroView to be ready, then applies.
-     * Use this in LaunchedEffect / coroutines where suspension is acceptable.
-     */
-    suspend fun applyDualScreenLayoutDirect(
-        layout: DualScreenLayout,
-        uvCfg: com.swordfish.chimeroid.lib.library.GameSystem.DualScreenUVConfig,
-    ) {
-        val view = retroGameViewFlow()
-        val t = layout.top
-        val b = layout.bottom
-        view.dualScreenConfig = GLRetroView.DualScreenConfig(
-            primaryViewport   = RectF(
-                t.xFraction, t.yFraction,
-                t.xFraction + t.widthFraction,
-                t.yFraction + t.heightFraction,
-            ),
-            secondaryViewport = RectF(
-                b.xFraction, b.yFraction,
-                b.xFraction + b.widthFraction,
-                b.yFraction + b.heightFraction,
-            ),
-            primaryUVxMin   = uvCfg.primaryUVxMin,
-            primaryUVyMin   = uvCfg.primaryUVyMin,
-            primaryUVxMax   = uvCfg.primaryUVxMax,
-            primaryUVyMax   = uvCfg.primaryUVyMax,
-            secondaryUVxMin = uvCfg.secondaryUVxMin,
-            secondaryUVyMin = uvCfg.secondaryUVyMin,
-            secondaryUVxMax = uvCfg.secondaryUVxMax,
-            secondaryUVyMax = uvCfg.secondaryUVyMax,
         )
     }
 

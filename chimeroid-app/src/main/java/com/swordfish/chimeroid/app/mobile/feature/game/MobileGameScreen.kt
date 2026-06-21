@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Height
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.OpenWith
 import androidx.compose.material.icons.filled.RotateLeft
-import androidx.compose.material.icons.filled.Splitscreen
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -141,26 +140,6 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                 HapticFeedbackMode.PRESS_RELEASE -> HapticFeedbackType.PRESS_RELEASE
             }
 
-        // ── Dual-screen state (NDS / 3DS) ──────────────────────────────────
-        val isDualScreen = remember { viewModel.getSystem().isDualScreen }
-        val dualLayout by viewModel.dualScreenLayout.collectAsState()
-        val dualScreenEditMode by viewModel.dualScreenEditMode.collectAsState()
-
-        // Compute optimal Drastic-like layout from actual screen dimensions.
-        // Runs once; skipped if the user already has a saved layout.
-        val containerW = constraints.maxWidth.toFloat()
-        val containerH = constraints.maxHeight.toFloat()
-        LaunchedEffect(isDualScreen) {
-            if (isDualScreen) viewModel.initOptimalLayout(containerW, containerH)
-        }
-
-        // Suspend fallback: waits for GLRetroView to be ready, then applies.
-        // Covers Activity resume / rotation where the sync path returned false.
-        LaunchedEffect(isDualScreen, dualLayout) {
-            if (isDualScreen) viewModel.applyDualScreenGL(dualLayout)
-            else viewModel.clearDualScreenLayout()
-        }
-
         PadKit(
             modifier = Modifier.fillMaxSize(),
             onInputEvents = { viewModel.handleVirtualInputEvent(it) },
@@ -173,6 +152,9 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
 
             val fullScreenPosition = remember { mutableStateOf<Rect?>(null) }
             val viewportPosition = remember { mutableStateOf<Rect?>(null) }
+
+            // Determine once whether this system uses dual-screen rendering
+            val isDualScreen = remember { viewModel.getSystem().isDualScreen }
 
             AndroidView(
                 modifier =
@@ -189,7 +171,7 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
 
             // Single-viewport path (non-dual-screen systems)
             LaunchedEffect(fullPos, viewPos) {
-                if (isDualScreen) return@LaunchedEffect
+                if (isDualScreen) return@LaunchedEffect   // handled by DualScreenPanels
                 val gameView = viewModel.retroGameView.retroGameViewFlow()
                 if (fullPos == null || viewPos == null) return@LaunchedEffect
                 val viewport =
@@ -202,6 +184,11 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                 gameView.viewport = viewport
             }
 
+            // Clear dual-screen config on the GL layer when leaving
+            LaunchedEffect(isDualScreen) {
+                if (!isDualScreen) viewModel.clearDualScreenLayout()
+            }
+
             ConstraintLayout(
                 modifier = Modifier.fillMaxSize(),
                 constraintSet =
@@ -210,14 +197,21 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                         currentControllerConfig?.allowTouchOverlay ?: true,
                     ),
             ) {
-                // Game-view area — used only as a viewport reference for non-dual-screen.
                 Box(
                     modifier =
                         Modifier
                             .layoutId(GameScreenLayout.CONSTRAINTS_GAME_VIEW)
                             .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Top))
                             .onGloballyPositioned { viewportPosition.value = it.boundsInRoot() },
-                )
+                ) {
+                    // ── Dual-screen split panels (NDS / 3DS only) ───────────
+                    if (isDualScreen) {
+                        DualScreenPanels(
+                            fullScreenPosition = fullScreenPosition,
+                            viewModel = viewModel,
+                        )
+                    }
+                }
 
                 val isVisible =
                     touchControllerSettings != null &&
@@ -273,16 +267,6 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
         }
         if (macroEditMode && !editDialogShown) {
             MacroDragModeBanner(onDone = { viewModel.exitMacroDragMode() })
-        }
-
-        // ── Dual-screen edit overlay (NDS / 3DS only) ──────────────────────
-        if (isDualScreen && dualScreenEditMode) {
-            DualScreenEditOverlay(
-                layout         = dualLayout,
-                onLayoutChange = { viewModel.updateDualScreenLayout(it) },
-                onDone         = { viewModel.stopDualScreenEdit() },
-                onReset        = { w, h -> viewModel.resetDualScreenLayout(w, h) },
-            )
         }
 
         val isLoading =
