@@ -170,6 +170,11 @@ private:
 
     bool      bottomLeftOrigin = false;
     DualScreenCfg dualCfg;
+
+    // True when setDualScreenConfig was called before the first frame arrived
+    // (texture size was 0). onNewFrame will call setDualScreenConfig again
+    // with the real texture dimensions to recompute correct aspect ratios.
+    bool pendingDualARRecompute = false;
 };
 
 }

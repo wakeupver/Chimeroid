@@ -14,19 +14,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.app.shared.game.BaseGameScreenViewModel
 
@@ -42,15 +40,16 @@ private val DIVIDER_H = 22.dp
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Renders two resizable panels (top = primary screen, bottom = secondary screen)
- * separated by a drag handle.  Tracks Compose layout bounds and pushes viewport
- * coordinates to the GL layer via [viewModel.applyDualScreenLayout].
+ * Renders two resizable panels separated by a drag handle, and immediately
+ * pushes viewport coordinates to the GL layer via [viewModel.applyDualScreenLayout].
  *
- * Designed to be placed inside the same Box that normally tracks the single
- * viewport, so it inherits the game-view area (above the touch pads).
+ * Panel positions are computed **mathematically** from [fullScreenPosition] +
+ * [splitFraction] rather than waiting for individual Compose layout measurements.
+ * This eliminates the 2-5 frame delay that caused a visible stutter/freeze at
+ * game start: the GL dual-screen config is applied on the very first frame that
+ * [fullScreenPosition] is non-null.
  *
- * @param fullScreenPosition  Bounds of the full-screen GLRetroView surface,
- *                            tracked by the parent composable.
+ * @param fullScreenPosition  Bounds of the full-screen GLRetroView surface.
  * @param viewModel           Receives dual-screen layout updates.
  */
 @Composable
@@ -58,35 +57,41 @@ fun DualScreenPanels(
     fullScreenPosition: State<Rect?>,
     viewModel: BaseGameScreenViewModel,
 ) {
-    // ── State ─────────────────────────────────────────────────────────────────
+    val density = LocalDensity.current
     var splitFraction by remember { mutableFloatStateOf(SPLIT_DEFAULT) }
 
-    val topPanelPos    = remember { mutableStateOf<Rect?>(null) }
-    val bottomPanelPos = remember { mutableStateOf<Rect?>(null) }
-
-    // ── Push to GL whenever positions update ──────────────────────────────────
+    // ── Push to GL every recompose where fullPos is known ────────────────────
+    // SideEffect runs synchronously after each successful recomposition, so the
+    // GL config is updated on the same frame that splitFraction or fullPos change.
+    // No need to wait for onGloballyPositioned on each sub-panel.
     val fullPos = fullScreenPosition.value
-    val top     = topPanelPos.value
-    val bot     = bottomPanelPos.value
+    if (fullPos != null) {
+        SideEffect {
+            val dividerPx = with(density) { DIVIDER_H.toPx() }
+            val splitY    = fullPos.top + fullPos.height * splitFraction
 
-    LaunchedEffect(fullPos, top, bot) {
-        if (fullPos == null || top == null || bot == null) return@LaunchedEffect
-        val fullRectF = AndroidRectF(fullPos.left, fullPos.top, fullPos.right, fullPos.bottom)
-        viewModel.applyDualScreenLayout(fullRectF, top, bot)
+            val topPanel = Rect(fullPos.left, fullPos.top,        fullPos.right, splitY)
+            val botPanel = Rect(fullPos.left, splitY + dividerPx, fullPos.right, fullPos.bottom)
+
+            viewModel.applyDualScreenLayout(
+                AndroidRectF(fullPos.left, fullPos.top, fullPos.right, fullPos.bottom),
+                topPanel,
+                botPanel,
+            )
+        }
     }
 
-    // ── Layout ────────────────────────────────────────────────────────────────
+    // ── Visual layout (divider + two weight-based boxes) ─────────────────────
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val totalPx = constraints.maxHeight.toFloat().coerceAtLeast(1f)
 
         Column(modifier = Modifier.fillMaxSize()) {
 
-            // Top screen panel
+            // Top screen panel (transparent — GLRetroView renders behind it)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(splitFraction)
-                    .onGloballyPositioned { topPanelPos.value = it.boundsInRoot() },
+                    .weight(splitFraction),
             )
 
             // Drag-handle divider
@@ -101,8 +106,7 @@ fun DualScreenPanels(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight((1f - splitFraction).coerceAtLeast(SPLIT_MIN))
-                    .onGloballyPositioned { bottomPanelPos.value = it.boundsInRoot() },
+                    .weight((1f - splitFraction).coerceAtLeast(SPLIT_MIN)),
             )
         }
     }

@@ -340,11 +340,15 @@ void Video::drawQuadPass(
 void Video::setDualScreenConfig(DualScreenCfg cfg) {
     dualCfg = cfg;
 
-    if (!cfg.enabled) return;
+    if (!cfg.enabled) {
+        pendingDualARRecompute = false;
+        return;
+    }
 
     // Compute per-panel aspect ratio from the actual game texture dimensions
     // (e.g. 256×384 for NDS, 400×480 for 3DS default-top-bottom layout).
-    // Texture size may be 0 before the first frame — fall back to 4:3.
+    // Texture size may be 0 before the first frame — fall back to 4:3 and
+    // schedule a recompute once the first real frame arrives.
     float texW = getTextureWidth();
     float texH = getTextureHeight();
 
@@ -357,9 +361,13 @@ void Video::setDualScreenConfig(DualScreenCfg cfg) {
 
         primaryAR   = (pUVH > 0.f) ? (pUVW * texW) / (pUVH * texH) : 4.f / 3.f;
         secondaryAR = (sUVH > 0.f) ? (sUVW * texW) / (sUVH * texH) : 4.f / 3.f;
+        pendingDualARRecompute = false;
     } else {
         primaryAR   = 4.f / 3.f;   // safe fallback (NDS-like)
         secondaryAR = 4.f / 3.f;
+        // Schedule a recompute: onNewFrame will call setDualScreenConfig again
+        // once renderer->lastFrameSize is populated with real dimensions.
+        pendingDualARRecompute = true;
     }
 
     videoLayout.updateViewportSize(
@@ -393,6 +401,14 @@ void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t
     if (data != nullptr) {
         renderer->onNewFrame(data, width, height, pitch);
         isDirty = true;
+
+        // setDualScreenConfig was called before the first frame arrived (texture
+        // size was 0), so aspect ratios used a 4:3 fallback.  Now that the
+        // renderer has real dimensions, recompute immediately so the correct AR
+        // is in place before renderFrame() draws the first visible game frame.
+        if (pendingDualARRecompute) {
+            setDualScreenConfig(dualCfg);   // texW/texH are valid now; clears the flag
+        }
     }
 }
 
