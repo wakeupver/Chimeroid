@@ -8,8 +8,10 @@ import android.view.MotionEvent
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Density
+import com.swordfish.chimeroid.app.mobile.feature.game.DualScreenDefaults
 import com.swordfish.chimeroid.app.mobile.feature.game.DualScreenLayout
 import com.swordfish.chimeroid.app.mobile.feature.game.DualScreenLayoutManager
+import com.swordfish.chimeroid.app.mobile.feature.game.PanelLayout
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
