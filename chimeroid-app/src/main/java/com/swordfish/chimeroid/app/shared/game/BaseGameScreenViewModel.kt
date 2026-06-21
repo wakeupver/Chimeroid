@@ -168,22 +168,13 @@ class BaseGameScreenViewModel(
         systemDbName = system.id.dbname,
     )
 
-    // Current orientation — set via onOrientationChanged() from the Compose UI
-    private var currentIsLandscape: Boolean = false
-
-    private fun portraitDefault() = when (system.id) {
-        com.swordfish.chimeroid.lib.library.SystemID.NINTENDO_3DS -> DualScreenLayout.N3DS_PORTRAIT
-        else -> DualScreenLayout.NDS_PORTRAIT
-    }
-    private fun landscapeDefault() = when (system.id) {
-        com.swordfish.chimeroid.lib.library.SystemID.NINTENDO_3DS -> DualScreenLayout.N3DS_LANDSCAPE
-        else -> DualScreenLayout.NDS_LANDSCAPE
-    }
-
     private val _dualScreenLayout = MutableStateFlow(
         if (system.isDualScreen)
-            dualScreenLayoutManager.load(portraitDefault(), isLandscape = false)
-        else DualScreenLayout.NDS_PORTRAIT,
+            dualScreenLayoutManager.load() ?: DualScreenLayout(
+                top    = PanelLayout(0f, 0f,    1f, 0.35f),
+                bottom = PanelLayout(0f, 0.35f, 1f, 0.35f),
+            )
+        else DualScreenLayout(PanelLayout(), PanelLayout(yFraction = 0.5f)),
     )
     val dualScreenLayout: kotlinx.coroutines.flow.StateFlow<DualScreenLayout> = _dualScreenLayout
 
@@ -191,23 +182,20 @@ class BaseGameScreenViewModel(
     val dualScreenEditMode: kotlinx.coroutines.flow.StateFlow<Boolean> = _dualScreenEditMode
 
     /**
-     * Called from Compose whenever the orientation changes.
-     * Loads the portrait or landscape layout from SharedPrefs and applies it.
+     * Called once from Compose when the container dimensions are known.
+     * Computes the optimal Drastic-like layout if no saved layout exists.
      */
-    fun onOrientationChanged(isLandscape: Boolean) {
+    fun initOptimalLayout(containerWidthDp: Float, containerHeightDp: Float) {
         if (!system.isDualScreen) return
-        if (currentIsLandscape == isLandscape && _dualScreenLayout.value != portraitDefault() &&
-            _dualScreenLayout.value != landscapeDefault()) {
-            // Already on the right orientation and user has customised — just re-apply
+        if (dualScreenLayoutManager.load() != null) {
+            // User has a saved layout — just apply it (no override)
             applyCurrentLayoutSync()
             return
         }
-        currentIsLandscape = isLandscape
-        val layout = dualScreenLayoutManager.load(
-            default     = if (isLandscape) landscapeDefault() else portraitDefault(),
-            isLandscape = isLandscape,
+        val optimal = DualScreenDefaults.optimalPortrait(
+            containerWidthDp, containerHeightDp, system.id,
         )
-        _dualScreenLayout.value = layout
+        _dualScreenLayout.value = optimal
         applyCurrentLayoutSync()
     }
 
@@ -215,22 +203,28 @@ class BaseGameScreenViewModel(
 
     fun stopDualScreenEdit() {
         _dualScreenEditMode.value = false
-        dualScreenLayoutManager.save(_dualScreenLayout.value, currentIsLandscape)
+        dualScreenLayoutManager.save(_dualScreenLayout.value)
     }
 
     /**
-     * Synchronous update — posts directly to the GL thread via the
-     * observable property setter.  Zero coroutine overhead, safe for rapid
-     * drag callbacks.
+     * Synchronous update — posts to GL thread via the observable property,
+     * no coroutine overhead.  Safe for high-frequency drag callbacks.
      */
     fun updateDualScreenLayout(layout: DualScreenLayout) {
         _dualScreenLayout.value = layout
         applyCurrentLayoutSync()
     }
 
-    fun resetDualScreenLayout() {
-        val def = if (currentIsLandscape) landscapeDefault() else portraitDefault()
-        _dualScreenLayout.value = def
+    fun resetDualScreenLayout(containerWidthDp: Float = 0f, containerHeightDp: Float = 0f) {
+        dualScreenLayoutManager.clear()
+        val layout = if (containerWidthDp > 0f && containerHeightDp > 0f)
+            DualScreenDefaults.optimalPortrait(containerWidthDp, containerHeightDp, system.id)
+        else
+            DualScreenLayout(
+                top    = PanelLayout(0f, 0f,    1f, 0.35f),
+                bottom = PanelLayout(0f, 0.35f, 1f, 0.35f),
+            )
+        _dualScreenLayout.value = layout
         applyCurrentLayoutSync()
     }
 
@@ -239,10 +233,9 @@ class BaseGameScreenViewModel(
         retroGameView.applyDualScreenConfig(_dualScreenLayout.value, uvCfg)
     }
 
-    /** Suspend fallback — waits for GLRetroView if not yet ready. */
+    /** Suspend fallback — waits for GLRetroView if not ready yet. */
     suspend fun applyDualScreenGL(layout: DualScreenLayout = _dualScreenLayout.value) {
         val uvCfg = system.dualScreenUVConfig ?: return
-        // Try synchronous first; fall back to suspend if view not ready
         if (!retroGameView.applyDualScreenConfig(layout, uvCfg)) {
             retroGameView.applyDualScreenLayoutDirect(layout, uvCfg)
         }

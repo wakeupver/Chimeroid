@@ -138,7 +138,7 @@ fun DualScreenEditOverlay(
     layout: DualScreenLayout,
     onLayoutChange: (DualScreenLayout) -> Unit,
     onDone: () -> Unit,
-    onReset: () -> Unit,
+    onReset: (containerW: Float, containerH: Float) -> Unit,
 ) {
     val primaryColor  = MaterialTheme.colorScheme.primary
     val tertiaryColor = MaterialTheme.colorScheme.tertiary
@@ -222,7 +222,7 @@ fun DualScreenEditOverlay(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                 verticalAlignment     = Alignment.CenterVertically,
             ) {
-                OutlinedButton(onClick = onReset) {
+                OutlinedButton(onClick = { onReset(cW, cH) }) {
                     Icon(Icons.Default.RestartAlt, null, modifier = Modifier.size(16.dp))
                     Text(stringResource(R.string.dual_screen_reset_ratio), modifier = Modifier.padding(start = 4.dp))
                 }

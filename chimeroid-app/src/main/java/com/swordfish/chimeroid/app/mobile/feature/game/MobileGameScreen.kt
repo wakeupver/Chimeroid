@@ -146,17 +146,19 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
         val dualLayout by viewModel.dualScreenLayout.collectAsState()
         val dualScreenEditMode by viewModel.dualScreenEditMode.collectAsState()
 
-        // Orientation change → load correct portrait/landscape layout + re-apply GL.
-        // Also handles initial GL apply after the view is ready.
-        LaunchedEffect(isDualScreen, isLandscape) {
-            if (isDualScreen) viewModel.onOrientationChanged(isLandscape)
+        // Compute optimal Drastic-like layout from actual screen dimensions.
+        // Runs once; skipped if the user already has a saved layout.
+        val containerW = constraints.maxWidth.toFloat()
+        val containerH = constraints.maxHeight.toFloat()
+        LaunchedEffect(isDualScreen) {
+            if (isDualScreen) viewModel.initOptimalLayout(containerW, containerH)
         }
 
-        // Fallback: if the view wasn't ready during the orientation LaunchedEffect,
-        // wait until the GL view is initialised then apply the current layout.
+        // Suspend fallback: waits for GLRetroView to be ready, then applies.
+        // Covers Activity resume / rotation where the sync path returned false.
         LaunchedEffect(isDualScreen, dualLayout) {
             if (isDualScreen) viewModel.applyDualScreenGL(dualLayout)
-            else              viewModel.clearDualScreenLayout()
+            else viewModel.clearDualScreenLayout()
         }
 
         PadKit(
@@ -276,10 +278,10 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
         // ── Dual-screen edit overlay (NDS / 3DS only) ──────────────────────
         if (isDualScreen && dualScreenEditMode) {
             DualScreenEditOverlay(
-                layout        = dualLayout,
+                layout         = dualLayout,
                 onLayoutChange = { viewModel.updateDualScreenLayout(it) },
-                onDone        = { viewModel.stopDualScreenEdit() },
-                onReset       = { viewModel.resetDualScreenLayout() },
+                onDone         = { viewModel.stopDualScreenEdit() },
+                onReset        = { w, h -> viewModel.resetDualScreenLayout(w, h) },
             )
         }
 
