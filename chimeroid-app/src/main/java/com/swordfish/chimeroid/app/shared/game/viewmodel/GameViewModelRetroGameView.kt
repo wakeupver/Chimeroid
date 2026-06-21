@@ -245,6 +245,30 @@ class GameViewModelRetroGameView(
             result.disableTouchEvents()
         }
 
+        // Apply an initial dual-screen config before the GL thread renders its first frame.
+        // The native layer stores dualScreenCfg even while video==null and restores it when
+        // the GL surface is created (libretrodroid.cpp:249-250), so this is safe to call here
+        // synchronously before lifecycle events fire.
+        //
+        // Viewports use a plain 50/50 GL-surface split as a temporary default; DualScreenPanels
+        // will push the accurate per-pixel split once Compose finishes its first layout pass.
+        // Without this initial config, GL renders the combined single-screen image for several
+        // Compose frames — the visible "freeze/stuck" stutter at game start.
+        system.dualScreenUVConfig?.let { uvCfg ->
+            result.dualScreenConfig = GLRetroView.DualScreenConfig(
+                primaryViewport   = RectF(0f, 0f, 1f, 0.5f),
+                secondaryViewport = RectF(0f, 0.5f, 1f, 1f),
+                primaryUVxMin     = uvCfg.primaryUVxMin,
+                primaryUVyMin     = uvCfg.primaryUVyMin,
+                primaryUVxMax     = uvCfg.primaryUVxMax,
+                primaryUVyMax     = uvCfg.primaryUVyMax,
+                secondaryUVxMin   = uvCfg.secondaryUVxMin,
+                secondaryUVyMin   = uvCfg.secondaryUVyMin,
+                secondaryUVxMax   = uvCfg.secondaryUVxMax,
+                secondaryUVyMax   = uvCfg.secondaryUVyMax,
+            )
+        }
+
         lifecycle.lifecycle.addObserver(result)
 
         if (BuildConfig.DEBUG) {
