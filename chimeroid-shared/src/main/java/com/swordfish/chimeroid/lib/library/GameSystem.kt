@@ -87,10 +87,10 @@ data class GameSystem(
             ),
         )
         private val GENESIS_4_PLAYER_CONTROLLERS = hashMapOf(
-            0 to listOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
-            1 to listOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
-            2 to listOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
-            3 to listOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+            0 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+            1 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+            2 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+            3 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
         )
         // ─────────────────────────────────────────────────────────────────────
         private val SYSTEMS =
@@ -135,7 +135,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.ATARI_2600),
+                                    0 to arrayListOf(ControllerConfigs.ATARI_2600),
                                 ),
                         ),
                     ),
@@ -169,7 +169,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.NES),
+                                    0 to arrayListOf(ControllerConfigs.NES),
                                 ),
                         ),
                     ),
@@ -185,8 +185,8 @@ data class GameSystem(
                             CoreID.SNES9X,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.SNES),
-                                    1 to listOf(ControllerConfigs.SNES),
+                                    0 to arrayListOf(ControllerConfigs.SNES),
+                                    1 to arrayListOf(ControllerConfigs.SNES),
                                 ),
                         ),
                     ),
@@ -233,7 +233,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.SMS),
+                                    0 to arrayListOf(ControllerConfigs.SMS),
                                 ),
                         ),
                     ),
@@ -307,7 +307,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.GG),
+                                    0 to arrayListOf(ControllerConfigs.GG),
                                 ),
                         ),
                     ),
@@ -365,7 +365,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.GB),
+                                    0 to arrayListOf(ControllerConfigs.GB),
                                 ),
                         ),
                     ),
@@ -429,7 +429,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.GB),
+                                    0 to arrayListOf(ControllerConfigs.GB),
                                 ),
                         ),
                     ),
@@ -500,7 +500,7 @@ data class GameSystem(
                             rumbleSupported = true,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.GBA),
+                                    0 to arrayListOf(ControllerConfigs.GBA),
                                 ),
                         ),
                     ),
@@ -592,7 +592,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.N64),
+                                    0 to arrayListOf(ControllerConfigs.N64),
                                 ),
                             rumbleSupported = true,
                             skipDuplicateFrames = false,
@@ -715,7 +715,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.PSP),
+                                    0 to arrayListOf(ControllerConfigs.PSP),
                                 ),
                             supportsLibretroVFS = true,
                         ),
@@ -750,7 +750,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.FB_NEO_4, ControllerConfigs.FB_NEO_6),
+                                    0 to arrayListOf(ControllerConfigs.FB_NEO_4, ControllerConfigs.FB_NEO_6),
                                 ),
                         ),
                     ),
@@ -829,7 +829,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.DESMUME),
+                                    0 to arrayListOf(ControllerConfigs.DESMUME),
                                 ),
                             skipDuplicateFrames = false,
                         ),
@@ -885,7 +885,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.MELONDS),
+                                    0 to arrayListOf(ControllerConfigs.MELONDS),
                                 ),
                             statesVersion = 2,
                             supportsMicrophone = true,
@@ -911,7 +911,7 @@ data class GameSystem(
                             CoreID.PROSYSTEM,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.ATARI7800),
+                                    0 to arrayListOf(ControllerConfigs.ATARI7800),
                                 ),
                         ),
                     ),
@@ -932,7 +932,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.LYNX),
+                                    0 to arrayListOf(ControllerConfigs.LYNX),
                                 ),
                             exposedSettings =
                                 listOf(
@@ -974,7 +974,7 @@ data class GameSystem(
                             CoreID.MEDNAFEN_PCE_FAST,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.PCE),
+                                    0 to arrayListOf(ControllerConfigs.PCE),
                                 ),
                         ),
                     ),
@@ -991,7 +991,7 @@ data class GameSystem(
                             CoreID.MEDNAFEN_NGP,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.NGP),
+                                    0 to arrayListOf(ControllerConfigs.NGP),
                                 ),
                         ),
                     ),
@@ -1007,7 +1007,7 @@ data class GameSystem(
                             CoreID.MEDNAFEN_NGP,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.NGP),
+                                    0 to arrayListOf(ControllerConfigs.NGP),
                                 ),
                         ),
                     ),
@@ -1023,7 +1023,7 @@ data class GameSystem(
                             CoreID.MEDNAFEN_WSWAN,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.WS_LANDSCAPE, ControllerConfigs.WS_PORTRAIT),
+                                    0 to arrayListOf(ControllerConfigs.WS_LANDSCAPE, ControllerConfigs.WS_PORTRAIT),
                                 ),
                             exposedSettings =
                                 listOf(
@@ -1065,7 +1065,7 @@ data class GameSystem(
                             CoreID.MEDNAFEN_WSWAN,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.WS_LANDSCAPE, ControllerConfigs.WS_PORTRAIT),
+                                    0 to arrayListOf(ControllerConfigs.WS_LANDSCAPE, ControllerConfigs.WS_PORTRAIT),
                                 ),
                             exposedSettings =
                                 listOf(
@@ -1102,7 +1102,7 @@ data class GameSystem(
                             CoreID.DOSBOX_PURE,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.DOS_AUTO),
+                                    0 to arrayListOf(ControllerConfigs.DOS_AUTO),
                                 ),
                             statesSupported = false,
                         ),
@@ -1127,7 +1127,7 @@ data class GameSystem(
                             CoreID.CITRA,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to listOf(ControllerConfigs.NINTENDO_3DS),
+                                    0 to arrayListOf(ControllerConfigs.NINTENDO_3DS),
                                 ),
                             defaultSettings =
                                 listOf(
