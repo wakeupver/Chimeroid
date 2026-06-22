@@ -59,10 +59,10 @@ data class GameSystem(
     )
     companion object {
         // ── Shared settings reused across SMS / GENESIS / SEGACD ─────────────
-        private val GENESIS_NTSC_FILTER_SETTING = ExposedSetting(
+        private val GENESIS_NTSC_FILTER_SETTING = ExposedSetting.Registered(
             "genesis_plus_gx_blargg_ntsc_filter",
             R.string.setting_genesis_plus_gx_blargg_ntsc_filter,
-            arrayListOf(
+            listOf(
                 ExposedSetting.Value("disabled",   R.string.value_genesis_plus_gx_blargg_ntsc_filter_disabled),
                 ExposedSetting.Value("monochrome", R.string.value_genesis_plus_gx_blargg_ntsc_filter_monochrome),
                 ExposedSetting.Value("composite",  R.string.value_genesis_plus_gx_blargg_ntsc_filter_composite),
@@ -71,14 +71,14 @@ data class GameSystem(
             ),
         )
         private val GENESIS_ADVANCED_SETTINGS = listOf(
-            ExposedSetting(
+            ExposedSetting.Registered(
                 "genesis_plus_gx_no_sprite_limit",
                 R.string.setting_genesis_plus_gx_no_sprite_limit,
             ),
-            ExposedSetting(
+            ExposedSetting.Registered(
                 "genesis_plus_gx_overscan",
                 R.string.setting_genesis_plus_gx_overscan,
-                arrayListOf(
+                listOf(
                     ExposedSetting.Value("disabled",   R.string.value_genesis_plus_gx_overscan_disabled),
                     ExposedSetting.Value("top/bottom", R.string.value_genesis_plus_gx_overscan_topbottom),
                     ExposedSetting.Value("left/right", R.string.value_genesis_plus_gx_overscan_leftright),
@@ -87,10 +87,10 @@ data class GameSystem(
             ),
         )
         private val GENESIS_4_PLAYER_CONTROLLERS = hashMapOf(
-            0 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
-            1 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
-            2 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
-            3 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+            0 to listOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+            1 to listOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+            2 to listOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+            3 to listOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
         )
         // ─────────────────────────────────────────────────────────────────────
         private val SYSTEMS =
@@ -105,10 +105,10 @@ data class GameSystem(
                             coreID = CoreID.STELLA,
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "stella_filter",
                                         R.string.setting_stella_filter,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "disabled",
                                                 R.string.value_stella_filter_disabled,
@@ -128,14 +128,14 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "stella_crop_hoverscan",
                                         R.string.setting_stella_crop_hoverscan,
                                     ),
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.ATARI_2600),
+                                    0 to listOf(ControllerConfigs.ATARI_2600),
                                 ),
                         ),
                     ),
@@ -151,25 +151,25 @@ data class GameSystem(
                             CoreID.FCEUMM,
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "fceumm_overscan_h",
                                         R.string.setting_fceumm_overscan_h,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "fceumm_overscan_v",
                                         R.string.setting_fceumm_overscan_v,
                                     ),
                                 ),
                             exposedAdvancedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "fceumm_nospritelimit",
                                         R.string.setting_fceumm_nospritelimit,
                                     ),
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.NES),
+                                    0 to listOf(ControllerConfigs.NES),
                                 ),
                         ),
                     ),
@@ -185,8 +185,8 @@ data class GameSystem(
                             CoreID.SNES9X,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.SNES),
-                                    1 to arrayListOf(ControllerConfigs.SNES),
+                                    0 to listOf(ControllerConfigs.SNES),
+                                    1 to listOf(ControllerConfigs.SNES),
                                 ),
                         ),
                     ),
@@ -204,14 +204,14 @@ data class GameSystem(
                                 listOf(GENESIS_NTSC_FILTER_SETTING),
                             exposedAdvancedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "genesis_plus_gx_no_sprite_limit",
                                         R.string.setting_genesis_plus_gx_no_sprite_limit,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "genesis_plus_gx_overscan",
                                         R.string.setting_genesis_plus_gx_overscan,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "disabled",
                                                 R.string.value_genesis_plus_gx_overscan_disabled,
@@ -233,7 +233,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.SMS),
+                                    0 to listOf(ControllerConfigs.SMS),
                                 ),
                         ),
                     ),
@@ -293,21 +293,21 @@ data class GameSystem(
                             CoreID.GENESIS_PLUS_GX,
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "genesis_plus_gx_lcd_filter",
                                         R.string.setting_genesis_plus_gx_lcd_filter,
                                     ),
                                 ),
                             exposedAdvancedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "genesis_plus_gx_no_sprite_limit",
                                         R.string.setting_genesis_plus_gx_no_sprite_limit,
                                     ),
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.GG),
+                                    0 to listOf(ControllerConfigs.GG),
                                 ),
                         ),
                     ),
@@ -323,18 +323,18 @@ data class GameSystem(
                             CoreID.GAMBATTE,
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "gambatte_gb_colorization",
                                         R.string.setting_gambatte_gb_colorization,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "gambatte_gb_internal_palette",
                                         R.string.setting_gambatte_gb_internal_palette,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "gambatte_mix_frames",
                                         R.string.setting_gambatte_mix_frames,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "disabled",
                                                 R.string.value_gambatte_mix_frames_disabled,
@@ -353,7 +353,7 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "gambatte_dark_filter_level",
                                         R.string.setting_gambatte_dark_filter_level,
                                     ),
@@ -365,7 +365,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.GB),
+                                    0 to listOf(ControllerConfigs.GB),
                                 ),
                         ),
                     ),
@@ -381,10 +381,10 @@ data class GameSystem(
                             CoreID.GAMBATTE,
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "gambatte_mix_frames",
                                         R.string.setting_gambatte_mix_frames,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "disabled",
                                                 R.string.value_gambatte_mix_frames_disabled,
@@ -403,10 +403,10 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "gambatte_gbc_color_correction",
                                         R.string.setting_gambatte_gbc_color_correction,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "disabled",
                                                 R.string.value_gambatte_gbc_color_correction_disabled,
@@ -417,7 +417,7 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "gambatte_dark_filter_level",
                                         R.string.setting_gambatte_dark_filter_level,
                                     ),
@@ -429,7 +429,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.GB),
+                                    0 to listOf(ControllerConfigs.GB),
                                 ),
                         ),
                     ),
@@ -445,14 +445,14 @@ data class GameSystem(
                             CoreID.MGBA,
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "mgba_solar_sensor_level",
                                         R.string.setting_mgba_solar_sensor_level,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "mgba_interframe_blending",
                                         R.string.setting_mgba_interframe_blending,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "OFF",
                                                 R.string.value_mgba_interframe_blending_off,
@@ -471,10 +471,10 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "mgba_frameskip",
                                         R.string.setting_mgba_frameskip,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "disabled",
                                                 R.string.value_mgba_frameskip_disabled,
@@ -482,10 +482,10 @@ data class GameSystem(
                                             ExposedSetting.Value("auto", R.string.value_mgba_frameskip_auto),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "mgba_color_correction",
                                         R.string.setting_mgba_color_correction,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "OFF",
                                                 R.string.value_mgba_color_correction_off,
@@ -500,7 +500,7 @@ data class GameSystem(
                             rumbleSupported = true,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.GBA),
+                                    0 to listOf(ControllerConfigs.GBA),
                                 ),
                         ),
                     ),
@@ -516,14 +516,14 @@ data class GameSystem(
                             CoreID.MUPEN64_PLUS_NEXT,
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "mupen64plus-43screensize",
                                         R.string.setting_mupen64plus_43screensize,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "mupen64plus-cpucore",
                                         R.string.setting_mupen64plus_cpucore,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "dynamic_recompiler",
                                                 R.string.value_mupen64plus_cpucore_dynamicrecompiler,
@@ -538,10 +538,10 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "mupen64plus-BilinearMode",
                                         R.string.setting_mupen64plus_BilinearMode,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "standard",
                                                 R.string.value_mupen64plus_bilinearmode_standard,
@@ -552,10 +552,10 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "mupen64plus-pak1",
                                         R.string.setting_mupen64plus_pak1,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "memory",
                                                 R.string.value_mupen64plus_mupen64plus_pak1_memory,
@@ -570,10 +570,10 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "mupen64plus-pak2",
                                         R.string.setting_mupen64plus_pak2,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "none",
                                                 R.string.value_mupen64plus_mupen64plus_pak2_none,
@@ -592,7 +592,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.N64),
+                                    0 to listOf(ControllerConfigs.N64),
                                 ),
                             rumbleSupported = true,
                             skipDuplicateFrames = false,
@@ -611,36 +611,36 @@ data class GameSystem(
                             controllerConfigs =
                                 hashMapOf(
                                     0 to
-                                        arrayListOf(
+                                        listOf(
                                             ControllerConfigs.PSX_STANDARD,
                                             ControllerConfigs.PSX_DUALSHOCK,
                                         ),
                                     1 to
-                                        arrayListOf(
+                                        listOf(
                                             ControllerConfigs.PSX_STANDARD,
                                             ControllerConfigs.PSX_DUALSHOCK,
                                         ),
                                     2 to
-                                        arrayListOf(
+                                        listOf(
                                             ControllerConfigs.PSX_STANDARD,
                                             ControllerConfigs.PSX_DUALSHOCK,
                                         ),
                                     3 to
-                                        arrayListOf(
+                                        listOf(
                                             ControllerConfigs.PSX_STANDARD,
                                             ControllerConfigs.PSX_DUALSHOCK,
                                         ),
                                 ),
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "pcsx_rearmed_frameskip",
                                         R.string.setting_pcsx_rearmed_frameskip,
                                     ),
                                 ),
                             exposedAdvancedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "pcsx_rearmed_drc",
                                         R.string.setting_pcsx_rearmed_drc,
                                     ),
@@ -678,21 +678,21 @@ data class GameSystem(
                                 ),
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "ppsspp_auto_frameskip",
                                         R.string.setting_ppsspp_auto_frameskip,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "ppsspp_frameskip",
                                         R.string.setting_mgba_frameskip,
                                     ),
                                 ),
                             exposedAdvancedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "ppsspp_cpu_core",
                                         R.string.setting_ppsspp_cpu_core,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value("JIT", R.string.value_ppsspp_cpu_core_jit),
                                             ExposedSetting.Value(
                                                 "IR JIT",
@@ -704,18 +704,18 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "ppsspp_internal_resolution",
                                         R.string.setting_ppsspp_internal_resolution,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "ppsspp_texture_scaling_level",
                                         R.string.setting_ppsspp_texture_scaling_level,
                                     ),
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.PSP),
+                                    0 to listOf(ControllerConfigs.PSP),
                                 ),
                             supportsLibretroVFS = true,
                         ),
@@ -739,18 +739,18 @@ data class GameSystem(
                             CoreID.FBNEO,
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "fbneo-frameskip",
                                         R.string.setting_fbneo_frameskip,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "fbneo-cpu-speed-adjust",
                                         R.string.setting_fbneo_cpu_speed_adjust,
                                     ),
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.FB_NEO_4, ControllerConfigs.FB_NEO_6),
+                                    0 to listOf(ControllerConfigs.FB_NEO_4, ControllerConfigs.FB_NEO_6),
                                 ),
                         ),
                     ),
@@ -776,7 +776,7 @@ data class GameSystem(
                             controllerConfigs =
                                 hashMapOf(
                                     0 to
-                                        arrayListOf(
+                                        listOf(
                                             ControllerConfigs.MAME_2003_4,
                                             ControllerConfigs.MAME_2003_6,
                                         ),
@@ -803,10 +803,10 @@ data class GameSystem(
                             CoreID.DESMUME,
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "desmume_screens_layout",
                                         R.string.setting_desmume_screens_layout,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "top/bottom",
                                                 R.string.value_desmume_screens_layout_topbottom,
@@ -817,7 +817,7 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "desmume_frameskip",
                                         R.string.setting_desmume_frameskip,
                                     ),
@@ -829,7 +829,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.DESMUME),
+                                    0 to listOf(ControllerConfigs.DESMUME),
                                 ),
                             skipDuplicateFrames = false,
                         ),
@@ -837,10 +837,10 @@ data class GameSystem(
                             CoreID.MELONDS,
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "melonds_screen_layout1",
                                         R.string.setting_melonds_screen_layout,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "top-bottom",
                                                 R.string.value_melonds_screen_layout_topbottom,
@@ -851,10 +851,10 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "melonds_mic_input",
                                         R.string.setting_melonds_mic_input,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "microphone",
                                                 R.string.value_melonds_mic_input_microphone,
@@ -868,11 +868,11 @@ data class GameSystem(
                                 ),
                             exposedAdvancedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "melonds_threaded_renderer",
                                         R.string.setting_melonds_threaded_renderer,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "melonds_jit_enable",
                                         R.string.setting_melonds_jit_enable,
                                     ),
@@ -885,7 +885,7 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.MELONDS),
+                                    0 to listOf(ControllerConfigs.MELONDS),
                                 ),
                             statesVersion = 2,
                             supportsMicrophone = true,
@@ -911,7 +911,7 @@ data class GameSystem(
                             CoreID.PROSYSTEM,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.ATARI7800),
+                                    0 to listOf(ControllerConfigs.ATARI7800),
                                 ),
                         ),
                     ),
@@ -932,14 +932,14 @@ data class GameSystem(
                                 ),
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.LYNX),
+                                    0 to listOf(ControllerConfigs.LYNX),
                                 ),
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "handy_rot",
                                         R.string.setting_handy_rot,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "None",
                                                 R.string.value_handy_rot_none,
@@ -974,7 +974,7 @@ data class GameSystem(
                             CoreID.MEDNAFEN_PCE_FAST,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.PCE),
+                                    0 to listOf(ControllerConfigs.PCE),
                                 ),
                         ),
                     ),
@@ -991,7 +991,7 @@ data class GameSystem(
                             CoreID.MEDNAFEN_NGP,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.NGP),
+                                    0 to listOf(ControllerConfigs.NGP),
                                 ),
                         ),
                     ),
@@ -1007,7 +1007,7 @@ data class GameSystem(
                             CoreID.MEDNAFEN_NGP,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.NGP),
+                                    0 to listOf(ControllerConfigs.NGP),
                                 ),
                         ),
                     ),
@@ -1023,14 +1023,14 @@ data class GameSystem(
                             CoreID.MEDNAFEN_WSWAN,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.WS_LANDSCAPE, ControllerConfigs.WS_PORTRAIT),
+                                    0 to listOf(ControllerConfigs.WS_LANDSCAPE, ControllerConfigs.WS_PORTRAIT),
                                 ),
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "wswan_rotate_display",
                                         R.string.setting_wswan_rotate_display,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "landscape",
                                                 R.string.value_wswan_rotate_display_landscape,
@@ -1041,7 +1041,7 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "wswan_mono_palette",
                                         R.string.setting_wswan_mono_palette,
                                     ),
@@ -1065,14 +1065,14 @@ data class GameSystem(
                             CoreID.MEDNAFEN_WSWAN,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.WS_LANDSCAPE, ControllerConfigs.WS_PORTRAIT),
+                                    0 to listOf(ControllerConfigs.WS_LANDSCAPE, ControllerConfigs.WS_PORTRAIT),
                                 ),
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "wswan_rotate_display",
                                         R.string.setting_wswan_rotate_display,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "landscape",
                                                 R.string.value_wswan_rotate_display_landscape,
@@ -1102,7 +1102,7 @@ data class GameSystem(
                             CoreID.DOSBOX_PURE,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.DOS_AUTO),
+                                    0 to listOf(ControllerConfigs.DOS_AUTO),
                                 ),
                             statesSupported = false,
                         ),
@@ -1127,7 +1127,7 @@ data class GameSystem(
                             CoreID.CITRA,
                             controllerConfigs =
                                 hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.NINTENDO_3DS),
+                                    0 to listOf(ControllerConfigs.NINTENDO_3DS),
                                 ),
                             defaultSettings =
                                 listOf(
@@ -1139,10 +1139,10 @@ data class GameSystem(
                                 ),
                             exposedSettings =
                                 listOf(
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "citra_layout_option",
                                         R.string.setting_citra_layout_option,
-                                        arrayListOf(
+                                        listOf(
                                             ExposedSetting.Value(
                                                 "Default Top-Bottom Screen",
                                                 R.string.value_citra_layout_option_topbottom,
@@ -1153,15 +1153,15 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "citra_resolution_factor",
                                         R.string.setting_citra_resolution_factor,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "citra_use_acc_mul",
                                         R.string.setting_citra_use_acc_mul,
                                     ),
-                                    ExposedSetting(
+                                    ExposedSetting.Registered(
                                         "citra_use_acc_geo_shaders",
                                         R.string.setting_citra_use_acc_geo_shaders,
                                     ),

@@ -168,7 +168,7 @@ abstract class BaseGameActivity : ImmersiveActivity() {
     }
 
     private fun transformExposedSetting(
-        exposedSetting: ExposedSetting,
+        exposedSetting: ExposedSetting.Registered,
         coreOptions: List<CoreOption>,
     ): ChimeroidCoreOption? {
         return coreOptions
@@ -186,10 +186,12 @@ abstract class BaseGameActivity : ImmersiveActivity() {
 
         val options =
             systemCoreConfig.exposedSettings
+                .filterIsInstance<ExposedSetting.Registered>()
                 .mapNotNull { transformExposedSetting(it, coreOptions) }
 
         val advancedOptions =
             systemCoreConfig.exposedAdvancedSettings
+                .filterIsInstance<ExposedSetting.Registered>()
                 .mapNotNull { transformExposedSetting(it, coreOptions) }
 
         val knownKeys =
@@ -238,7 +240,9 @@ abstract class BaseGameActivity : ImmersiveActivity() {
     private fun getCoreOptions(): List<CoreOption> {
         return baseGameScreenViewModel.retroGameView.retroGameView?.getVariables()
             ?.mapNotNull {
-                runCatching { CoreOption.fromLibretroDroidVariable(it) }.getOrNull()
+                runCatching { CoreOption.fromLibretroDroidVariable(it) }
+                    .onFailure { e -> Timber.w(e, "Failed to parse variable key=${it.key}") }
+                    .getOrNull()
             } ?: emptyList()
     }
 

@@ -70,41 +70,58 @@ void Environment::deinitialize() {
 }
 
 void Environment::updateVariable(const std::string& key, const std::string& value) {
-    auto current = variables[key];
-    current.key = key;
-
-    if (value != current.value) {
-        current.value = value;
-        variables[key] = current;
-        dirtyVariables = true;
+    auto it = variables.find(key);
+    if (it != variables.end()) {
+        // Key was registered by SET_VARIABLES — update value only if changed.
+        if (it->second.value != value) {
+            it->second.value = value;
+            dirtyVariables = true;
+        }
+        return;
     }
+    // Key not yet registered — insert a placeholder so GET_VARIABLE can serve it.
+    // (Can happen when Kotlin pushes stored prefs before the core fires SET_VARIABLES.)
+    Variable v;
+    v.key   = key;
+    v.value = value;
+    variables.emplace(key, std::move(v));
+    dirtyVariables = true;
 }
 
 bool Environment::environment_handle_set_variables(const struct retro_variable* received) {
-    unsigned count = 0;
-    while (received[count].key != nullptr) {
-        LOGD("Received variable %s: %s", received[count].key, received[count].value);
+    for (unsigned i = 0; received[i].key != nullptr; ++i) {
+        const char* rawKey  = received[i].key;
+        const char* rawDesc = received[i].value;   // "Human name; val1|val2|val3"
 
-        std::string key(received[count].key);
-        std::string description(received[count].value);
-        std::string value(received[count].value);
+        LOGD("Received variable %s: %s", rawKey, rawDesc);
 
-        auto firstValueStart = value.find(';') + 2;
-        auto firstValueEnd = value.find('|', firstValueStart);
-        value = value.substr(firstValueStart, firstValueEnd - firstValueStart);
+        std::string key(rawKey);
+        std::string description(rawDesc);
 
-        auto currentVariable = variables[key];
-        currentVariable.key = key;
-        currentVariable.description = description;
-
-        if (currentVariable.value.empty()) {
-            currentVariable.value = value;
+        // Extract the first option value as the default.
+        // Format: "Human name; val1|val2|…"  — semicolon + space separate name from values.
+        std::string defaultValue;
+        const char* semi = (rawDesc != nullptr) ? std::strchr(rawDesc, ';') : nullptr;
+        if (semi != nullptr) {
+            const char* valueStart = semi + 1;
+            // Skip the single space after the semicolon if present.
+            if (*valueStart == ' ') ++valueStart;
+            // Default value ends at the first '|' or end-of-string.
+            const char* pipe = std::strchr(valueStart, '|');
+            defaultValue = (pipe != nullptr)
+                ? std::string(valueStart, static_cast<size_t>(pipe - valueStart))
+                : std::string(valueStart);
         }
 
-        variables[key] = currentVariable;
-        LOGD("Assigning variable %s: %s", currentVariable.key.c_str(), currentVariable.value.c_str());
+        auto& var = variables[key];   // insert default-constructed entry if absent
+        var.key         = key;
+        var.description = std::move(description);
+        // Preserve a user-set value (written by updateVariable before SET_VARIABLES fired).
+        if (var.value.empty()) {
+            var.value = std::move(defaultValue);
+        }
 
-        count++;
+        LOGD("Variable registered %s = %s", var.key.c_str(), var.value.c_str());
     }
 
     return true;
