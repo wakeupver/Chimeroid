@@ -611,22 +611,22 @@ data class GameSystem(
                             controllerConfigs =
                                 hashMapOf(
                                     0 to
-                                        listOf(
+                                        arrayListOf(
                                             ControllerConfigs.PSX_STANDARD,
                                             ControllerConfigs.PSX_DUALSHOCK,
                                         ),
                                     1 to
-                                        listOf(
+                                        arrayListOf(
                                             ControllerConfigs.PSX_STANDARD,
                                             ControllerConfigs.PSX_DUALSHOCK,
                                         ),
                                     2 to
-                                        listOf(
+                                        arrayListOf(
                                             ControllerConfigs.PSX_STANDARD,
                                             ControllerConfigs.PSX_DUALSHOCK,
                                         ),
                                     3 to
-                                        listOf(
+                                        arrayListOf(
                                             ControllerConfigs.PSX_STANDARD,
                                             ControllerConfigs.PSX_DUALSHOCK,
                                         ),
@@ -776,7 +776,7 @@ data class GameSystem(
                             controllerConfigs =
                                 hashMapOf(
                                     0 to
-                                        listOf(
+                                        arrayListOf(
                                             ControllerConfigs.MAME_2003_4,
                                             ControllerConfigs.MAME_2003_6,
                                         ),
