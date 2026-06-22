@@ -184,6 +184,11 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                 gameView.viewport = viewport
             }
 
+            // Clear dual-screen config on the GL layer when leaving
+            LaunchedEffect(isDualScreen) {
+                if (!isDualScreen) viewModel.clearDualScreenLayout()
+            }
+
             ConstraintLayout(
                 modifier = Modifier.fillMaxSize(),
                 constraintSet =
