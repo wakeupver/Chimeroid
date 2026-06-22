@@ -371,7 +371,7 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
 void Environment::setLanguage(const std::string& androidLanguage) {
     std::unordered_map<std::string, unsigned> languages {
             { "en", RETRO_LANGUAGE_ENGLISH },
-            { "jp", RETRO_LANGUAGE_JAPANESE },
+            { "ja", RETRO_LANGUAGE_JAPANESE },
             { "fr", RETRO_LANGUAGE_FRENCH },
             { "es", RETRO_LANGUAGE_SPANISH },
             { "de", RETRO_LANGUAGE_GERMAN },
@@ -452,19 +452,16 @@ float Environment::getGameGeometryAspectRatio() const {
 
 const std::vector<struct Variable> Environment::getVariables() const {
     std::vector<struct Variable> result;
+    result.reserve(variables.size());
 
-    std::for_each(
-        variables.begin(),
-        variables.end(),
-        [&](std::pair<std::string, struct Variable> item) {
-            result.push_back(item.second);
-        }
-    );
+    for (const auto& [key, var] : variables) {
+        result.push_back(var);
+    }
 
     std::sort(
         result.begin(),
         result.end(),
-        [](struct Variable v1, struct Variable v2) {
+        [](const struct Variable& v1, const struct Variable& v2) {
             return v1.key < v2.key;
         }
     );

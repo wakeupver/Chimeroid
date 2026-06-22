@@ -45,8 +45,5 @@ fun <E> Array<E>.toIndexedMap(): Map<Int, E> =
         .mapIndexed { index, e -> index to e }
         .toMap()
 
-inline fun <T, K> Iterable<T>.associateByNotNull(keySelector: (T) -> K?): Map<K, T> {
-    return this.map { keySelector(it) to it }
-        .filter { (key, _) -> key != null }
-        .associate { (key, value) -> key!! to value }
-}
+inline fun <T, K> Iterable<T>.associateByNotNull(keySelector: (T) -> K?): Map<K, T> =
+    mapNotNull { item -> keySelector(item)?.let { key -> key to item } }.toMap()

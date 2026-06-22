@@ -662,7 +662,11 @@ private fun MacroButtonListItem(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = if (btn.simultaneous) "Simultaneous" else "Sequential",
+                text = if (btn.simultaneous) {
+                    stringResource(R.string.macro_simultaneous_label)
+                } else {
+                    stringResource(R.string.macro_sequential_label)
+                },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -670,7 +674,7 @@ private fun MacroButtonListItem(
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
             Icon(
                 imageVector = Icons.Default.Delete,
-                contentDescription = "Delete",
+                contentDescription = stringResource(R.string.macro_delete),
                 modifier = Modifier.size(18.dp),
                 tint = MaterialTheme.colorScheme.error,
             )
@@ -763,7 +767,7 @@ private fun AddMacroDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.macro_cancel))
                     }
                     Spacer(Modifier.width(8.dp))
                     Button(
@@ -780,7 +784,7 @@ private fun AddMacroDialog(
                         },
                         enabled = selectedKeys.isNotEmpty(),
                     ) {
-                        Text("Add")
+                        Text(stringResource(R.string.macro_confirm_add))
                     }
                 }
             }

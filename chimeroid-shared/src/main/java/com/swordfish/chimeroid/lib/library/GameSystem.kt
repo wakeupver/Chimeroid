@@ -58,6 +58,41 @@ data class GameSystem(
         val secondaryUVyMax: Float = 1f,
     )
     companion object {
+        // ── Shared settings reused across SMS / GENESIS / SEGACD ─────────────
+        private val GENESIS_NTSC_FILTER_SETTING = ExposedSetting(
+            "genesis_plus_gx_blargg_ntsc_filter",
+            R.string.setting_genesis_plus_gx_blargg_ntsc_filter,
+            arrayListOf(
+                ExposedSetting.Value("disabled",   R.string.value_genesis_plus_gx_blargg_ntsc_filter_disabled),
+                ExposedSetting.Value("monochrome", R.string.value_genesis_plus_gx_blargg_ntsc_filter_monochrome),
+                ExposedSetting.Value("composite",  R.string.value_genesis_plus_gx_blargg_ntsc_filter_composite),
+                ExposedSetting.Value("svideo",     R.string.value_genesis_plus_gx_blargg_ntsc_filter_svideo),
+                ExposedSetting.Value("rgb",        R.string.value_genesis_plus_gx_blargg_ntsc_filter_rgb),
+            ),
+        )
+        private val GENESIS_ADVANCED_SETTINGS = listOf(
+            ExposedSetting(
+                "genesis_plus_gx_no_sprite_limit",
+                R.string.setting_genesis_plus_gx_no_sprite_limit,
+            ),
+            ExposedSetting(
+                "genesis_plus_gx_overscan",
+                R.string.setting_genesis_plus_gx_overscan,
+                arrayListOf(
+                    ExposedSetting.Value("disabled",   R.string.value_genesis_plus_gx_overscan_disabled),
+                    ExposedSetting.Value("top/bottom", R.string.value_genesis_plus_gx_overscan_topbottom),
+                    ExposedSetting.Value("left/right", R.string.value_genesis_plus_gx_overscan_leftright),
+                    ExposedSetting.Value("full",       R.string.value_genesis_plus_gx_overscan_full),
+                ),
+            ),
+        )
+        private val GENESIS_4_PLAYER_CONTROLLERS = hashMapOf(
+            0 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+            1 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+            2 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+            3 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
+        )
+        // ─────────────────────────────────────────────────────────────────────
         private val SYSTEMS =
             listOf(
                 GameSystem(
@@ -166,34 +201,7 @@ data class GameSystem(
                         SystemCoreConfig(
                             CoreID.GENESIS_PLUS_GX,
                             exposedSettings =
-                                listOf(
-                                    ExposedSetting(
-                                        "genesis_plus_gx_blargg_ntsc_filter",
-                                        R.string.setting_genesis_plus_gx_blargg_ntsc_filter,
-                                        arrayListOf(
-                                            ExposedSetting.Value(
-                                                "disabled",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_disabled,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "monochrome",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_monochrome,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "composite",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_composite,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "svideo",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_svideo,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "rgb",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_rgb,
-                                            ),
-                                        ),
-                                    ),
-                                ),
+                                listOf(GENESIS_NTSC_FILTER_SETTING),
                             exposedAdvancedSettings =
                                 listOf(
                                     ExposedSetting(
@@ -239,87 +247,9 @@ data class GameSystem(
                     listOf(
                         SystemCoreConfig(
                             CoreID.GENESIS_PLUS_GX,
-                            exposedSettings =
-                                listOf(
-                                    ExposedSetting(
-                                        "genesis_plus_gx_blargg_ntsc_filter",
-                                        R.string.setting_genesis_plus_gx_blargg_ntsc_filter,
-                                        arrayListOf(
-                                            ExposedSetting.Value(
-                                                "disabled",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_disabled,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "monochrome",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_monochrome,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "composite",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_composite,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "svideo",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_svideo,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "rgb",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_rgb,
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                            exposedAdvancedSettings =
-                                listOf(
-                                    ExposedSetting(
-                                        "genesis_plus_gx_no_sprite_limit",
-                                        R.string.setting_genesis_plus_gx_no_sprite_limit,
-                                    ),
-                                    ExposedSetting(
-                                        "genesis_plus_gx_overscan",
-                                        R.string.setting_genesis_plus_gx_overscan,
-                                        arrayListOf(
-                                            ExposedSetting.Value(
-                                                "disabled",
-                                                R.string.value_genesis_plus_gx_overscan_disabled,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "top/bottom",
-                                                R.string.value_genesis_plus_gx_overscan_topbottom,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "left/right",
-                                                R.string.value_genesis_plus_gx_overscan_leftright,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "full",
-                                                R.string.value_genesis_plus_gx_overscan_full,
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                            controllerConfigs =
-                                hashMapOf(
-                                    0 to
-                                        arrayListOf(
-                                            ControllerConfigs.GENESIS_3,
-                                            ControllerConfigs.GENESIS_6,
-                                        ),
-                                    1 to
-                                        arrayListOf(
-                                            ControllerConfigs.GENESIS_3,
-                                            ControllerConfigs.GENESIS_6,
-                                        ),
-                                    2 to
-                                        arrayListOf(
-                                            ControllerConfigs.GENESIS_3,
-                                            ControllerConfigs.GENESIS_6,
-                                        ),
-                                    3 to
-                                        arrayListOf(
-                                            ControllerConfigs.GENESIS_3,
-                                            ControllerConfigs.GENESIS_6,
-                                        ),
-                                ),
+                            exposedSettings = listOf(GENESIS_NTSC_FILTER_SETTING),
+                            exposedAdvancedSettings = GENESIS_ADVANCED_SETTINGS,
+                            controllerConfigs = GENESIS_4_PLAYER_CONTROLLERS,
                         ),
                     ),
                     uniqueExtensions = listOf("gen", "smd", "md"),
@@ -332,87 +262,9 @@ data class GameSystem(
                     listOf(
                         SystemCoreConfig(
                             CoreID.GENESIS_PLUS_GX,
-                            exposedSettings =
-                                listOf(
-                                    ExposedSetting(
-                                        "genesis_plus_gx_blargg_ntsc_filter",
-                                        R.string.setting_genesis_plus_gx_blargg_ntsc_filter,
-                                        arrayListOf(
-                                            ExposedSetting.Value(
-                                                "disabled",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_disabled,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "monochrome",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_monochrome,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "composite",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_composite,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "svideo",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_svideo,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "rgb",
-                                                R.string.value_genesis_plus_gx_blargg_ntsc_filter_rgb,
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                            exposedAdvancedSettings =
-                                listOf(
-                                    ExposedSetting(
-                                        "genesis_plus_gx_no_sprite_limit",
-                                        R.string.setting_genesis_plus_gx_no_sprite_limit,
-                                    ),
-                                    ExposedSetting(
-                                        "genesis_plus_gx_overscan",
-                                        R.string.setting_genesis_plus_gx_overscan,
-                                        arrayListOf(
-                                            ExposedSetting.Value(
-                                                "disabled",
-                                                R.string.value_genesis_plus_gx_overscan_disabled,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "top/bottom",
-                                                R.string.value_genesis_plus_gx_overscan_topbottom,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "left/right",
-                                                R.string.value_genesis_plus_gx_overscan_leftright,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "full",
-                                                R.string.value_genesis_plus_gx_overscan_full,
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                            controllerConfigs =
-                                hashMapOf(
-                                    0 to
-                                        arrayListOf(
-                                            ControllerConfigs.GENESIS_3,
-                                            ControllerConfigs.GENESIS_6,
-                                        ),
-                                    1 to
-                                        arrayListOf(
-                                            ControllerConfigs.GENESIS_3,
-                                            ControllerConfigs.GENESIS_6,
-                                        ),
-                                    2 to
-                                        arrayListOf(
-                                            ControllerConfigs.GENESIS_3,
-                                            ControllerConfigs.GENESIS_6,
-                                        ),
-                                    3 to
-                                        arrayListOf(
-                                            ControllerConfigs.GENESIS_3,
-                                            ControllerConfigs.GENESIS_6,
-                                        ),
-                                ),
+                            exposedSettings = listOf(GENESIS_NTSC_FILTER_SETTING),
+                            exposedAdvancedSettings = GENESIS_ADVANCED_SETTINGS,
+                            controllerConfigs = GENESIS_4_PLAYER_CONTROLLERS,
                             regionalBIOSFiles =
                                 mapOf(
                                     "Europe" to "bios_CD_E.bin",
@@ -1333,12 +1185,12 @@ data class GameSystem(
                 ),
             )
 
-        private val byIdCache by lazy { mapOf(*SYSTEMS.map { it.id.dbname to it }.toTypedArray()) }
+        private val byIdCache by lazy { SYSTEMS.associateBy { it.id.dbname } }
         private val byExtensionCache by lazy {
             val mutableMap = mutableMapOf<String, GameSystem>()
             for (system in SYSTEMS) {
                 for (extension in system.uniqueExtensions) {
-                    mutableMap[extension.toLowerCase(Locale.US)] = system
+                    mutableMap[extension.lowercase(Locale.US)] = system
                 }
             }
             mutableMap.toMap()
@@ -1360,7 +1212,7 @@ data class GameSystem(
         }
 
         fun findByUniqueFileExtension(fileExtension: String): GameSystem? =
-            byExtensionCache[fileExtension.toLowerCase(Locale.US)]
+            byExtensionCache[fileExtension.lowercase(Locale.US)]
 
         data class ScanOptions(
             val scanByFilename: Boolean = true,

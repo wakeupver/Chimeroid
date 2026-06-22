@@ -227,23 +227,6 @@ void Video::renderFrame() {
             : videoLayout.getFramebufferVertices();
         auto& coordinates = videoLayout.getTextureCoordinates();
 
-        constexpr GLsizeiptr kVerts    = 12;
-        constexpr GLsizeiptr kPosBytes = kVerts * sizeof(float);
-        constexpr GLsizeiptr kUvBytes  = kVerts * sizeof(float);
-
-        glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
-        glBufferData(GL_ARRAY_BUFFER, kPosBytes + kUvBytes, nullptr, GL_STREAM_DRAW);
-        glBufferSubData(GL_ARRAY_BUFFER, 0,        kPosBytes, vertices.data());
-        glBufferSubData(GL_ARRAY_BUFFER, kPosBytes, kUvBytes,  coordinates.data());
-
-        glVertexAttribPointer(shader.gvPositionHandle,   2, GL_FLOAT, GL_FALSE, 0,
-            reinterpret_cast<void*>(static_cast<uintptr_t>(0)));
-        glEnableVertexAttribArray(shader.gvPositionHandle);
-
-        glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0,
-            reinterpret_cast<void*>(static_cast<uintptr_t>(kPosBytes)));
-        glEnableVertexAttribArray(shader.gvCoordinateHandle);
-
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
         glUniform1i(shader.gTextureHandle, 0);
@@ -257,10 +240,7 @@ void Video::renderFrame() {
         glUniform2f(shader.gTextureSizeHandle,    getTextureWidth(), getTextureHeight());
         glUniform1f(shader.gScreenDensityHandle,  getScreenDensity());
 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        glDisableVertexAttribArray(shader.gvPositionHandle);
-        glDisableVertexAttribArray(shader.gvCoordinateHandle);
+        uploadAndDraw(vertices, coordinates, shader.gvPositionHandle, shader.gvCoordinateHandle);
 
         if (shader.gPreviousPassTextureHandle != -1 && passData.texture.has_value()) {
             glActiveTexture(GL_TEXTURE0 + 1);
@@ -269,7 +249,6 @@ void Video::renderFrame() {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
         glUseProgram(0);
     }
 
@@ -296,29 +275,42 @@ std::array<float, 12> Video::buildUVQuad(
     };
 }
 
-void Video::drawQuadPass(
+void Video::uploadAndDraw(
     const std::array<float, 12>& vertices,
     const std::array<float, 12>& uvs,
-    const ShaderChainEntry&       shader
+    GLint posHandle,
+    GLint coordHandle
 ) {
     constexpr GLsizeiptr kVerts    = 12;
     constexpr GLsizeiptr kPosBytes = kVerts * sizeof(float);
     constexpr GLsizeiptr kUvBytes  = kVerts * sizeof(float);
-
-    glUseProgram(shader.gProgram);
 
     glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
     glBufferData(GL_ARRAY_BUFFER, kPosBytes + kUvBytes, nullptr, GL_STREAM_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0,        kPosBytes, vertices.data());
     glBufferSubData(GL_ARRAY_BUFFER, kPosBytes, kUvBytes,  uvs.data());
 
-    glVertexAttribPointer(shader.gvPositionHandle,   2, GL_FLOAT, GL_FALSE, 0,
+    glVertexAttribPointer(posHandle,   2, GL_FLOAT, GL_FALSE, 0,
         reinterpret_cast<void*>(static_cast<uintptr_t>(0)));
-    glEnableVertexAttribArray(shader.gvPositionHandle);
+    glEnableVertexAttribArray(posHandle);
 
-    glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0,
+    glVertexAttribPointer(coordHandle, 2, GL_FLOAT, GL_FALSE, 0,
         reinterpret_cast<void*>(static_cast<uintptr_t>(kPosBytes)));
-    glEnableVertexAttribArray(shader.gvCoordinateHandle);
+    glEnableVertexAttribArray(coordHandle);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glDisableVertexAttribArray(posHandle);
+    glDisableVertexAttribArray(coordHandle);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void Video::drawQuadPass(
+    const std::array<float, 12>& vertices,
+    const std::array<float, 12>& uvs,
+    const ShaderChainEntry&       shader
+) {
+    glUseProgram(shader.gProgram);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
@@ -327,13 +319,10 @@ void Video::drawQuadPass(
     glUniform2f(shader.gTextureSizeHandle,   getTextureWidth(), getTextureHeight());
     glUniform1f(shader.gScreenDensityHandle, getScreenDensity());
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    uploadAndDraw(vertices, uvs, shader.gvPositionHandle, shader.gvCoordinateHandle);
 
-    glDisableVertexAttribArray(shader.gvPositionHandle);
-    glDisableVertexAttribArray(shader.gvCoordinateHandle);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram(0);
 }
 

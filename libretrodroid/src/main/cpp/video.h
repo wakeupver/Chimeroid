@@ -137,6 +137,14 @@ private:
                       const std::array<float, 12>& uvs,
                       const ShaderChainEntry&       shader);
 
+    // Inner helper: upload vertices+uvs to quadVbo, set attrib pointers, draw 6
+    // vertices, then disable attribs and unbind the VBO.  Caller owns program
+    // binding, uniform setup, and texture bind/unbind.
+    void uploadAndDraw(const std::array<float, 12>& vertices,
+                       const std::array<float, 12>& uvs,
+                       GLint posHandle,
+                       GLint coordHandle);
+
     // Compute the UV quad (12 floats) for a crop rect [xMin,yMin,xMax,yMax].
     // Handles bottomLeftOrigin Y-flip.
     std::array<float, 12> buildUVQuad(float xMin, float yMin,

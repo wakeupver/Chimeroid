@@ -256,7 +256,6 @@ class BaseGameScreenViewModel(
     fun deleteMacro(macroId: String) = macro.deleteMacro(macroId)
     fun clearAllMacros() = macro.clearAll()
     fun updateMacroPosition(macroId: String, x: Float, y: Float) = macro.updateMacroPosition(macroId, x, y)
-    fun fireMacro(btn: MacroButton) = macro.pressMacro(btn)   // legacy alias
     fun pressMacro(btn: MacroButton) = macro.pressMacro(btn)
     fun releaseMacro(btn: MacroButton) = macro.releaseMacro(btn)
 

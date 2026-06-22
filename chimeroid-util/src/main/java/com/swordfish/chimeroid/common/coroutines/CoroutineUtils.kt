@@ -27,7 +27,7 @@ suspend fun <T> retry(
     delay: Duration,
     block: suspend (Int) -> T,
 ): Result<T> {
-    assert(attempts >= 1)
+    require(attempts >= 1)
 
     val lastAttempt = attempts - 1
     for (attempt in 0 until lastAttempt) {

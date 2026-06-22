@@ -104,11 +104,7 @@ class LocalStorageProvider(
             return cacheFile
         }
 
-        if (originalFile.isZipped()) {
-            val stream = ZipInputStream(originalFile.inputStream())
-            stream.extractEntryToFile(game.fileName, cacheFile)
-        }
-
+        ZipInputStream(originalFile.inputStream()).extractEntryToFile(game.fileName, cacheFile)
         return cacheFile
     }
 
