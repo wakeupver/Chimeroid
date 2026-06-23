@@ -2,6 +2,8 @@ package com.swordfish.chimeroid.app.mobile.feature.game
 
 import android.graphics.RectF as AndroidRectF
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -97,12 +100,66 @@ fun DualScreenPanels(
                 },
             )
 
-            // Bottom screen panel
+            // Bottom screen panel — DS/3DS touch screen
+            //
+            // Native GLRetroView.onTouchEvent is disabled for dual-screen systems (see
+            // createRetroView). Touch events are intercepted here in the Initial pass
+            // (before PadKit's Main-pass virtual-button handlers) and forwarded directly
+            // to the libretro core as NDC pointer coordinates.  The C++ onTouchEvent()
+            // maps those coordinates through the secondary VideoLayout, which covers only
+            // the bottom panel — so touches on the top (non-touch) screen correctly
+            // produce "outside" and release the pointer.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight((1f - splitFraction).coerceAtLeast(SPLIT_MIN))
-                    .onGloballyPositioned { bottomPanelPos.value = it.boundsInRoot() },
+                    .onGloballyPositioned { bottomPanelPos.value = it.boundsInRoot() }
+                    .pointerInput(Unit) {
+                        awaitEachGesture {
+                            // Grab the DOWN event before PadKit can consume it.
+                            val down = awaitFirstDown(
+                                requireUnconsumed = false,
+                                pass = PointerEventPass.Initial,
+                            )
+                            down.consume()
+
+                            // Helper: convert Box-local position → NDC relative to the
+                            // full GL surface, then forward to the libretro core.
+                            fun forwardChange(offsetX: Float, offsetY: Float) {
+                                val full  = fullScreenPosition.value ?: return
+                                val panel = bottomPanelPos.value ?: return
+                                if (full.width == 0f || full.height == 0f) return
+                                val screenX = offsetX + panel.left
+                                val screenY = offsetY + panel.top
+                                viewModel.sendRetroTouchEvent(
+                                    (2f * screenX / full.width  - 1f).coerceIn(-1f, 1f),
+                                    (2f * screenY / full.height - 1f).coerceIn(-1f, 1f),
+                                )
+                            }
+
+                            forwardChange(down.position.x, down.position.y)
+
+                            // Track MOVE/UP until the finger lifts.
+                            var tracking = true
+                            while (tracking) {
+                                val event  = awaitPointerEvent(PointerEventPass.Initial)
+                                val change = event.changes.firstOrNull { it.id == down.id }
+                                if (change == null) {
+                                    // Pointer was cancelled by the system.
+                                    viewModel.sendRetroTouchEvent(-10f, 10f)
+                                    tracking = false
+                                } else {
+                                    change.consume()
+                                    if (change.pressed) {
+                                        forwardChange(change.position.x, change.position.y)
+                                    } else {
+                                        viewModel.sendRetroTouchEvent(-10f, 10f)
+                                        tracking = false
+                                    }
+                                }
+                            }
+                        }
+                    },
             )
         }
     }

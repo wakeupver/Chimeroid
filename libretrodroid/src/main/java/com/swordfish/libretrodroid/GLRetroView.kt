@@ -177,6 +177,17 @@ class GLRetroView(
         queueEvent { LibretroDroid.onMotionEvent(port, source, xAxis, yAxis) }
     }
 
+    /**
+     * Sends a touch event with coordinates already normalized to NDC space [-1, 1].
+     *
+     * Used by dual-screen (NDS/3DS) systems where Compose intercepts touch events on the
+     * secondary panel and forwards them here, bypassing the View-level [onTouchEvent].
+     * Pass [TOUCH_EVENT_OUTSIDE] to release.
+     */
+    fun sendTouchEventNDC(x: Float, y: Float) {
+        LibretroDroid.onTouchEvent(x, y)
+    }
+
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         val position = when (event?.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {

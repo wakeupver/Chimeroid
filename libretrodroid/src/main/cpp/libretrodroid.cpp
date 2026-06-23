@@ -270,8 +270,16 @@ void LibretroDroid::onMotionEvent(
 void LibretroDroid::onTouchEvent(float xAxis, float yAxis) {
     LOGD("Received touch event: %.2f, %.2f", xAxis, yAxis);
     if (input && video) {
-        auto [x, y] = video->getLayout().getRelativePosition(xAxis, yAxis);
-        input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, x, y);
+        std::pair<float, float> pos;
+        if (dualScreenCfg.enabled) {
+            // NDS/3DS: the touch-sensitive screen is the secondary (bottom) panel.
+            // Only query the secondary layout so that touching the top (non-touch)
+            // screen correctly produces "outside" (-10,-10) and releases the pointer.
+            pos = video->getSecondaryLayout().getRelativePosition(xAxis, yAxis);
+        } else {
+            pos = video->getLayout().getRelativePosition(xAxis, yAxis);
+        }
+        input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, pos.first, pos.second);
     }
 }
 

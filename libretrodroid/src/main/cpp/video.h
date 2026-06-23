@@ -68,6 +68,12 @@ public:
 
     VideoLayout& getLayout() { return videoLayout; }
 
+    /**
+     * Returns the secondary (bottom/touch-screen) layout used in dual-screen mode.
+     * Only valid while dual-screen is enabled via setDualScreenConfig().
+     */
+    VideoLayout& getSecondaryLayout() { return secondaryLayout; }
+
     void updateAspectRatio(float aspectRatio);
     void updateScreenSize(unsigned screenWidth, unsigned screenHeight);
     void updateViewportSize(Rect viewportRect);

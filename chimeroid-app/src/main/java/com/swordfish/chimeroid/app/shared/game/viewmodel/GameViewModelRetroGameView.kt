@@ -241,7 +241,11 @@ class GameViewModelRetroGameView(
                     isFocusableInTouchMode = false
                 }
 
-        if (!system.hasTouchScreen) {
+        if (!system.hasTouchScreen || system.isDualScreen) {
+            // Native View touch handling is disabled for dual-screen (NDS/3DS) systems.
+            // Touch forwarding is done explicitly via Compose in DualScreenPanels using
+            // sendRetroTouchEvent(), which maps bottom-panel coordinates through the
+            // secondary VideoLayout — the actual DS/3DS touchscreen.
             result.disableTouchEvents()
         }
 
@@ -426,6 +430,16 @@ class GameViewModelRetroGameView(
         retroGameViewFlow().getGLRetroErrors()
             .catch { Timber.e(it, "Exception in GLRetroErrors stream.") }
             .collect { handleRetroViewError(it) }
+    }
+
+    /**
+     * Forwards a touch event to the libretro core using NDC coordinates [-1, 1].
+     *
+     * Called by the Compose bottom-panel touch handler in dual-screen (NDS/3DS) mode.
+     * Pass -10f / 10f to signal a touch release (mirrors GLRetroView.TOUCH_EVENT_OUTSIDE).
+     */
+    fun sendRetroTouchEvent(ndcX: Float, ndcY: Float) {
+        retroGameView?.sendTouchEventNDC(ndcX, ndcY)
     }
 
     private fun updateCoreVariables(options: List<CoreVariable>) {

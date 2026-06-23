@@ -405,4 +405,7 @@ class BaseGameScreenViewModel(
     fun sendKeyEvent(keyCode: Int, event: KeyEvent): Boolean = inputs.sendKeyEvent(keyCode, event)
 
     fun sendMotionEvent(event: MotionEvent): Boolean = inputs.sendMotionEvent(event)
+
+    /** Forwards a pre-normalized NDC touch event to the libretro core (dual-screen systems). */
+    fun sendRetroTouchEvent(ndcX: Float, ndcY: Float) = retroGameView.sendRetroTouchEvent(ndcX, ndcY)
 }
