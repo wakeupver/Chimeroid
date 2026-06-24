@@ -125,15 +125,22 @@ fun DualScreenPanels(
 
                             // Helper: convert Box-local position → NDC relative to the
                             // full GL surface, then forward to the libretro core.
+                            //
+                            // Equivalent to GLRetroView.normalizeTouchCoordinates():
+                            //   ndcX = 2 * (abs_x - surface.left) / surface.width  - 1
+                            //   ndcY = 2 * (abs_y - surface.top)  / surface.height - 1
                             fun forwardChange(offsetX: Float, offsetY: Float) {
                                 val full  = fullScreenPosition.value ?: return
                                 val panel = bottomPanelPos.value ?: return
-                                if (full.width == 0f || full.height == 0f) return
-                                val screenX = offsetX + panel.left
-                                val screenY = offsetY + panel.top
+                                val w = full.width
+                                val h = full.height
+                                if (w == 0f || h == 0f) return
+                                // Box-local offset → absolute root coords → NDC
+                                val absX = offsetX + panel.left
+                                val absY = offsetY + panel.top
                                 viewModel.sendRetroTouchEvent(
-                                    (2f * screenX / full.width  - 1f).coerceIn(-1f, 1f),
-                                    (2f * screenY / full.height - 1f).coerceIn(-1f, 1f),
+                                    (2f * (absX - full.left) / w - 1f).coerceIn(-1f, 1f),
+                                    (2f * (absY - full.top)  / h - 1f).coerceIn(-1f, 1f),
                                 )
                             }
 
