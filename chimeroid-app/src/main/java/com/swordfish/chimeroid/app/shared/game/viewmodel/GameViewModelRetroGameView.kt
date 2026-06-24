@@ -433,13 +433,19 @@ class GameViewModelRetroGameView(
     }
 
     /**
-     * Forwards a touch event to the libretro core using NDC coordinates [-1, 1].
-     *
-     * Called by the Compose bottom-panel touch handler in dual-screen (NDS/3DS) mode.
-     * Pass -10f / 10f to signal a touch release (mirrors GLRetroView.TOUCH_EVENT_OUTSIDE).
+     * Forwards a touch at absolute screen pixel coordinates to the libretro core.
+     * The [GLRetroView] converts them to its local space via [getLocationOnScreen],
+     * keeping the same NDC mapping as native [MotionEvent] dispatch.
      */
-    fun sendRetroTouchEvent(ndcX: Float, ndcY: Float) {
-        retroGameView?.sendTouchEventNDC(ndcX, ndcY)
+    fun sendRetroTouchAtScreen(screenX: Float, screenY: Float) {
+        retroGameView?.sendTouchAtScreen(screenX, screenY)
+    }
+
+    /**
+     * Releases the current dual-screen touch (call on ACTION_UP / pointer cancel).
+     */
+    fun sendRetroTouchRelease() {
+        retroGameView?.sendTouchRelease()
     }
 
     private fun updateCoreVariables(options: List<CoreVariable>) {

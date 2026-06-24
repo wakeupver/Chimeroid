@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -79,6 +80,10 @@ fun DualScreenPanels(
     }
 
     // ── Layout ────────────────────────────────────────────────────────────────
+    // Capture the Compose root View once so the pointerInput coroutine can call
+    // getLocationOnScreen() without needing a @Composable context.
+    val composeRootView = LocalView.current
+
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val totalPx = constraints.maxHeight.toFloat().coerceAtLeast(1f)
 
@@ -123,24 +128,17 @@ fun DualScreenPanels(
                             )
                             down.consume()
 
-                            // Helper: convert Box-local position → NDC relative to the
-                            // full GL surface, then forward to the libretro core.
-                            //
-                            // Equivalent to GLRetroView.normalizeTouchCoordinates():
-                            //   ndcX = 2 * (abs_x - surface.left) / surface.width  - 1
-                            //   ndcY = 2 * (abs_y - surface.top)  / surface.height - 1
+                            // Helper: convert Box-local touch to absolute screen pixels,
+                            // then forward to GLRetroView which normalises them the same
+                            // way onTouchEvent does — guaranteeing exact NDC match.
                             fun forwardChange(offsetX: Float, offsetY: Float) {
-                                val full  = fullScreenPosition.value ?: return
                                 val panel = bottomPanelPos.value ?: return
-                                val w = full.width
-                                val h = full.height
-                                if (w == 0f || h == 0f) return
-                                // Box-local offset → absolute root coords → NDC
-                                val absX = offsetX + panel.left
-                                val absY = offsetY + panel.top
-                                viewModel.sendRetroTouchEvent(
-                                    (2f * (absX - full.left) / w - 1f).coerceIn(-1f, 1f),
-                                    (2f * (absY - full.top)  / h - 1f).coerceIn(-1f, 1f),
+                                // Compose root → absolute screen origin
+                                val rootPos = IntArray(2)
+                                composeRootView.getLocationOnScreen(rootPos)
+                                viewModel.sendRetroTouchAtScreen(
+                                    offsetX + panel.left + rootPos[0],
+                                    offsetY + panel.top  + rootPos[1],
                                 )
                             }
 
@@ -153,14 +151,14 @@ fun DualScreenPanels(
                                 val change = event.changes.firstOrNull { it.id == down.id }
                                 if (change == null) {
                                     // Pointer was cancelled by the system.
-                                    viewModel.sendRetroTouchEvent(-10f, 10f)
+                                    viewModel.sendRetroTouchRelease()
                                     tracking = false
                                 } else {
                                     change.consume()
                                     if (change.pressed) {
                                         forwardChange(change.position.x, change.position.y)
                                     } else {
-                                        viewModel.sendRetroTouchEvent(-10f, 10f)
+                                        viewModel.sendRetroTouchRelease()
                                         tracking = false
                                     }
                                 }
