@@ -406,9 +406,9 @@ class BaseGameScreenViewModel(
 
     fun sendMotionEvent(event: MotionEvent): Boolean = inputs.sendMotionEvent(event)
 
-    /** Forwards a touch at absolute screen pixels to the libretro core (dual-screen). */
-    fun sendRetroTouchAtScreen(screenX: Float, screenY: Float) =
-        retroGameView.sendRetroTouchAtScreen(screenX, screenY)
+    /** Forwards a [0,1]-relative panel touch to the libretro core (dual-screen). */
+    fun sendRetroTouchPanelRelative(panelRelX: Float, panelRelY: Float) =
+        retroGameView.sendRetroTouchPanelRelative(panelRelX, panelRelY)
 
     /** Releases the current dual-screen touch. */
     fun sendRetroTouchRelease() = retroGameView.sendRetroTouchRelease()

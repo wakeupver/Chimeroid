@@ -433,12 +433,12 @@ class GameViewModelRetroGameView(
     }
 
     /**
-     * Forwards a touch at absolute screen pixel coordinates to the libretro core.
-     * The [GLRetroView] converts them to its local space via [getLocationOnScreen],
-     * keeping the same NDC mapping as native [MotionEvent] dispatch.
+     * Forwards a touch expressed as [0,1] fractions within the secondary panel.
+     * The coordinate-to-NDC conversion happens inside C++ using the stored viewport
+     * config, guaranteeing consistency with the rendered game content position.
      */
-    fun sendRetroTouchAtScreen(screenX: Float, screenY: Float) {
-        retroGameView?.sendTouchAtScreen(screenX, screenY)
+    fun sendRetroTouchPanelRelative(panelRelX: Float, panelRelY: Float) {
+        retroGameView?.sendTouchPanelRelative(panelRelX, panelRelY)
     }
 
     /**

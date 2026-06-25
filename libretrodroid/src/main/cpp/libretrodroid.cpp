@@ -283,6 +283,26 @@ void LibretroDroid::onTouchEvent(float xAxis, float yAxis) {
     }
 }
 
+void LibretroDroid::setSecondaryTouchFromPanel(float panelRelX, float panelRelY) {
+    if (!input || !video || !dualScreenCfg.enabled) return;
+
+    // Convert panel-relative [0,1] → full-screen NDC using the SAME viewport fractions
+    // that were used to build the secondary layout's foreground vertices.
+    // This guarantees consistency without any dependency on Kotlin screen dimensions.
+    float ndcX = 2.0f * (dualScreenCfg.secondaryVpX + panelRelX * dualScreenCfg.secondaryVpW) - 1.0f;
+    float ndcY = 2.0f * (dualScreenCfg.secondaryVpY + panelRelY * dualScreenCfg.secondaryVpH) - 1.0f;
+
+    auto [x, y] = video->getSecondaryLayout().getRelativePosition(ndcX, ndcY);
+    input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, x, y);
+}
+
+void LibretroDroid::releaseSecondaryTouch() {
+    if (input) {
+        // -10 / -10 is outside any valid [0,1] range → POINTER_PRESSED = 0
+        input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, -10.0f, -10.0f);
+    }
+}
+
 void LibretroDroid::onKeyEvent(unsigned int port, int action, int keyCode) {
     LOGD("Received key event with action (%d) and keycode (%d)", action, keyCode);
     if (input) {

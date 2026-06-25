@@ -23,7 +23,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -80,10 +79,6 @@ fun DualScreenPanels(
     }
 
     // ── Layout ────────────────────────────────────────────────────────────────
-    // Capture the Compose root View once so the pointerInput coroutine can call
-    // getLocationOnScreen() without needing a @Composable context.
-    val composeRootView = LocalView.current
-
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val totalPx = constraints.maxHeight.toFloat().coerceAtLeast(1f)
 
@@ -128,17 +123,17 @@ fun DualScreenPanels(
                             )
                             down.consume()
 
-                            // Helper: convert Box-local touch to absolute screen pixels,
-                            // then forward to GLRetroView which normalises them the same
-                            // way onTouchEvent does — guaranteeing exact NDC match.
+                            // Helper: convert Box-local pixel offset → [0,1] fraction
+                            // within the panel, then hand off to C++ which converts to
+                            // NDC using the stored secondary-viewport config.
+                            // No Kotlin-side screen/NDC calculation needed.
                             fun forwardChange(offsetX: Float, offsetY: Float) {
                                 val panel = bottomPanelPos.value ?: return
-                                // Compose root → absolute screen origin
-                                val rootPos = IntArray(2)
-                                composeRootView.getLocationOnScreen(rootPos)
-                                viewModel.sendRetroTouchAtScreen(
-                                    offsetX + panel.left + rootPos[0],
-                                    offsetY + panel.top  + rootPos[1],
+                                val panelW = panel.width.coerceAtLeast(1f)
+                                val panelH = panel.height.coerceAtLeast(1f)
+                                viewModel.sendRetroTouchPanelRelative(
+                                    (offsetX / panelW).coerceIn(0f, 1f),
+                                    (offsetY / panelH).coerceIn(0f, 1f),
                                 )
                             }
 

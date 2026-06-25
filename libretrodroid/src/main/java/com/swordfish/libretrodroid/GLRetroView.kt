@@ -178,33 +178,22 @@ class GLRetroView(
     }
 
     /**
-     * Forwards a touch at absolute **screen** pixel coordinates to the libretro core.
+     * Forwards a touch expressed as [0,1] fractions within the secondary (bottom) panel
+     * directly to the libretro core. C++ converts to NDC internally using the stored
+     * secondary-viewport config — no Kotlin-side screen coordinate calculation needed.
      *
-     * The view converts them to its own local coordinate space using
-     * [getLocationOnScreen], then normalises identically to [onTouchEvent] —
-     * guaranteeing the same NDC mapping regardless of window insets, navigation
-     * bars, or Compose root offsets.
-     *
-     * Used by dual-screen (NDS/3DS) systems where Compose intercepts bottom-panel
-     * touch events and forwards them here, bypassing the disabled [onTouchEvent].
+     * [panelRelX] 0 = left edge of panel, 1 = right edge.
+     * [panelRelY] 0 = top edge of panel, 1 = bottom edge.
      */
-    fun sendTouchAtScreen(screenX: Float, screenY: Float) {
-        val pos = IntArray(2)
-        getLocationOnScreen(pos)
-        val localX = screenX - pos[0]
-        val localY = screenY - pos[1]
-        LibretroDroid.onTouchEvent(
-            clamp(2f * localX / width  - 1f, -1f, +1f),
-            clamp(2f * localY / height - 1f, -1f, +1f),
-        )
+    fun sendTouchPanelRelative(panelRelX: Float, panelRelY: Float) {
+        LibretroDroid.setSecondaryTouchFromPanel(panelRelX, panelRelY)
     }
 
     /**
-     * Releases the current touch (equivalent to [MotionEvent.ACTION_UP] in
-     * [onTouchEvent]). Must be called for every [sendTouchAtScreen] sequence.
+     * Releases the current dual-screen touch (call on ACTION_UP / pointer cancel).
      */
     fun sendTouchRelease() {
-        LibretroDroid.onTouchEvent(TOUCH_EVENT_OUTSIDE.x, TOUCH_EVENT_OUTSIDE.y)
+        LibretroDroid.releaseSecondaryTouch()
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {

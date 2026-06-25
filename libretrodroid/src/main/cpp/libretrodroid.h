@@ -117,6 +117,15 @@ public:
     void onMotionEvent(unsigned int port, unsigned int source, float xAxis, float yAxis);
     void onTouchEvent(float xAxis, float yAxis);
 
+    /**
+     * Forwards a touch expressed as [0,1] fractions within the secondary (bottom) panel.
+     * C++ converts to NDC using the stored secondary viewport config so the mapping
+     * is guaranteed consistent with the foreground-vertex computation.
+     * Call releaseSecondaryTouch() on finger lift.
+     */
+    void setSecondaryTouchFromPanel(float panelRelX, float panelRelY);
+    void releaseSecondaryTouch();
+
     void refreshAspectRatio();
     float getAspectRatio();
     void setAspectRatioOverride(float aspectRatio);

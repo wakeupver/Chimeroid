@@ -141,6 +141,8 @@ public class LibretroDroid {
 
     public static native void onMotionEvent(int port, int motionSource, float xAxis, float yAxis);
     public static native void onTouchEvent(float xAxis, float yAxis);
+    public static native void setSecondaryTouchFromPanel(float panelRelX, float panelRelY);
+    public static native void releaseSecondaryTouch();
 
     public static native void onKeyEvent(int port, int action, int keyCode);
 
