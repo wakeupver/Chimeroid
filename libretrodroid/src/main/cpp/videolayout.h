@@ -48,6 +48,16 @@ public:
 
     std::pair<float, float> getRelativePosition(float touchX, float touchY);
 
+    /**
+     * Like getRelativePosition but clamps to [0,1] when the touch is within the
+     * panel's NDC bounds even if it falls in a letterbox/pillarbox dead-zone.
+     * Returns (-10,-10) only when the touch is entirely outside this panel
+     * (e.g., the user touched the primary/top screen).
+     *
+     * Used for dual-screen systems so the full bottom panel is touchable.
+     */
+    std::pair<float, float> getRelativePositionClamped(float touchX, float touchY);
+
 private:
     void updateBuffers();
 

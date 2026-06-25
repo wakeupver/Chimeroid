@@ -209,6 +209,54 @@ std::pair<float, float> VideoLayout::getRelativePosition(float touchX, float tou
     return {relativeX, relativeY};
 }
 
+std::pair<float, float> VideoLayout::getRelativePositionClamped(float touchX, float touchY) {
+    // Panel bounds in Android NDC (y increases downward: −1 = screen top, +1 = bottom).
+    // viewportRect stores (x, y, w, h) as [0,1] fractions of the GL surface where
+    // y=0 is the screen top. Converting:
+    //   panel NDC left   = 2*vpX − 1
+    //   panel NDC right  = 2*(vpX+vpW) − 1
+    //   panel NDC top    = 2*vpY − 1
+    //   panel NDC bottom = 2*(vpY+vpH) − 1
+    const float panelLeft   = 2.0f * viewportRect.getX() - 1.0f;
+    const float panelRight  = 2.0f * (viewportRect.getX() + viewportRect.getWidth())  - 1.0f;
+    const float panelTop    = 2.0f * viewportRect.getY() - 1.0f;
+    const float panelBottom = 2.0f * (viewportRect.getY() + viewportRect.getHeight()) - 1.0f;
+
+    // Reject touches that are completely outside this panel (e.g. user touched the
+    // primary/top screen). A small epsilon widens the acceptance region slightly to
+    // absorb sub-pixel rounding at the divider boundary.
+    const float eps = 0.01f;
+    if (touchX < panelLeft - eps || touchX > panelRight  + eps ||
+        touchY < panelTop  - eps || touchY > panelBottom + eps) {
+        return {-10.0f, -10.0f};
+    }
+
+    // Touch is within the panel. Compute game-content bounds (same as getRelativePosition).
+    float xMin = std::numeric_limits<float>::max();
+    float xMax = std::numeric_limits<float>::lowest();
+    float yMin = std::numeric_limits<float>::max();
+    float yMax = std::numeric_limits<float>::lowest();
+
+    for (size_t i = 0; i < foregroundVertices.size(); i += 2) {
+        float x = foregroundVertices[i];
+        float y = foregroundVertices[i + 1];
+        xMin = std::min(xMin, x);
+        xMax = std::max(xMax, x);
+        yMin = std::min(yMin, -y);
+        yMax = std::max(yMax, -y);
+    }
+
+    // Clamp to [0, 1] so letterbox/pillarbox dead-zones still produce a valid
+    // game coordinate rather than "outside". This makes the full panel touchable.
+    auto clamp01 = [](float v) { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); };
+
+    float relativeX = clamp01((touchX - xMin) / (xMax - xMin));
+    float relativeY = clamp01((touchY - yMin) / (yMax - yMin));
+
+    LOGD("Clamped relative touch: %.2f, %.2f", relativeX, relativeY);
+    return {relativeX, relativeY};
+}
+
 void VideoLayout::updateRelativeForegroundBounds() {
     float xMin = std::numeric_limits<float>::max();
     float xMax = std::numeric_limits<float>::lowest();

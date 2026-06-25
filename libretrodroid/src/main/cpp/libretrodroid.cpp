@@ -272,10 +272,11 @@ void LibretroDroid::onTouchEvent(float xAxis, float yAxis) {
     if (input && video) {
         std::pair<float, float> pos;
         if (dualScreenCfg.enabled) {
-            // NDS/3DS: the touch-sensitive screen is the secondary (bottom) panel.
-            // Only query the secondary layout so that touching the top (non-touch)
-            // screen correctly produces "outside" (-10,-10) and releases the pointer.
-            pos = video->getSecondaryLayout().getRelativePosition(xAxis, yAxis);
+            // NDS/3DS: route to the secondary (bottom/touch) screen.
+            // Use the clamped variant so the full bottom panel is touchable —
+            // letterbox/pillarbox dead-zones clamp to the nearest game edge
+            // instead of being silently dropped.
+            pos = video->getSecondaryLayout().getRelativePositionClamped(xAxis, yAxis);
         } else {
             pos = video->getLayout().getRelativePosition(xAxis, yAxis);
         }
