@@ -241,11 +241,7 @@ class GameViewModelRetroGameView(
                     isFocusableInTouchMode = false
                 }
 
-        if (!system.hasTouchScreen || system.isDualScreen) {
-            // Native View touch handling is disabled for dual-screen (NDS/3DS) systems.
-            // Touch forwarding is done explicitly via Compose in DualScreenPanels using
-            // sendRetroTouchEvent(), which maps bottom-panel coordinates through the
-            // secondary VideoLayout — the actual DS/3DS touchscreen.
+        if (!system.hasTouchScreen) {
             result.disableTouchEvents()
         }
 

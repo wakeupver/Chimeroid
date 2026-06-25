@@ -2,8 +2,6 @@ package com.swordfish.chimeroid.app.mobile.feature.game
 
 import android.graphics.RectF as AndroidRectF
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -26,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -113,53 +110,7 @@ fun DualScreenPanels(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight((1f - splitFraction).coerceAtLeast(SPLIT_MIN))
-                    .onGloballyPositioned { bottomPanelPos.value = it.boundsInRoot() }
-                    .pointerInput(Unit) {
-                        awaitEachGesture {
-                            // Grab the DOWN event before PadKit can consume it.
-                            val down = awaitFirstDown(
-                                requireUnconsumed = false,
-                                pass = PointerEventPass.Initial,
-                            )
-                            down.consume()
-
-                            // Helper: convert Box-local pixel offset → [0,1] fraction
-                            // within the panel, then hand off to C++ which converts to
-                            // NDC using the stored secondary-viewport config.
-                            // No Kotlin-side screen/NDC calculation needed.
-                            fun forwardChange(offsetX: Float, offsetY: Float) {
-                                val panel = bottomPanelPos.value ?: return
-                                val panelW = panel.width.coerceAtLeast(1f)
-                                val panelH = panel.height.coerceAtLeast(1f)
-                                viewModel.sendRetroTouchPanelRelative(
-                                    (offsetX / panelW).coerceIn(0f, 1f),
-                                    (offsetY / panelH).coerceIn(0f, 1f),
-                                )
-                            }
-
-                            forwardChange(down.position.x, down.position.y)
-
-                            // Track MOVE/UP until the finger lifts.
-                            var tracking = true
-                            while (tracking) {
-                                val event  = awaitPointerEvent(PointerEventPass.Initial)
-                                val change = event.changes.firstOrNull { it.id == down.id }
-                                if (change == null) {
-                                    // Pointer was cancelled by the system.
-                                    viewModel.sendRetroTouchRelease()
-                                    tracking = false
-                                } else {
-                                    change.consume()
-                                    if (change.pressed) {
-                                        forwardChange(change.position.x, change.position.y)
-                                    } else {
-                                        viewModel.sendRetroTouchRelease()
-                                        tracking = false
-                                    }
-                                }
-                            }
-                        }
-                    },
+                    .onGloballyPositioned { bottomPanelPos.value = it.boundsInRoot() },
             )
         }
     }
