@@ -269,18 +269,45 @@ void LibretroDroid::onMotionEvent(
 
 void LibretroDroid::onTouchEvent(float xAxis, float yAxis) {
     LOGD("Received touch event: %.2f, %.2f", xAxis, yAxis);
-    if (input && video) {
-        std::pair<float, float> pos;
-        if (dualScreenCfg.enabled) {
-            // NDS/3DS: route to the secondary (bottom/touch) screen.
-            // Use the clamped variant so the full bottom panel is touchable —
-            // letterbox/pillarbox dead-zones clamp to the nearest game edge
-            // instead of being silently dropped.
-            pos = video->getSecondaryLayout().getRelativePositionClamped(xAxis, yAxis);
-        } else {
-            pos = video->getLayout().getRelativePosition(xAxis, yAxis);
+    if (!input) return;
+
+    if (dualScreenCfg.enabled) {
+        // NDS / 3DS: map the entire bottom panel to [0,1] using the same
+        // secondaryVp* fractions used by the renderer. This avoids any dead-zone
+        // from letterboxing because the full panel is addressable.
+        const float pX = dualScreenCfg.secondaryVpX;
+        const float pY = dualScreenCfg.secondaryVpY;
+        const float pW = dualScreenCfg.secondaryVpW;
+        const float pH = dualScreenCfg.secondaryVpH;
+
+        // Convert viewport fractions → Android NDC bounds (y-down, −1=top, +1=bottom)
+        const float left   = 2.0f * pX         - 1.0f;
+        const float right  = 2.0f * (pX + pW)  - 1.0f;
+        const float top    = 2.0f * pY          - 1.0f;
+        const float bottom = 2.0f * (pY + pH)   - 1.0f;
+
+        // Reject touches that are clearly outside this panel
+        // (e.g. user tapped the primary/top screen).
+        const float eps = 0.02f;
+        if (xAxis < left - eps || xAxis > right  + eps ||
+            yAxis < top  - eps || yAxis > bottom + eps) {
+            input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, -10.0f, -10.0f);
+            return;
         }
-        input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, pos.first, pos.second);
+
+        // Linear map panel → [0, 1], clamped at edges.
+        auto clamp01 = [](float v) { return v < 0.f ? 0.f : (v > 1.f ? 1.f : v); };
+        const float relX = clamp01((xAxis - left) / (right  - left));
+        const float relY = clamp01((yAxis - top)  / (bottom - top));
+
+        LOGD("Dual-screen panel touch: relX=%.3f relY=%.3f", relX, relY);
+        input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, relX, relY);
+        return;
+    }
+
+    if (video) {
+        auto [x, y] = video->getLayout().getRelativePosition(xAxis, yAxis);
+        input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, x, y);
     }
 }
 
