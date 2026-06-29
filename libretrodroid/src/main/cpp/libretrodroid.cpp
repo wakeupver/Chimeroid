@@ -332,13 +332,20 @@ void LibretroDroid::releaseSecondaryTouch() {
 }
 
 void LibretroDroid::setSecondaryTouchDirect(float relX, float relY) {
-    // Direct path: pass [0,1] panel-relative coordinates straight to the pointer
-    // device without any NDC conversion or foreground-vertex lookup.
-    // relX=0 → NDS left, relX=1 → NDS right.
-    // relY=0 → NDS top,  relY=1 → NDS bottom.
-    if (input && dualScreenCfg.enabled) {
-        input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, relX, relY);
-    }
+    if (!input || !video || !dualScreenCfg.enabled) return;
+
+    // Convert panel-relative [0,1] → full-screen NDC using the same secondaryVp*
+    // fractions that control the rendering. This keeps the coordinate space
+    // consistent regardless of system-bar insets or density differences.
+    const float ndcX = 2.0f * (dualScreenCfg.secondaryVpX + relX * dualScreenCfg.secondaryVpW) - 1.0f;
+    const float ndcY = 2.0f * (dualScreenCfg.secondaryVpY + relY * dualScreenCfg.secondaryVpH) - 1.0f;
+
+    // Use the clamped version so:
+    //  • touches in the letterbox black-bar areas clamp to the nearest NDS edge
+    //    (the full panel is touchable, no dead zones)
+    //  • touches outside the panel entirely (e.g. top screen) are rejected
+    auto [x, y] = video->getSecondaryLayout().getRelativePositionClamped(ndcX, ndcY);
+    input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, x, y);
 }
 
 
