@@ -126,6 +126,9 @@ public:
     void setSecondaryTouchFromPanel(float panelRelX, float panelRelY);
     void releaseSecondaryTouch();
 
+    /** Sends [0,1] touch coordinates directly to the pointer device (no NDC math). */
+    void setSecondaryTouchDirect(float relX, float relY);
+
     void refreshAspectRatio();
     float getAspectRatio();
     void setAspectRatioOverride(float aspectRatio);

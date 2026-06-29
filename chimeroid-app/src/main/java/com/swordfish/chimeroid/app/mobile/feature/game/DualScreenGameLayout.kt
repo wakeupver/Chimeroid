@@ -2,6 +2,8 @@ package com.swordfish.chimeroid.app.mobile.feature.game
 
 import android.graphics.RectF as AndroidRectF
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -110,7 +113,43 @@ fun DualScreenPanels(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight((1f - splitFraction).coerceAtLeast(SPLIT_MIN))
-                    .onGloballyPositioned { bottomPanelPos.value = it.boundsInRoot() },
+                    .onGloballyPositioned { bottomPanelPos.value = it.boundsInRoot() }
+                    .pointerInput(Unit) {
+                        // Intercept in Initial pass so PadKit's Main-pass virtual-button
+                        // handlers never see these events. Compute [0,1] relative to the
+                        // panel Box and send directly to the libretro pointer device —
+                        // no NDC conversion, no foreground-vertex lookup, no dead zones.
+                        awaitEachGesture {
+                            val down = awaitFirstDown(
+                                requireUnconsumed = false,
+                                pass = PointerEventPass.Initial,
+                            )
+                            down.consume()
+
+                            fun forward(offsetX: Float, offsetY: Float) {
+                                val panel = bottomPanelPos.value ?: return
+                                viewModel.sendRetroTouchPanelRelative(
+                                    (offsetX / panel.width.coerceAtLeast(1f)).coerceIn(0f, 1f),
+                                    (offsetY / panel.height.coerceAtLeast(1f)).coerceIn(0f, 1f),
+                                )
+                            }
+
+                            forward(down.position.x, down.position.y)
+
+                            var held = true
+                            while (held) {
+                                val evt = awaitPointerEvent(PointerEventPass.Initial)
+                                val ch  = evt.changes.firstOrNull { it.id == down.id }
+                                if (ch == null) {
+                                    viewModel.sendRetroTouchRelease(); held = false
+                                } else {
+                                    ch.consume()
+                                    if (ch.pressed) forward(ch.position.x, ch.position.y)
+                                    else { viewModel.sendRetroTouchRelease(); held = false }
+                                }
+                            }
+                        }
+                    },
             )
         }
     }

@@ -186,7 +186,7 @@ class GLRetroView(
      * [panelRelY] 0 = top edge of panel, 1 = bottom edge.
      */
     fun sendTouchPanelRelative(panelRelX: Float, panelRelY: Float) {
-        LibretroDroid.setSecondaryTouchFromPanel(panelRelX, panelRelY)
+        LibretroDroid.setSecondaryTouchDirect(panelRelX, panelRelY)
     }
 
     /**

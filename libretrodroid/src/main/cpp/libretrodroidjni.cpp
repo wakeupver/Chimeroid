@@ -362,6 +362,15 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_releaseSec
     LibretroDroid::getInstance().releaseSecondaryTouch();
 }
 
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setSecondaryTouchDirect(
+    JNIEnv* env,
+    jclass obj,
+    jfloat relX,
+    jfloat relY
+) {
+    LibretroDroid::getInstance().setSecondaryTouchDirect(relX, relY);
+}
+
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(
     JNIEnv* env,
     jclass obj,

@@ -331,6 +331,17 @@ void LibretroDroid::releaseSecondaryTouch() {
     }
 }
 
+void LibretroDroid::setSecondaryTouchDirect(float relX, float relY) {
+    // Direct path: pass [0,1] panel-relative coordinates straight to the pointer
+    // device without any NDC conversion or foreground-vertex lookup.
+    // relX=0 → NDS left, relX=1 → NDS right.
+    // relY=0 → NDS top,  relY=1 → NDS bottom.
+    if (input && dualScreenCfg.enabled) {
+        input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, relX, relY);
+    }
+}
+
+
 void LibretroDroid::onKeyEvent(unsigned int port, int action, int keyCode) {
     LOGD("Received key event with action (%d) and keycode (%d)", action, keyCode);
     if (input) {
