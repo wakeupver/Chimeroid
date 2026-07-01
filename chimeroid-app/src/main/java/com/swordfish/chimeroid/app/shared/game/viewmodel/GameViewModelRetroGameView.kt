@@ -241,7 +241,15 @@ class GameViewModelRetroGameView(
                     isFocusableInTouchMode = false
                 }
 
-        if (!system.hasTouchScreen) {
+        // Dual-screen systems (NDS/3DS) handle the bottom-screen touch panel entirely
+        // through Compose's DualScreenPanels -> sendTouchPanelRelative pipeline, which
+        // maps taps against the real per-panel content bounds (letterbox-aware, full
+        // panel touchable, no dead zones). The raw GLRetroView.onTouchEvent listener
+        // must be disabled here too, or it keeps firing in parallel using the whole
+        // surface's width/height with a cruder viewport-only mapping — the two
+        // pipelines fight over the same pointer, which is what makes the touch screen
+        // feel like it only responds across half its area, squeezed toward the bottom.
+        if (!system.hasTouchScreen || system.isDualScreen) {
             result.disableTouchEvents()
         }
 
