@@ -272,36 +272,14 @@ void LibretroDroid::onTouchEvent(float xAxis, float yAxis) {
     if (!input) return;
 
     if (dualScreenCfg.enabled) {
-        // NDS / 3DS: map the entire bottom panel to [0,1] using the same
-        // secondaryVp* fractions used by the renderer. This avoids any dead-zone
-        // from letterboxing because the full panel is addressable.
-        const float pX = dualScreenCfg.secondaryVpX;
-        const float pY = dualScreenCfg.secondaryVpY;
-        const float pW = dualScreenCfg.secondaryVpW;
-        const float pH = dualScreenCfg.secondaryVpH;
-
-        // Convert viewport fractions → Android NDC bounds (y-down, −1=top, +1=bottom)
-        const float left   = 2.0f * pX         - 1.0f;
-        const float right  = 2.0f * (pX + pW)  - 1.0f;
-        const float top    = 2.0f * pY          - 1.0f;
-        const float bottom = 2.0f * (pY + pH)   - 1.0f;
-
-        // Reject touches that are clearly outside this panel
-        // (e.g. user tapped the primary/top screen).
-        const float eps = 0.02f;
-        if (xAxis < left - eps || xAxis > right  + eps ||
-            yAxis < top  - eps || yAxis > bottom + eps) {
-            input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, -10.0f, -10.0f);
-            return;
-        }
-
-        // Linear map panel → [0, 1], clamped at edges.
-        auto clamp01 = [](float v) { return v < 0.f ? 0.f : (v > 1.f ? 1.f : v); };
-        const float relX = clamp01((xAxis - left) / (right  - left));
-        const float relY = clamp01((yAxis - top)  / (bottom - top));
-
-        LOGD("Dual-screen panel touch: relX=%.3f relY=%.3f", relX, relY);
-        input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, relX, relY);
+        // Defensive fallback only. Dual-screen systems route touch through the
+        // Compose panel -> setSecondaryTouchDirect() pipeline; GLRetroView disables
+        // this Android View's onTouchEvent for dual-screen systems in createRetroView()
+        // precisely so this branch is not reached. It is kept — and kept correct, by
+        // reusing the exact same clamped/letterbox-aware mapping — as a safety net
+        // in case that guard is ever bypassed by a future change, rather than falling
+        // back to a cruder, inconsistent-with-the-renderer computation.
+        dispatchSecondaryTouch(xAxis, yAxis);
         return;
     }
 
@@ -309,19 +287,6 @@ void LibretroDroid::onTouchEvent(float xAxis, float yAxis) {
         auto [x, y] = video->getLayout().getRelativePosition(xAxis, yAxis);
         input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, x, y);
     }
-}
-
-void LibretroDroid::setSecondaryTouchFromPanel(float panelRelX, float panelRelY) {
-    if (!input || !video || !dualScreenCfg.enabled) return;
-
-    // Convert panel-relative [0,1] → full-screen NDC using the SAME viewport fractions
-    // that were used to build the secondary layout's foreground vertices.
-    // This guarantees consistency without any dependency on Kotlin screen dimensions.
-    float ndcX = 2.0f * (dualScreenCfg.secondaryVpX + panelRelX * dualScreenCfg.secondaryVpW) - 1.0f;
-    float ndcY = 2.0f * (dualScreenCfg.secondaryVpY + panelRelY * dualScreenCfg.secondaryVpH) - 1.0f;
-
-    auto [x, y] = video->getSecondaryLayout().getRelativePosition(ndcX, ndcY);
-    input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, x, y);
 }
 
 void LibretroDroid::releaseSecondaryTouch() {
@@ -332,18 +297,27 @@ void LibretroDroid::releaseSecondaryTouch() {
 }
 
 void LibretroDroid::setSecondaryTouchDirect(float relX, float relY) {
-    if (!input || !video || !dualScreenCfg.enabled) return;
+    if (!dualScreenCfg.enabled) return;
 
     // Convert panel-relative [0,1] → full-screen NDC using the same secondaryVp*
     // fractions that control the rendering. This keeps the coordinate space
     // consistent regardless of system-bar insets or density differences.
     const float ndcX = 2.0f * (dualScreenCfg.secondaryVpX + relX * dualScreenCfg.secondaryVpW) - 1.0f;
     const float ndcY = 2.0f * (dualScreenCfg.secondaryVpY + relY * dualScreenCfg.secondaryVpH) - 1.0f;
+    dispatchSecondaryTouch(ndcX, ndcY);
+}
 
-    // Use the clamped version so:
-    //  • touches in the letterbox black-bar areas clamp to the nearest NDS edge
-    //    (the full panel is touchable, no dead zones)
-    //  • touches outside the panel entirely (e.g. top screen) are rejected
+void LibretroDroid::dispatchSecondaryTouch(float ndcX, float ndcY) {
+    if (!input || !video) return;
+
+    // Clamped mapping onto the secondary panel's actual rendered (foreground)
+    // content bounds, so:
+    //  • touches in the letterbox/pillarbox black-bar areas clamp to the nearest
+    //    NDS/3DS content edge instead of a dead zone — the full panel is touchable
+    //  • touches outside the panel entirely (e.g. the top screen) are rejected
+    // This is the single source of truth for dual-screen touch mapping, shared by
+    // onTouchEvent()'s fallback and setSecondaryTouchDirect() so the two can never
+    // disagree with each other or with what drawQuadPass() actually renders.
     auto [x, y] = video->getSecondaryLayout().getRelativePositionClamped(ndcX, ndcY);
     input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, x, y);
 }

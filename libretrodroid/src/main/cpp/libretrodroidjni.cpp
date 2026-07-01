@@ -346,15 +346,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onTouchEve
     LibretroDroid::getInstance().onTouchEvent(xAxis, yAxis);
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setSecondaryTouchFromPanel(
-    JNIEnv* env,
-    jclass obj,
-    jfloat panelRelX,
-    jfloat panelRelY
-) {
-    LibretroDroid::getInstance().setSecondaryTouchFromPanel(panelRelX, panelRelY);
-}
-
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_releaseSecondaryTouch(
     JNIEnv* env,
     jclass obj

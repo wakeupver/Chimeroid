@@ -118,16 +118,14 @@ public:
     void onTouchEvent(float xAxis, float yAxis);
 
     /**
-     * Forwards a touch expressed as [0,1] fractions within the secondary (bottom) panel.
-     * C++ converts to NDC using the stored secondary viewport config so the mapping
-     * is guaranteed consistent with the foreground-vertex computation.
+     * Sends a touch expressed as [0,1] fractions within the secondary (bottom) panel.
+     * C++ converts to NDC using the stored secondary viewport config, then clamps into
+     * the panel's foreground (content) bounds, so the mapping is guaranteed consistent
+     * with what actually gets rendered — including letterbox/pillarbox dead zones.
      * Call releaseSecondaryTouch() on finger lift.
      */
-    void setSecondaryTouchFromPanel(float panelRelX, float panelRelY);
-    void releaseSecondaryTouch();
-
-    /** Sends [0,1] touch coordinates directly to the pointer device (no NDC math). */
     void setSecondaryTouchDirect(float relX, float relY);
+    void releaseSecondaryTouch();
 
     void refreshAspectRatio();
     float getAspectRatio();
@@ -168,6 +166,11 @@ private:
     void updateAudioSampleRateMultiplier();
     float findDefaultAspectRatio(const retro_system_av_info &system_av_info);
     void afterGameLoad();
+
+    // Shared by onTouchEvent()'s dual-screen fallback and setSecondaryTouchDirect():
+    // maps a full-surface NDC point onto the secondary panel's content bounds
+    // (clamped, letterbox-aware) and dispatches it as the pointer device state.
+    void dispatchSecondaryTouch(float ndcX, float ndcY);
 
 protected:
     static void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch);

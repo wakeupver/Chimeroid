@@ -182,18 +182,30 @@ class GLRetroView(
      * directly to the libretro core. C++ converts to NDC internally using the stored
      * secondary-viewport config — no Kotlin-side screen coordinate calculation needed.
      *
+     * Queued onto the GL thread (like [sendMotionEvent]) rather than called directly:
+     * the native side reads the secondary panel's viewport/foreground-vertex state,
+     * which [dualScreenConfig] mutates on the GL thread on every panel resize. Calling
+     * across threads without queuing raced that state — the touch could read a
+     * half-updated panel rect while dragging, or run before the very first
+     * [dualScreenConfig] push had been applied — which is what let a tap land somewhere
+     * other than where it visually landed.
+     *
      * [panelRelX] 0 = left edge of panel, 1 = right edge.
      * [panelRelY] 0 = top edge of panel, 1 = bottom edge.
      */
     fun sendTouchPanelRelative(panelRelX: Float, panelRelY: Float) {
-        LibretroDroid.setSecondaryTouchDirect(panelRelX, panelRelY)
+        queueEvent { LibretroDroid.setSecondaryTouchDirect(panelRelX, panelRelY) }
     }
 
     /**
      * Releases the current dual-screen touch (call on ACTION_UP / pointer cancel).
+     *
+     * Also queued — a press queued via [sendTouchPanelRelative] followed by an
+     * unqueued release could reach the GL thread out of order and land the release
+     * before the press it was meant to end.
      */
     fun sendTouchRelease() {
-        LibretroDroid.releaseSecondaryTouch()
+        queueEvent { LibretroDroid.releaseSecondaryTouch() }
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
