@@ -304,6 +304,15 @@ void LibretroDroid::setSecondaryTouchDirect(float relX, float relY) {
     // consistent regardless of system-bar insets or density differences.
     const float ndcX = 2.0f * (dualScreenCfg.secondaryVpX + relX * dualScreenCfg.secondaryVpW) - 1.0f;
     const float ndcY = 2.0f * (dualScreenCfg.secondaryVpY + relY * dualScreenCfg.secondaryVpH) - 1.0f;
+
+    LOGD(
+        "[dualtouch] panelRel=(%.3f,%.3f) secondaryVp=(x=%.3f,y=%.3f,w=%.3f,h=%.3f) -> ndc=(%.3f,%.3f)",
+        relX, relY,
+        dualScreenCfg.secondaryVpX, dualScreenCfg.secondaryVpY,
+        dualScreenCfg.secondaryVpW, dualScreenCfg.secondaryVpH,
+        ndcX, ndcY
+    );
+
     dispatchSecondaryTouch(ndcX, ndcY);
 }
 
