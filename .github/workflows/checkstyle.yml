@@ -28,7 +28,12 @@ jobs:
 
       - name: Build debug APK
         run: ./gradlew :chimeroid-app:assembleFreeDebug
-        
+
+      - name: Rename APK
+        run: |
+          mv chimeroid-app/build/outputs/apk/free/debug/chimeroid-app-free-debug.apk \
+             chimeroid-app/build/outputs/apk/free/debug/ChimeroidDebug.apk
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
