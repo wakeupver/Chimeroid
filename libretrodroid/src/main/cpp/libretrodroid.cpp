@@ -305,7 +305,7 @@ void LibretroDroid::setSecondaryTouchDirect(float relX, float relY) {
     const float ndcX = 2.0f * (dualScreenCfg.secondaryVpX + relX * dualScreenCfg.secondaryVpW) - 1.0f;
     const float ndcY = 2.0f * (dualScreenCfg.secondaryVpY + relY * dualScreenCfg.secondaryVpH) - 1.0f;
 
-    LOGI(
+    LOGD(
         "[dualtouch] panelRel=(%.3f,%.3f) secondaryVp=(x=%.3f,y=%.3f,w=%.3f,h=%.3f) -> ndc=(%.3f,%.3f)",
         relX, relY,
         dualScreenCfg.secondaryVpX, dualScreenCfg.secondaryVpY,
@@ -345,7 +345,7 @@ void LibretroDroid::dispatchSecondaryTouch(float ndcX, float ndcY) {
     const float y = dualScreenCfg.secondaryUVyMin +
         localY * (dualScreenCfg.secondaryUVyMax - dualScreenCfg.secondaryUVyMin);
 
-    LOGI(
+    LOGD(
         "[dualtouch] local=(%.3f,%.3f) secondaryUV=[x:%.3f,%.3f y:%.3f,%.3f] -> canvas=(%.3f,%.3f)",
         localX, localY,
         dualScreenCfg.secondaryUVxMin, dualScreenCfg.secondaryUVxMax,

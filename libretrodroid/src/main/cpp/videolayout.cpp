@@ -253,7 +253,7 @@ std::pair<float, float> VideoLayout::getRelativePositionClamped(float touchX, fl
     float relativeX = clamp01((touchX - xMin) / (xMax - xMin));
     float relativeY = clamp01((touchY - yMin) / (yMax - yMin));
 
-    LOGI(
+    LOGD(
         "[dualtouch] ndc=(%.3f,%.3f) panel=[x:%.3f,%.3f y:%.3f,%.3f] content=[x:%.3f,%.3f y:%.3f,%.3f] -> rel=(%.3f,%.3f)",
         touchX, touchY,
         panelLeft, panelRight, panelTop, panelBottom,
