@@ -327,7 +327,32 @@ void LibretroDroid::dispatchSecondaryTouch(float ndcX, float ndcY) {
     // This is the single source of truth for dual-screen touch mapping, shared by
     // onTouchEvent()'s fallback and setSecondaryTouchDirect() so the two can never
     // disagree with each other or with what drawQuadPass() actually renders.
-    auto [x, y] = video->getSecondaryLayout().getRelativePositionClamped(ndcX, ndcY);
+    auto [localX, localY] = video->getSecondaryLayout().getRelativePositionClamped(ndcX, ndcY);
+
+    // localX/localY are [0,1] relative to the touch screen's OWN content — but the
+    // core renders both screens into one combined framebuffer and reports/reads
+    // RETRO_DEVICE_POINTER against that full combined canvas, not against just this
+    // sub-screen (confirmed via logcat: a touch-panel-correct localY of 0.572 was
+    // being sent as-is, which the core reads as 0.572 of the FULL top+bottom canvas —
+    // landing back up near the top screen's content instead of the touch screen's).
+    // secondaryUV{x,y}{Min,Max} already describe exactly where this screen sits
+    // within that combined canvas (e.g. NDS bottom half: y 0.5→1.0; 3DS bottom
+    // screen pillarboxed in a wider canvas: x 0.1→0.9) — reuse it for touch too,
+    // so rendering and touch agree on the same layout instead of each assuming
+    // their own.
+    const float x = dualScreenCfg.secondaryUVxMin +
+        localX * (dualScreenCfg.secondaryUVxMax - dualScreenCfg.secondaryUVxMin);
+    const float y = dualScreenCfg.secondaryUVyMin +
+        localY * (dualScreenCfg.secondaryUVyMax - dualScreenCfg.secondaryUVyMin);
+
+    LOGI(
+        "[dualtouch] local=(%.3f,%.3f) secondaryUV=[x:%.3f,%.3f y:%.3f,%.3f] -> canvas=(%.3f,%.3f)",
+        localX, localY,
+        dualScreenCfg.secondaryUVxMin, dualScreenCfg.secondaryUVxMax,
+        dualScreenCfg.secondaryUVyMin, dualScreenCfg.secondaryUVyMax,
+        x, y
+    );
+
     input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, x, y);
 }
 
