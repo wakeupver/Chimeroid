@@ -28,3 +28,10 @@ jobs:
 
       - name: Build debug APK
         run: ./gradlew :chimeroid-app:assembleFreeDebug
+        
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chimeroid-APK
+          path: chimeroid-app/build/outputs/apk/free/debug/Chimeroid-*.apk
+          if-no-files-found: error
