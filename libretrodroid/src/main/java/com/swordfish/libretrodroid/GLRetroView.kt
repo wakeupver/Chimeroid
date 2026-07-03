@@ -61,10 +61,46 @@ class GLRetroView(
         LibretroDroid.setShaderConfig(buildShader(value))
     }
 
+    // Latest known GL surface size in pixels, set from onSurfaceChanged() (GL thread).
+    // Needed by refreshStretchToFillOverride() to compute the *effective* viewport's
+    // pixel aspect ratio - see its kdoc for why the raw surface size alone is wrong.
+    private var surfaceWidth: Int = 0
+    private var surfaceHeight: Int = 0
+
     var viewport: RectF by Delegates.observable(RectF(0f, 0f, 1f, 1f)) { _, _, value ->
         runOnEmulationThread(true) {
             LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())
+            // Viewport can change independently of the surface (e.g. on-screen controls
+            // being shown/hidden/resized). Without this, "Fill" silently reverts to
+            // letterboxing until some unrelated onSurfaceChanged() happens to fire.
+            refreshStretchToFillOverride()
         }
+    }
+
+    /**
+     * "Stretch to fill" is implemented as an aspect-ratio override equal to the
+     * *effective* viewport's pixel aspect ratio - not the raw surface's. The native
+     * contain-fit in VideoLayout compares this override against screenWidth/Height *
+     * viewportRect, so using the raw surface aspect ratio only produces zero
+     * letterboxing when viewport happens to cover the full surface. The moment
+     * viewport is a sub-rect (on-screen controls reserving space - the common case
+     * on phones without a controller), the two aspect ratios diverge and "Fill" still
+     * shows bars, defeating the entire point of the mode.
+     *
+     * Must be recomputed whenever either the surface size or the viewport rect
+     * changes, so this is called from both onSurfaceChanged() and the viewport
+     * setter above rather than only from one of the two triggers.
+     */
+    private fun refreshStretchToFillOverride() {
+        val viewportWidthPx = surfaceWidth * viewport.width()
+        val viewportHeightPx = surfaceHeight * viewport.height()
+        val aspectRatioOverride =
+            if (data.stretchToFill && viewportWidthPx > 0f && viewportHeightPx > 0f) {
+                viewportWidthPx / viewportHeightPx
+            } else {
+                -1.0f
+            }
+        LibretroDroid.setAspectRatioOverride(aspectRatioOverride)
     }
 
     /**
@@ -408,11 +444,9 @@ class GLRetroView(
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) = catchExceptions {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             LibretroDroid.onSurfaceChanged(width, height)
-            if (data.stretchToFill && width > 0 && height > 0) {
-                LibretroDroid.setAspectRatioOverride(width.toFloat() / height.toFloat())
-            } else {
-                LibretroDroid.setAspectRatioOverride(-1.0f)
-            }
+            surfaceWidth = width
+            surfaceHeight = height
+            refreshStretchToFillOverride()
         }
 
 
