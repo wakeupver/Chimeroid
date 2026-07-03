@@ -337,19 +337,21 @@ void Video::setDualScreenConfig(DualScreenCfg cfg) {
     float texW = getTextureWidth();
     float texH = getTextureHeight();
 
-    float primaryAR, secondaryAR;
-    if (texW > 0.f && texH > 0.f) {
-        float pUVW = cfg.primaryUVxMax   - cfg.primaryUVxMin;
-        float pUVH = cfg.primaryUVyMax   - cfg.primaryUVyMin;
-        float sUVW = cfg.secondaryUVxMax - cfg.secondaryUVxMin;
-        float sUVH = cfg.secondaryUVyMax - cfg.secondaryUVyMin;
+    constexpr float kFallbackAspectRatio = 4.f / 3.f;   // safe fallback (NDS-like)
+    auto panelAspectRatio = [texW, texH](float uMin, float uMax, float vMin, float vMax) {
+        float uvHeight = vMax - vMin;
+        if (texW <= 0.f || texH <= 0.f || uvHeight <= 0.f) {
+            return kFallbackAspectRatio;
+        }
+        return ((uMax - uMin) * texW) / (uvHeight * texH);
+    };
 
-        primaryAR   = (pUVH > 0.f) ? (pUVW * texW) / (pUVH * texH) : 4.f / 3.f;
-        secondaryAR = (sUVH > 0.f) ? (sUVW * texW) / (sUVH * texH) : 4.f / 3.f;
-    } else {
-        primaryAR   = 4.f / 3.f;   // safe fallback (NDS-like)
-        secondaryAR = 4.f / 3.f;
-    }
+    float primaryAR = panelAspectRatio(
+        cfg.primaryUVxMin, cfg.primaryUVxMax, cfg.primaryUVyMin, cfg.primaryUVyMax
+    );
+    float secondaryAR = panelAspectRatio(
+        cfg.secondaryUVxMin, cfg.secondaryUVxMax, cfg.secondaryUVyMin, cfg.secondaryUVyMax
+    );
 
     videoLayout.updateViewportSize(
         Rect(cfg.primaryVpX, cfg.primaryVpY, cfg.primaryVpW, cfg.primaryVpH)
@@ -367,7 +369,15 @@ void Video::setDualScreenConfig(DualScreenCfg cfg) {
 }
 
 float Video::getScreenDensity() {
-    return std::min(videoLayout.getScreenWidth() / getTextureWidth(), videoLayout.getScreenHeight() / getTextureHeight());
+    float textureWidth = getTextureWidth();
+    float textureHeight = getTextureHeight();
+    // Texture size is 0 until the first frame is decoded; without this guard the
+    // division below produces Inf, which then feeds into the shader's screenDensity
+    // uniform (used by CRT/LCD/sharpen passes for scanline/pixel-grid math).
+    if (textureWidth <= 0.0f || textureHeight <= 0.0f) {
+        return 1.0f;
+    }
+    return std::min(videoLayout.getScreenWidth() / textureWidth, videoLayout.getScreenHeight() / textureHeight);
 }
 
 float Video::getTextureWidth() {

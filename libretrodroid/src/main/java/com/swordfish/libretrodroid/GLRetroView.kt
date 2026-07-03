@@ -376,7 +376,13 @@ class GLRetroView(
     private inner class RenderLifecycleObserver : LifecycleObserver {
         @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
         private fun resume() = catchExceptions {
-            LibretroDroid.resume()
+            // ON_RESUME fires on the lifecycle-owner (main) thread. LibretroDroid.resume()
+            // reaches refreshAspectRatio() -> video->updateAspectRatio(), and `video` is
+            // owned by the GL thread (created in onSurfaceCreated, read in step()). Calling
+            // it directly here — unlike every touch/motion handler in this class, which all
+            // go through queueEvent — can null-deref if resume() wins the race against
+            // onSurfaceCreated(), or otherwise data-race with a concurrent renderFrame().
+            runOnEmulationThread(true) { LibretroDroid.resume() }
             onResume()
             isEmulationReady = true
         }

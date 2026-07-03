@@ -663,7 +663,13 @@ float LibretroDroid::getAspectRatio() {
 }
 
 void LibretroDroid::refreshAspectRatio() {
-    video->updateAspectRatio(getAspectRatio());
+    // video can legitimately be null here (e.g. resume() fires before onSurfaceCreated()
+    // has run, or after destroy()). Match the null-guard already used by every other
+    // caller of video->... in this class (see setViewport/setDualScreenConfig) instead
+    // of assuming the caller always checked.
+    if (video != nullptr) {
+        video->updateAspectRatio(getAspectRatio());
+    }
 }
 
 void LibretroDroid::setAspectRatioOverride(float aspectRatio) {
@@ -796,9 +802,16 @@ void LibretroDroid::afterGameLoad() {
 
 float LibretroDroid::findDefaultAspectRatio(const retro_system_av_info& system_av_info) {
     float result = system_av_info.geometry.aspect_ratio;
-    if (result < 0) {
-        result =
-            (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
+
+    // libretro spec: aspect_ratio <= 0.0 means "derive it from base_width/base_height"
+    // (see retro_game_geometry in libretro.h). The previous strict `< 0` check let a
+    // spec-compliant 0.0 through unchanged, collapsing the rendered view to zero width.
+    // base_height is also guarded here: a core reporting 0 would otherwise turn this
+    // into an Inf/NaN aspect ratio that poisons the whole VideoLayout.
+    if (result <= 0.0f) {
+        unsigned width = system_av_info.geometry.base_width;
+        unsigned height = system_av_info.geometry.base_height;
+        result = (height > 0) ? (float) width / (float) height : (4.0f / 3.0f);
     }
     return result;
 }
