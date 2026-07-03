@@ -67,8 +67,13 @@ class GLRetroView(
     private var surfaceWidth: Int = 0
     private var surfaceHeight: Int = 0
 
-    var viewport: RectF by Delegates.observable(RectF(0f, 0f, 1f, 1f)) { _, _, value ->
-        runOnEmulationThread(true) {
+    var viewport: RectF by Delegates.observable(RectF(0f, 0f, 1f, 1f)) { _, old, value ->
+        if (old == value) return@observable
+        // Posted, not blocking: see postToEmulationThread() kdoc. Blocking here would stall
+        // Compose's layout thread behind whatever the GL thread is doing — often core/ROM
+        // loading right after the view attaches — which is what produced multi-second
+        // freezes/ANRs when opening a game.
+        postToEmulationThread {
             LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())
             // Viewport can change independently of the surface (e.g. on-screen controls
             // being shown/hidden/resized). Without this, "Fill" silently reverts to
@@ -125,29 +130,26 @@ class GLRetroView(
         val secondaryUVyMax: Float = 1f,
     )
 
-    var dualScreenConfig: DualScreenConfig? by Delegates.observable(null) { _, _, value ->
-        runOnEmulationThread(true) {
-            if (value != null) {
-                LibretroDroid.setDualScreenConfig(
-                    true,
-                    value.primaryViewport.left,   value.primaryViewport.top,
-                    value.primaryViewport.width(), value.primaryViewport.height(),
-                    value.secondaryViewport.left,   value.secondaryViewport.top,
-                    value.secondaryViewport.width(), value.secondaryViewport.height(),
-                    value.primaryUVxMin,   value.primaryUVyMin,
-                    value.primaryUVxMax,   value.primaryUVyMax,
-                    value.secondaryUVxMin, value.secondaryUVyMin,
-                    value.secondaryUVxMax, value.secondaryUVyMax,
-                )
-            } else {
-                LibretroDroid.setDualScreenConfig(
-                    false,
-                    0f, 0f, 1f, 1f,
-                    0f, 0f, 1f, 1f,
-                    0f, 0f, 1f, 0.5f,
-                    0f, 0.5f, 1f, 1f,
-                )
-            }
+    var dualScreenConfig: DualScreenConfig? by Delegates.observable(null) { _, old, value ->
+        if (old == value) return@observable
+        val enabled = value != null
+        val cfg = value ?: DISABLED_DUAL_SCREEN_CONFIG
+        // Posted, not blocking: see postToEmulationThread() kdoc. This is exactly the config
+        // push Compose fires right after its first layout pass for NDS/3DS games — blocking
+        // here stalls the main thread behind onSurfaceCreated()'s core/ROM load on the GL
+        // thread, which is what caused the multi-second freeze / ANR on opening a game.
+        postToEmulationThread {
+            LibretroDroid.setDualScreenConfig(
+                enabled,
+                cfg.primaryViewport.left,    cfg.primaryViewport.top,
+                cfg.primaryViewport.width(), cfg.primaryViewport.height(),
+                cfg.secondaryViewport.left,    cfg.secondaryViewport.top,
+                cfg.secondaryViewport.width(), cfg.secondaryViewport.height(),
+                cfg.primaryUVxMin,   cfg.primaryUVyMin,
+                cfg.primaryUVxMax,   cfg.primaryUVyMax,
+                cfg.secondaryUVxMin, cfg.secondaryUVyMin,
+                cfg.secondaryUVxMax, cfg.secondaryUVyMax,
+            )
         }
     }
 
@@ -530,6 +532,30 @@ class GLRetroView(
         return result!!
     }
 
+    /**
+     * Posts [block] to the GL/emulation thread without blocking the caller.
+     *
+     * For fire-and-forget config pushes (viewport, dual-screen layout) whose observable
+     * delegate callback returns Unit — nothing reads a result back, so there is nothing to
+     * wait for. [runOnEmulationThread] blocks the caller until the GL thread drains its
+     * event queue, which is correct when a return value is needed (state serialization,
+     * cheats, disk changes) but wrong here: right after the view attaches, the GL thread is
+     * busy inside onSurfaceCreated() loading the core/ROM — which can take seconds, more so
+     * for NDS/3DS — so a caller blocked on that same queue stalls the whole UI thread until
+     * loading finishes. That was the multi-second freeze / ANR seen when opening a
+     * dual-screen game. The native setters this backs (setViewport/setDualScreenConfig) are
+     * already null-safe and buffer the latest value in a member field (see
+     * LibretroDroid::setViewport/setDualScreenConfig), so queuing without waiting is safe:
+     * the value is picked up the moment the emulation object exists, with no caller stall.
+     */
+    private inline fun postToEmulationThread(crossinline block: () -> Unit) {
+        if (Thread.currentThread().name.startsWith("GLThread")) {
+            block()
+        } else {
+            queueEvent { block() }
+        }
+    }
+
     private fun buildShader(config: ShaderConfig): GLRetroShader {
         return when (config) {
             is ShaderConfig.Default -> GLRetroShader(LibretroDroid.SHADER_DEFAULT)
@@ -642,5 +668,16 @@ class GLRetroView(
         const val ERROR_GENERIC = LibretroDroid.ERROR_GENERIC
 
         private val TOUCH_EVENT_OUTSIDE = PointF(-10f, 10f)
+
+        // Neutral top/bottom 50-50 split, sent natively when dualScreenConfig is set back to
+        // null. setDualScreenConfig's `enabled=false` flag is what actually turns off the
+        // split-screen path on the native side; this is just its inert UV/viewport payload,
+        // built once here instead of as a repeated argument list at every call site.
+        private val DISABLED_DUAL_SCREEN_CONFIG = DualScreenConfig(
+            primaryViewport = RectF(0f, 0f, 1f, 1f),
+            secondaryViewport = RectF(0f, 0f, 1f, 1f),
+            primaryUVxMin = 0f, primaryUVyMin = 0f, primaryUVxMax = 1f, primaryUVyMax = 0.5f,
+            secondaryUVxMin = 0f, secondaryUVyMin = 0.5f, secondaryUVxMax = 1f, secondaryUVyMax = 1f,
+        )
     }
 }
