@@ -16,6 +16,7 @@ import com.swordfish.chimeroid.app.shared.rumble.RumbleManager
 import com.swordfish.chimeroid.app.shared.settings.HDModeQuality
 import com.swordfish.chimeroid.common.coroutines.MutableStateProperty
 import com.swordfish.chimeroid.common.coroutines.launchOnState
+import com.swordfish.chimeroid.common.kotlin.closeDetachedFds
 import com.swordfish.chimeroid.common.view.disableTouchEvents
 import com.swordfish.chimeroid.lib.core.CoreVariable
 import com.swordfish.chimeroid.lib.core.CoreVariablesManager
@@ -30,7 +31,6 @@ import com.swordfish.libretrodroid.GLRetroView
 import com.swordfish.libretrodroid.GLRetroViewData
 import com.swordfish.libretrodroid.ImmersiveMode
 import com.swordfish.libretrodroid.Variable
-import com.swordfish.libretrodroid.VirtualFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -122,14 +122,7 @@ class GameViewModelRetroGameView(
      * [GameState.Loaded], so casting gameState would always yield null here.
      */
     fun closeOpenFds() {
-        detachedFds.forEach { rawFd ->
-            runCatching {
-                android.os.ParcelFileDescriptor.adoptFd(rawFd).close()
-                Timber.d("GameViewModelRetroGameView: closed detached fd=$rawFd")
-            }.onFailure {
-                Timber.w(it, "GameViewModelRetroGameView: failed to close fd=$rawFd")
-            }
-        }
+        detachedFds.closeDetachedFds(TAG)
         detachedFds = emptyList()
     }
 
@@ -198,8 +191,7 @@ class GameViewModelRetroGameView(
                                 // Capture detached fds now, before state transitions to Ready.
                                 // closeOpenFds() fires in onCleared() when state == Ready,
                                 // so reading detachedFds from gameState there would always miss.
-                                detachedFds = (loadingState.gameData.gameFiles as? RomFiles.Standard)
-                                    ?.detachedFds ?: emptyList()
+                                detachedFds = loadingState.gameData.gameFiles.detachedFds
                                 val retroViewData =
                                     buildRetroViewData(
                                         applicationContext,
@@ -343,15 +335,7 @@ class GameViewModelRetroGameView(
         return GLRetroViewData(appContext).apply {
             coreFilePath = gameData.coreLibrary
 
-            when (val gameFiles = gameData.gameFiles) {
-                is RomFiles.Standard -> {
-                    gameFilePath = gameFiles.files.first().absolutePath
-                }
-
-                is RomFiles.Virtual -> {
-                    gameVirtualFiles = gameFiles.files.map { VirtualFile(it.filePath, it.fd) }
-                }
-            }
+            gameFilePath = gameData.gameFiles.files.first().absolutePath
 
             systemDirectory = gameData.systemDirectory.absolutePath
             savesDirectory = gameData.savesDirectory.absolutePath
@@ -496,4 +480,8 @@ class GameViewModelRetroGameView(
             is GameLoaderError.MissingBiosFiles ->
                 appContext.getString(R.string.game_loader_error_missing_bios, gameError.missingFiles)
         }
+
+    companion object {
+        private const val TAG = "GameViewModelRetroGameView"
+    }
 }
