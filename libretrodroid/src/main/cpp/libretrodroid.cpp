@@ -599,13 +599,11 @@ void LibretroDroid::step() {
 
     LOGD("Stepping into retro_run()");
 
-    unsigned frames = 1;
-    if (fpsSync) {
-        unsigned requestedFrames = fpsSync->advanceFrames();
-
-        // If the application runs too slow it's better to just skip those frames.
-        frames = std::min(requestedFrames, 2u);
-    }
+    // FPSSync::advanceFrames() already returns a bounded, non-discarding catch-up
+    // count: it keeps retro_run() (and therefore audio production) tracking real
+    // elapsed time even when this step() is itself being called late (slow/dropped
+    // render frames), instead of silently running fewer frames than real time owes.
+    unsigned frames = fpsSync ? fpsSync->advanceFrames() : 1;
 
     for (size_t i = 0; i < frames * frameSpeed; i++)
         core->retro_run();

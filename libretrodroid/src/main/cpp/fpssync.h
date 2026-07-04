@@ -29,13 +29,22 @@ typedef std::chrono::duration<long, std::micro> Duration;
 class FPSSync {
 public:
     FPSSync(double contentRefreshRate, double screenRefreshRate);
-    ~FPSSync() { }
+    ~FPSSync() = default;
 
     void reset();
     unsigned advanceFrames();
     void wait();
     double getTimeStretchFactor();
 private:
+    // Upper bound on retro_run() calls a single advanceFrames() catch-up can request.
+    // Bounds worst-case per-call CPU cost so a stalled render thread recovers lost
+    // audio/game-time over a few steps instead of spiking into a spiral of death.
+    static constexpr long long MAX_FRAMES_PER_STEP = 4;
+
+    // Upper bound (in content frames) on how much "behind schedule" backlog is kept.
+    // Anything beyond this is forgiven rather than queued, so a chronic slowdown or a
+    // core hang can't build unbounded catch-up debt that fast-forwards once it clears.
+    static constexpr long long MAX_BACKLOG_FRAMES = 8;
 
     double screenRefreshRate;
     double contentRefreshRate;
