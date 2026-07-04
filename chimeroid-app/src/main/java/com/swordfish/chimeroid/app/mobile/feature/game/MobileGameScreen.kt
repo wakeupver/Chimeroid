@@ -156,6 +156,15 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
             // Determine once whether this system uses dual-screen rendering
             val isDualScreen = remember { viewModel.getSystem().isDualScreen }
 
+            // Master visibility flag shared by the virtual gamepad AND the
+            // dual-screen divider, so the divider never pops in ahead of the
+            // pads while controllerConfigState/touchControlsVisibleState are
+            // still emitting their initial values.
+            val isVisible =
+                touchControllerSettings != null &&
+                    currentControllerConfig != null &&
+                    touchControlsVisibleState.value
+
             AndroidView(
                 modifier =
                     Modifier
@@ -205,18 +214,15 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                             .onGloballyPositioned { viewportPosition.value = it.boundsInRoot() },
                 ) {
                     // ── Dual-screen split panels (NDS / 3DS only) ───────────
-                    if (isDualScreen) {
+                    // Gated on isVisible so the divider appears in sync with
+                    // the virtual gamepad instead of showing up first on open.
+                    if (isDualScreen && isVisible) {
                         DualScreenPanels(
                             fullScreenPosition = fullScreenPosition,
                             viewModel = viewModel,
                         )
                     }
                 }
-
-                val isVisible =
-                    touchControllerSettings != null &&
-                        currentControllerConfig != null &&
-                        touchControlsVisibleState.value
 
                 if (isVisible) {
                     CompositionLocalProvider(LocalChimeroidPadTheme provides ChimeroidPadTheme()) {
