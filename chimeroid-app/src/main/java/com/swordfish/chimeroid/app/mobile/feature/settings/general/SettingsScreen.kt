@@ -13,6 +13,7 @@ import androidx.navigation.NavController
 import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.mobile.feature.main.MainRoute
 import com.swordfish.chimeroid.app.mobile.feature.main.navigateToRoute
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ThemeMode
 import com.swordfish.chimeroid.app.shared.library.LibraryIndexScheduler
 import com.swordfish.chimeroid.app.utils.android.settings.ChimeroidCardSettingsGroup
 import com.swordfish.chimeroid.app.utils.android.settings.ChimeroidSettingsList
@@ -141,6 +142,17 @@ private fun GeneralSettings() {
     ChimeroidCardSettingsGroup(
         title = { Text(text = stringResource(id = R.string.settings_category_general)) },
     ) {
+        ChimeroidSettingsList(
+            state =
+                indexPreferenceState(
+                    R.string.pref_key_theme_mode,
+                    ThemeMode.SYSTEM.prefValue,
+                    stringListResource(R.array.pref_key_theme_mode_values).toList(),
+                ),
+            title = { Text(text = stringResource(id = R.string.settings_title_theme_mode)) },
+            subtitle = { Text(text = stringResource(id = R.string.settings_description_theme_mode)) },
+            items = stringListResource(R.array.pref_key_theme_mode_display_names),
+        )
         ChimeroidSettingsSwitch(
             state = booleanPreferenceState(R.string.pref_key_autosave, true),
             title = { Text(text = stringResource(id = R.string.settings_title_enable_autosave)) },

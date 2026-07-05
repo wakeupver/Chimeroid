@@ -2,11 +2,8 @@ package com.swordfish.chimeroid.app.mobile.feature.main
 
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
-import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -52,6 +49,7 @@ import com.swordfish.chimeroid.app.mobile.feature.shortcuts.ShortcutsGenerator
 import com.swordfish.chimeroid.app.mobile.feature.systems.MetaSystemsScreen
 import com.swordfish.chimeroid.app.mobile.feature.systems.MetaSystemsViewModel
 import com.swordfish.chimeroid.app.mobile.shared.compose.ui.AppTheme
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.enableEdgeToEdgeForTheme
 import com.swordfish.chimeroid.app.shared.GameInteractor
 import com.swordfish.chimeroid.app.shared.game.BaseGameActivity
 import com.swordfish.chimeroid.app.shared.game.GameLauncher
@@ -114,10 +112,7 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(
-            SystemBarStyle.dark(Color.TRANSPARENT),
-            SystemBarStyle.dark(Color.TRANSPARENT),
-        )
+        enableEdgeToEdgeForTheme()
         super.onCreate(savedInstanceState)
 
         GlobalScope.safeLaunch {

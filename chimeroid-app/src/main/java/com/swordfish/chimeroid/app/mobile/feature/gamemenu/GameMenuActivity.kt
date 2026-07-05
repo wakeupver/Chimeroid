@@ -3,11 +3,8 @@
 package com.swordfish.chimeroid.app.mobile.feature.gamemenu
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
-import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.animation.AnimatedContent
@@ -56,6 +53,7 @@ import com.swordfish.chimeroid.app.mobile.feature.gamemenu.patchcodes.GameMenuPa
 import com.swordfish.chimeroid.app.mobile.feature.gamemenu.states.GameMenuStatesScreen
 import com.swordfish.chimeroid.app.mobile.feature.gamemenu.states.GameMenuStatesViewModel
 import com.swordfish.chimeroid.app.mobile.shared.compose.ui.AppTheme
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.enableEdgeToEdgeForTheme
 import com.swordfish.chimeroid.app.shared.GameMenuContract
 import com.swordfish.chimeroid.app.shared.coreoptions.ChimeroidCoreOption
 import com.swordfish.chimeroid.app.shared.input.InputDeviceManager
@@ -101,10 +99,7 @@ class GameMenuActivity : RetrogradeComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        enableEdgeToEdge(
-            SystemBarStyle.dark(Color.TRANSPARENT),
-            SystemBarStyle.dark(Color.TRANSPARENT),
-        )
+        enableEdgeToEdgeForTheme()
 
         // Sembunyikan status bar saat game menu terbuka
         WindowInsetsControllerCompat(window, window.decorView).let { controller ->

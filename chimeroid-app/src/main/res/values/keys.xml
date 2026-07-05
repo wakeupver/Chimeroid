@@ -30,6 +30,7 @@
     <string name="pref_key_shader_filter" translatable="false">shader_filter_0</string>
     <string name="pref_key_hd_mode" translatable="false">hd_mode</string>
     <string name="pref_key_aspect_ratio" translatable="false">aspect_ratio</string>
+    <string name="pref_key_theme_mode" translatable="false">theme_mode</string>
 
     <string-array translatable="false" name="pref_key_haptic_feedback_mode_values">
         <item>none</item>
@@ -67,5 +68,17 @@
     <string-array translatable="false" name="pref_key_aspect_ratio_display_names">
         <item>@string/aspect_ratio_core_provided</item>
         <item>@string/aspect_ratio_stretch</item>
+    </string-array>
+
+    <string-array translatable="false" name="pref_key_theme_mode_values">
+        <item>system</item>
+        <item>light</item>
+        <item>dark</item>
+    </string-array>
+
+    <string-array translatable="false" name="pref_key_theme_mode_display_names">
+        <item>@string/theme_mode_system</item>
+        <item>@string/theme_mode_light</item>
+        <item>@string/theme_mode_dark</item>
     </string-array>
 </resources>

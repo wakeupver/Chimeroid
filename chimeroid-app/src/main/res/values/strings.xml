@@ -45,6 +45,12 @@
     <string name="aspect_ratio_core_provided">Core Provided</string>
     <string name="aspect_ratio_stretch">Fill / Stretch</string>
 
+    <string name="settings_title_theme_mode">Theme</string>
+    <string name="settings_description_theme_mode">Choose a light or dark app appearance</string>
+    <string name="theme_mode_system">Follow system</string>
+    <string name="theme_mode_light">Light</string>
+    <string name="theme_mode_dark">Dark</string>
+
     <string name="settings_title_immersive_mode">Immersive mode</string>
     <string name="settings_description_immersive_mode">Dynamically colors the background based on game visuals</string>
 

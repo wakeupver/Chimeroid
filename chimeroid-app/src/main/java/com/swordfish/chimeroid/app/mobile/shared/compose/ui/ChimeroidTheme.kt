@@ -1,12 +1,14 @@
 package com.swordfish.chimeroid.app.mobile.shared.compose.ui
 
 import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 
 private val LightColorScheme =
@@ -77,16 +79,29 @@ private val DarkColorScheme =
 
 @Composable
 fun AppTheme(
-    darkTheme: Boolean = true,
+    themeMode: ThemeMode = rememberThemeModePreference(),
     content: @Composable () -> Unit,
 ) {
+    val darkTheme =
+        when (themeMode) {
+            ThemeMode.LIGHT -> false
+            ThemeMode.DARK -> true
+            ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        }
     val dynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val context = LocalContext.current
+
+    // dynamicDarkColorScheme/dynamicLightColorScheme extract a full palette from the system
+    // wallpaper on every call; remember() keyed on the only inputs that can change avoids
+    // redoing that work on every recomposition of AppTheme (which wraps entire screens).
     val colors =
-        when {
-            dynamicColor && darkTheme -> dynamicDarkColorScheme(LocalContext.current)
-            dynamicColor && !darkTheme -> dynamicLightColorScheme(LocalContext.current)
-            darkTheme -> DarkColorScheme
-            else -> LightColorScheme
+        remember(darkTheme, dynamicColor, context) {
+            when {
+                dynamicColor && darkTheme -> dynamicDarkColorScheme(context)
+                dynamicColor && !darkTheme -> dynamicLightColorScheme(context)
+                darkTheme -> DarkColorScheme
+                else -> LightColorScheme
+            }
         }
 
     MaterialTheme(colorScheme = colors) {
