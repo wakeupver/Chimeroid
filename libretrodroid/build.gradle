@@ -30,6 +30,21 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            externalNativeBuild {
+                cmake {
+                    // AGP never sets CMAKE_BUILD_TYPE on its own; left unset, CMake adds no
+                    // optimization flags at all (effectively -O0) regardless of Gradle build
+                    // type. Release must opt in explicitly to get -O3/-DNDEBUG.
+                    arguments '-DCMAKE_BUILD_TYPE=Release'
+                }
+            }
+        }
+        debug {
+            externalNativeBuild {
+                cmake {
+                    arguments '-DCMAKE_BUILD_TYPE=Debug'
+                }
+            }
         }
     }
 

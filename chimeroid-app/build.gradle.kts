@@ -28,6 +28,10 @@ android {
         ndk {
             abiFilters += setOf("arm64-v8a")
         }
+        // chimeroid-shared / chimeroid-touchinput ship ~30 translated locales; this app's
+        // own strings (res/values, res/values-en-rUS) are only maintained in English, so
+        // drop the rest here to avoid shipping unused translated resources.
+        resConfigs("en")
     }
 
     splits {
@@ -65,6 +69,7 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs["release"]
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
             resValue("string", "chimeroid_name", "Chimeroid")
@@ -136,7 +141,6 @@ dependencies {
     implementation(deps.libs.okio)
     implementation(deps.libs.retrofit)
     implementation(deps.libs.flowPreferences)
-    implementation(deps.libs.guava)
     implementation(deps.libs.androidx.documentfile)
     implementation(deps.libs.harmony)
     implementation(deps.libs.startup)
