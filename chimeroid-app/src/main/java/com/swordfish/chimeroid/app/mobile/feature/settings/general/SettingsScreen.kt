@@ -25,7 +25,6 @@ import com.swordfish.chimeroid.app.utils.android.settings.booleanPreferenceState
 import com.swordfish.chimeroid.app.utils.android.settings.indexPreferenceState
 import com.swordfish.chimeroid.app.utils.android.settings.intPreferenceState
 import com.swordfish.chimeroid.app.utils.android.stringListResource
-import com.swordfish.libretrodroid.VulkanSupport
 
 @Composable
 fun SettingsScreen(
@@ -137,10 +136,8 @@ private fun InputSettings(navController: NavController) {
 
 @Composable
 private fun GeneralSettings() {
-    val context = LocalContext.current
     val hdMode = booleanPreferenceState(R.string.pref_key_hd_mode, false)
     val immersiveMode = booleanPreferenceState(R.string.pref_key_enable_immersive_mode, false)
-    val vulkanSupported = remember { VulkanSupport.isSupported(context) }
 
     ChimeroidCardSettingsGroup(
         title = { Text(text = stringResource(id = R.string.settings_category_general)) },
@@ -204,18 +201,6 @@ private fun GeneralSettings() {
             title = { Text(text = stringResource(id = R.string.settings_title_aspect_ratio)) },
             subtitle = { Text(text = stringResource(id = R.string.settings_description_aspect_ratio)) },
             items = stringListResource(R.array.pref_key_aspect_ratio_display_names),
-        )
-        ChimeroidSettingsList(
-            enabled = vulkanSupported,
-            state =
-                indexPreferenceState(
-                    R.string.pref_key_renderer_backend,
-                    "opengl_es",
-                    stringListResource(R.array.pref_key_renderer_backend_values).toList(),
-                ),
-            title = { Text(text = stringResource(id = R.string.settings_title_renderer_backend)) },
-            subtitle = { Text(text = stringResource(id = R.string.settings_description_renderer_backend)) },
-            items = stringListResource(R.array.pref_key_renderer_backend_display_names),
         )
     }
 }

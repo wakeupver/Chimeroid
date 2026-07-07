@@ -17,8 +17,6 @@
 
 package com.swordfish.libretrodroid;
 
-import android.view.Surface;
-
 import java.util.List;
 
 public class LibretroDroid {
@@ -80,9 +78,6 @@ public class LibretroDroid {
     public static final int ERROR_CHEAT = 4;
     public static final int ERROR_GENERIC = -1;
 
-    public static final int GRAPHICS_API_OPENGL_ES = 0;
-    public static final int GRAPHICS_API_VULKAN = 1;
-
     public static native void create(
         int GLESVersion,
         String coreFilePath,
@@ -96,8 +91,7 @@ public class LibretroDroid {
         boolean enableMicrophone,
         boolean skipDuplicateFrames,
         ImmersiveMode immersiveMode,
-        String language,
-        int preferredGraphicsApi
+        String language
     );
 
     public static native void loadGameFromPath(String gameFilePath);
@@ -107,13 +101,6 @@ public class LibretroDroid {
 
     public static native void onSurfaceCreated();
     public static native void onSurfaceChanged(int width, int height);
-
-    // Vulkan counterparts of onSurfaceCreated()/onSurfaceChanged(), used
-    // instead of (never alongside) the two methods above when GLRetroViewData's
-    // graphicsApi is GraphicsApi.VULKAN — see GLRetroView's SurfaceHolder.Callback.
-    public static native void onVulkanSurfaceCreated(Surface surface);
-    public static native void onVulkanSurfaceChanged(int width, int height);
-    public static native void onVulkanSurfaceDestroyed();
 
     public static native void pause();
     public static native void destroy();

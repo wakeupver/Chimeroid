@@ -32,13 +32,6 @@
 #include "../../libretro-common/include/libretro.h"
 #include "log.h"
 #include "rumblestate.h"
-#include "graphicsapi.h"
-
-// Forward-declared rather than pulling in libretro_vulkan.h / vulkan.h here:
-// Environment only ever stores/forwards an opaque pointer to this struct, it
-// never touches its contents, so every includer of environment.h is spared
-// the VK_USE_PLATFORM_ANDROID_KHR / Vulkan header dependency.
-struct retro_hw_render_interface_vulkan;
 
 class Environment {
 public:
@@ -73,30 +66,6 @@ public:
      */
     using AVInfoChangedCallback = std::function<void(unsigned, unsigned)>;
     void setAVInfoChangedCallback(AVInfoChangedCallback callback);
-
-    /**
-     * User/settings preference, consulted only when a core asks the frontend
-     * which HW context it should request via RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER.
-     * Does not by itself guarantee Vulkan will be used: the core is free to
-     * ignore the preference and request something else (or nothing) via
-     * RETRO_ENVIRONMENT_SET_HW_RENDER, which is the only place the frontend
-     * finds out what was actually negotiated (see getHwContextType()).
-     */
-    void setPreferredGraphicsApi(GraphicsApi api);
-    GraphicsApi getPreferredGraphicsApi() const;
-
-    /** What the core actually requested via SET_HW_RENDER, or RETRO_HW_CONTEXT_NONE
-     *  for a software-rendered core (or before the core has requested anything). */
-    retro_hw_context_type getHwContextType() const;
-
-    /**
-     * Registered by the orchestrator once its Vulkan backend is ready; invoked
-     * when a core queries RETRO_ENVIRONMENT_GET_HW_RENDER_INTERFACE. Mirrors
-     * AVInfoChangedCallback's role of reaching into LibretroDroid-owned state
-     * without environment.h depending on libretrodroid.h.
-     */
-    using HwRenderInterfaceVulkanProvider = std::function<bool(const struct retro_hw_render_interface_vulkan**)>;
-    void setHwRenderInterfaceVulkanProvider(HwRenderInterfaceVulkanProvider provider);
 
 private:
     Environment() {}
@@ -162,7 +131,6 @@ private:
     bool environment_handle_get_variable(struct retro_variable* requested);
     bool environment_handle_set_controller_info(const struct retro_controller_info* received);
     bool environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback);
-    bool environment_handle_get_hw_render_interface(const struct retro_hw_render_interface** data);
     bool environment_handle_get_vfs_interface(struct retro_vfs_interface_info* vfs_interface_info);
     bool environment_handle_get_microphone_interface(struct retro_microphone_interface* microphone_interface);
 
@@ -183,10 +151,6 @@ private:
     bool useDepth = false;
     bool useStencil = false;
     bool bottomLeftOrigin = false;
-
-    GraphicsApi preferredGraphicsApi = GraphicsApi::OPENGL_ES;
-    retro_hw_context_type hwContextType = RETRO_HW_CONTEXT_NONE;
-    HwRenderInterfaceVulkanProvider hwRenderInterfaceVulkanProvider = nullptr;
 
     float screenRotation = 0;
     bool screenRotationUpdated = false;

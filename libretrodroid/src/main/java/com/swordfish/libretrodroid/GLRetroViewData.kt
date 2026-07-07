@@ -35,12 +35,4 @@ class GLRetroViewData(context: Context) {
     var enableMicrophone: Boolean = false
     var immersiveMode: ImmersiveMode? = null
     var stretchToFill: Boolean = false
-
-    /**
-     * Rendering backend for this session. Defaults to [GraphicsApi.OPENGL_ES],
-     * which is exactly the pre-existing GLSurfaceView/EGL behaviour — every
-     * existing integrator is unaffected unless it explicitly opts into
-     * [GraphicsApi.VULKAN].
-     */
-    var graphicsApi: GraphicsApi = GraphicsApi.OPENGL_ES
 }

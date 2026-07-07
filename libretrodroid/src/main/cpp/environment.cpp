@@ -58,8 +58,6 @@ void Environment::deinitialize() {
     useStencil = false;
     bottomLeftOrigin = false;
     screenRotation = 0;
-    hwContextType = RETRO_HW_CONTEXT_NONE;
-    hwRenderInterfaceVulkanProvider = nullptr;
 
     gameGeometryUpdated = false;
     gameGeometryWidth = 0;
@@ -171,40 +169,12 @@ bool Environment::environment_handle_set_hw_render(struct retro_hw_render_callba
     useDepth = hw_render_callback->depth;
     useStencil = hw_render_callback->stencil;
     bottomLeftOrigin = hw_render_callback->bottom_left_origin;
-    hwContextType = hw_render_callback->context_type;
 
     hw_context_destroy = hw_render_callback->context_destroy;
     hw_context_reset = hw_render_callback->context_reset;
+    hw_render_callback->get_current_framebuffer = callback_get_current_framebuffer;
+    hw_render_callback->get_proc_address = &eglGetProcAddress;
 
-    // get_current_framebuffer / eglGetProcAddress are EGL/GLES-only concepts:
-    // wiring them up for a core that just negotiated Vulkan would hand it a
-    // function pointer it must never call. Leaving them null for that case is
-    // the correct, spec-compliant behaviour (a Vulkan core instead retrieves
-    // everything it needs via RETRO_ENVIRONMENT_GET_HW_RENDER_INTERFACE).
-    if (hwContextType == RETRO_HW_CONTEXT_VULKAN) {
-        hw_render_callback->get_current_framebuffer = nullptr;
-        hw_render_callback->get_proc_address = nullptr;
-    } else {
-        hw_render_callback->get_current_framebuffer = callback_get_current_framebuffer;
-        hw_render_callback->get_proc_address = &eglGetProcAddress;
-    }
-
-    return true;
-}
-
-bool Environment::environment_handle_get_hw_render_interface(const struct retro_hw_render_interface** data) {
-    if (!hwRenderInterfaceVulkanProvider) {
-        return false;
-    }
-    // retro_hw_render_interface_vulkan's first two members (interface_type,
-    // interface_version) are laid out identically to the generic base struct
-    // libretro.h declares for this environment call, so this cast is exactly
-    // what every libretro frontend/core relies on for GET_HW_RENDER_INTERFACE.
-    const struct retro_hw_render_interface_vulkan* vulkanInterface = nullptr;
-    if (!hwRenderInterfaceVulkanProvider(&vulkanInterface) || vulkanInterface == nullptr) {
-        return false;
-    }
-    *data = reinterpret_cast<const struct retro_hw_render_interface*>(vulkanInterface);
     return true;
 }
 
@@ -306,23 +276,13 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
 
         case RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER: {
             LOGD("Called RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER");
-            // Advisory only: a core may ignore this and request something
-            // else entirely (or nothing) via SET_HW_RENDER. Defaults to the
-            // pre-existing ES3 preference whenever Vulkan was not requested,
-            // so behaviour for every existing integration is unchanged.
-            *((unsigned*) data) = preferredGraphicsApi == GraphicsApi::VULKAN
-                ? retro_hw_context_type::RETRO_HW_CONTEXT_VULKAN
-                : retro_hw_context_type::RETRO_HW_CONTEXT_OPENGLES3;
+            *((unsigned*) data) = retro_hw_context_type::RETRO_HW_CONTEXT_OPENGLES3;
             return true;
         }
 
         case RETRO_ENVIRONMENT_SET_HW_RENDER:
             LOGD("Called RETRO_ENVIRONMENT_SET_HW_RENDER");
             return environment_handle_set_hw_render(static_cast<struct retro_hw_render_callback*>(data));
-
-        case RETRO_ENVIRONMENT_GET_HW_RENDER_INTERFACE:
-            LOGD("Called RETRO_ENVIRONMENT_GET_HW_RENDER_INTERFACE");
-            return environment_handle_get_hw_render_interface(static_cast<const struct retro_hw_render_interface**>(data));
 
         case RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE:
             LOGD("Called RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");
@@ -564,22 +524,6 @@ void Environment::setEnableMicrophone(bool value) {
 
 void Environment::setAVInfoChangedCallback(AVInfoChangedCallback callback) {
     avInfoChangedCallback = std::move(callback);
-}
-
-void Environment::setPreferredGraphicsApi(GraphicsApi api) {
-    preferredGraphicsApi = api;
-}
-
-GraphicsApi Environment::getPreferredGraphicsApi() const {
-    return preferredGraphicsApi;
-}
-
-retro_hw_context_type Environment::getHwContextType() const {
-    return hwContextType;
-}
-
-void Environment::setHwRenderInterfaceVulkanProvider(HwRenderInterfaceVulkanProvider provider) {
-    hwRenderInterfaceVulkanProvider = std::move(provider);
 }
 
 bool Environment::isAVInfoFullUpdate() const {

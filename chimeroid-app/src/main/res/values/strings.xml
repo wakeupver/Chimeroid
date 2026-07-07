@@ -260,11 +260,6 @@
     <string name="shader_filter_names_crt">CRT</string>
     <string name="shader_filter_names_lcd">LCD</string>
 
-    <string name="renderer_backend_names_opengl_es">OpenGL ES</string>
-    <string name="renderer_backend_names_vulkan">Vulkan (Experimental)</string>
-    <string name="settings_title_renderer_backend">Renderer</string>
-    <string name="settings_description_renderer_backend">Graphics backend used to draw each game. Vulkan is experimental: most cores render in software and are unaffected either way, but a core that forces its own OpenGL ES rendering will show a blank screen here until this is switched back.</string>
-
     <string name="haptic_feedback_mode_names_none">None</string>
     <string name="haptic_feedback_mode_names_press">Press</string>
     <string name="haptic_feedback_mode_names_press_release">Press &amp; release</string>

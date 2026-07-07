@@ -18,7 +18,6 @@
 #include <jni.h>
 
 #include <EGL/egl.h>
-#include <android/native_window_jni.h>
 
 #include <memory>
 #include <string>
@@ -327,65 +326,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
     }
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onVulkanSurfaceCreated(
-    JNIEnv* env,
-    jclass obj,
-    jobject surface
-) {
-    try {
-        ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
-        if (window == nullptr) {
-            LOGE("onVulkanSurfaceCreated: ANativeWindow_fromSurface returned null");
-            return;
-        }
-        LibretroDroid::getInstance().onVulkanSurfaceCreated(window);
-        // Safe to release immediately: on success the driver's VkSurfaceKHR
-        // has already taken its own internal reference during
-        // vkCreateAndroidSurfaceKHR (inside onVulkanSurfaceCreated above); on
-        // failure nothing retained the pointer at all. Either way, holding
-        // this JNI-local reference any longer would only leak it.
-        ANativeWindow_release(window);
-    } catch (std::exception& exception) {
-        LOGE("Error in onVulkanSurfaceCreated: %s", exception.what());
-        JavaUtils::throwRetroException(env, ERROR_GENERIC);
-    } catch (...) {
-        LOGE("Unknown exception in onVulkanSurfaceCreated");
-        JavaUtils::throwRetroException(env, ERROR_GENERIC);
-    }
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onVulkanSurfaceChanged(
-    JNIEnv* env,
-    jclass obj,
-    jint width,
-    jint height
-) {
-    try {
-        LibretroDroid::getInstance().onVulkanSurfaceChanged(width, height);
-    } catch (std::exception& exception) {
-        LOGE("Error in onVulkanSurfaceChanged: %s", exception.what());
-        JavaUtils::throwRetroException(env, ERROR_GENERIC);
-    } catch (...) {
-        LOGE("Unknown exception in onVulkanSurfaceChanged");
-        JavaUtils::throwRetroException(env, ERROR_GENERIC);
-    }
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onVulkanSurfaceDestroyed(
-    JNIEnv* env,
-    jclass obj
-) {
-    try {
-        LibretroDroid::getInstance().onVulkanSurfaceDestroyed();
-    } catch (std::exception& exception) {
-        LOGE("Error in onVulkanSurfaceDestroyed: %s", exception.what());
-        JavaUtils::throwRetroException(env, ERROR_GENERIC);
-    } catch (...) {
-        LOGE("Unknown exception in onVulkanSurfaceDestroyed");
-        JavaUtils::throwRetroException(env, ERROR_GENERIC);
-    }
-}
-
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(
     JNIEnv* env,
     jclass obj,
@@ -447,8 +387,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     jboolean enableMicrophone,
     jboolean skipDuplicateFrames,
     jobject immersiveMode,
-    jstring language,
-    jint preferredGraphicsApi
+    jstring language
 ) {
     try {
         auto corePath = JniString(env, soFilePath);
@@ -497,8 +436,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
             enableMicrophone,
             skipDuplicateFrames,
             parsedConfig,
-            deviceLanguage.stdString(),
-            static_cast<GraphicsApi>(preferredGraphicsApi)
+            deviceLanguage.stdString()
         );
 
     } catch (libretrodroid::LibretroDroidError& exception) {
