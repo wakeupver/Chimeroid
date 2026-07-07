@@ -255,6 +255,76 @@ void LibretroDroid::onSurfaceCreated() {
     }
 }
 
+void LibretroDroid::onVulkanSurfaceCreated(ANativeWindow* window) {
+    LOGD("Performing libretrodroid onVulkanSurfaceCreated");
+
+    auto& env = Environment::getInstance();
+
+    // A core is free to ignore RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER entirely
+    // and request GLES anyway. Kotlin never set up an EGL/GLSurfaceView path for
+    // this session (GraphicsApi.VULKAN skips it), and switching the underlying
+    // Android Surface's producer mid-session is not something that can be done
+    // safely here — so this is treated as an explicit, logged failure rather
+    // than attempting a risky in-place renderer swap. The surface stays blank;
+    // the user needs to switch the Renderer setting back to OpenGL ES for this
+    // particular core.
+    if (env.isUseHwAcceleration() && env.getHwContextType() != RETRO_HW_CONTEXT_VULKAN) {
+        LOGE(
+            "onVulkanSurfaceCreated: core requested HW context type %d instead of Vulkan; "
+            "this session cannot fall back to GLES mid-run. Select OpenGL ES in settings for this core.",
+            env.getHwContextType()
+        );
+        return;
+    }
+
+    bool preferHwInterface = env.getHwContextType() == RETRO_HW_CONTEXT_VULKAN;
+
+    vulkanContext = std::make_unique<VulkanContext>();
+    env.setHwRenderInterfaceVulkanProvider([this](const struct retro_hw_render_interface_vulkan** out) {
+        return vulkanContext && vulkanContext->getHwRenderInterface(out);
+    });
+
+    if (!vulkanContext->initialize(window, preferHwInterface)) {
+        LOGE("onVulkanSurfaceCreated: Vulkan initialization failed, surface will stay blank this session");
+        vulkanContext = nullptr;
+        return;
+    }
+
+    if (preferHwInterface) {
+        // Mirrors onSurfaceCreated()'s GLES flow: push the core's currently-known
+        // render resolution in immediately, so the very first presentFrame() has
+        // a valid (non-zero) blit source extent even before any SET_GEOMETRY /
+        // SET_SYSTEM_AV_INFO fires during this run.
+        struct retro_system_av_info system_av_info {};
+        core->retro_get_system_av_info(&system_av_info);
+        vulkanContext->onHwFrameGeometryChanged(
+            system_av_info.geometry.base_width,
+            system_av_info.geometry.base_height
+        );
+    }
+
+    if (env.getHwContextReset() != nullptr) {
+        env.getHwContextReset()();
+    }
+}
+
+void LibretroDroid::onVulkanSurfaceChanged(unsigned int width, unsigned int height) {
+    LOGD("Performing libretrodroid onVulkanSurfaceChanged");
+    if (vulkanContext) {
+        vulkanContext->onSurfaceResized(width, height);
+    }
+}
+
+void LibretroDroid::onVulkanSurfaceDestroyed() {
+    LOGD("Performing libretrodroid onVulkanSurfaceDestroyed");
+
+    if (vulkanContext && Environment::getInstance().getHwContextDestroy() != nullptr) {
+        Environment::getInstance().getHwContextDestroy()();
+    }
+
+    vulkanContext = nullptr;
+}
+
 void LibretroDroid::onMotionEvent(
     unsigned int port,
     unsigned int source,
@@ -377,7 +447,8 @@ void LibretroDroid::create(
     bool enableMicrophone,
     bool duplicateFrames,
     std::optional<ImmersiveMode::Config> immersiveModeConfig,
-    const std::string& language
+    const std::string& language,
+    GraphicsApi preferredGraphicsApi
 ) {
     LOGD("Performing libretrodroid create");
 
@@ -387,6 +458,7 @@ void LibretroDroid::create(
     Environment::getInstance().setLanguage(language);
     Environment::getInstance().setEnableVirtualFileSystem(enableVirtualFileSystem);
     Environment::getInstance().setEnableMicrophone(enableMicrophone);
+    Environment::getInstance().setPreferredGraphicsApi(preferredGraphicsApi);
 
     // Register the immediate-resize callback for RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO.
     // This callback is invoked from INSIDE retro_run() (on the GL thread) before the
@@ -568,6 +640,7 @@ void LibretroDroid::destroy() {
     core->retro_deinit();
 
     video = nullptr;
+    vulkanContext = nullptr;
     core = nullptr;
     rumble = nullptr;
     fpsSync = nullptr;
@@ -610,6 +683,8 @@ void LibretroDroid::step() {
 
     if (video && !video->rendersInVideoCallback()) {
         video->renderFrame();
+    } else if (vulkanContext) {
+        vulkanContext->presentFrame();
     }
 
     if (fpsSync) {
@@ -621,11 +696,14 @@ void LibretroDroid::step() {
     }
 
     // Some games override the core geometry at runtime. These fields get updated in retro_run().
-    if (video && Environment::getInstance().isGameGeometryUpdated()) {
+    if ((video || vulkanContext) && Environment::getInstance().isGameGeometryUpdated()) {
         Environment::getInstance().clearGameGeometryUpdated();
 
         bool wasFullAVUpdate = Environment::getInstance().isAVInfoFullUpdate();
         Environment::getInstance().clearAVInfoFullUpdate();
+
+        auto newWidth  = Environment::getInstance().getGameGeometryWidth();
+        auto newHeight = Environment::getInstance().getGameGeometryHeight();
 
         if (wasFullAVUpdate) {
             // SET_SYSTEM_AV_INFO: FBO resize + hw_context_reset were already performed
@@ -633,13 +711,20 @@ void LibretroDroid::step() {
             // Nothing left to do here except mark the video as dirty so the aspect ratio
             // and layout are refreshed on the next Java-side requestAspectRatioUpdate.
             LOGD("step: SET_SYSTEM_AV_INFO already handled immediately, marking dirty");
-        } else {
+        } else if (video) {
             // SET_GEOMETRY: only geometry/aspect-ratio changed, no GL context reset needed.
             // Update the renderer layout so the new aspect ratio is applied.
-            auto newWidth  = Environment::getInstance().getGameGeometryWidth();
-            auto newHeight = Environment::getInstance().getGameGeometryHeight();
             LOGD("step: SET_GEOMETRY update %dx%d", newWidth, newHeight);
             video->updateRendererSize(newWidth, newHeight);
+        }
+
+        // HW-accelerated Vulkan cores never get a GLES-style FBO resize (there is
+        // no FBO), but presentFrame()'s blit still needs the up-to-date source
+        // extent regardless of whether this was a full AV-info update or a plain
+        // SET_GEOMETRY — unlike the GLES branch above, there is no separate
+        // "immediate" push for the AV-info case, so it must happen here too.
+        if (vulkanContext && vulkanContext->isHwAccelerated()) {
+            vulkanContext->onHwFrameGeometryChanged(newWidth, newHeight);
         }
 
         dirtyVideo = true;
@@ -713,6 +798,13 @@ void LibretroDroid::handleVideoRefresh(
         if (video->rendersInVideoCallback()) {
             video->renderFrame();
         }
+    } else if (vulkanContext && !vulkanContext->isHwAccelerated()) {
+        // A HW-accelerated Vulkan core's actual frame already arrived via
+        // set_image() before retro_run() returned; `data` here would either be
+        // RETRO_HW_FRAME_BUFFER_VALID or garbage, never real pixels, so that
+        // case is intentionally excluded from this branch entirely rather than
+        // guarded per-call — there is nothing for onNewFrame() to do with it.
+        vulkanContext->onNewFrame(data, width, height, pitch, Environment::getInstance().getPixelFormat());
     }
 }
 

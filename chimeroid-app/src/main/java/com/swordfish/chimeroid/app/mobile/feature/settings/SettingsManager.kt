@@ -58,6 +58,8 @@ class SettingsManager(private val context: Context, sharedPreferences: Lazy<Shar
 
     suspend fun aspectRatioMode() = stringPreference(R.string.pref_key_aspect_ratio, "core_provided")
 
+    suspend fun rendererBackend() = stringPreference(R.string.pref_key_renderer_backend, "opengl_es")
+
     private suspend fun booleanPreference(
         keyId: Int,
         default: Boolean,

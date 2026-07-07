@@ -22,10 +22,14 @@ import android.content.Context
 import android.graphics.PointF
 import android.graphics.RectF
 import android.opengl.GLSurfaceView
+import android.os.Handler
+import android.os.HandlerThread
 import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.Surface
+import android.view.SurfaceHolder
 import android.view.WindowManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
@@ -166,12 +170,111 @@ class GLRetroView(
 
     private var lifecycle: Lifecycle? = null
 
+    // Only non-null while GraphicsApi.VULKAN is active and a Surface currently
+    // exists (see VulkanSurfaceCallback). Takes the place of GLSurfaceView's own
+    // GLThread, which is simply never started in this mode (setRenderer() is
+    // what starts it — see init{} below).
+    private var vulkanEmulationThread: HandlerThread? = null
+    private var vulkanEmulationHandler: Handler? = null
+
     init {
         openGLESVersion = getGLESVersion(context)
-        preserveEGLContextOnPause = true
-        setEGLContextClientVersion(openGLESVersion)
-        setRenderer(Renderer())
+        if (data.graphicsApi == GraphicsApi.OPENGL_ES) {
+            preserveEGLContextOnPause = true
+            setEGLContextClientVersion(openGLESVersion)
+            setRenderer(Renderer())
+        } else {
+            holder.addCallback(VulkanSurfaceCallback())
+        }
         keepScreenOn = true
+    }
+
+    // Routes every existing queueEvent{} call site (directly, or via
+    // runOnEmulationThread/postToEmulationThread) to whichever backend is
+    // actually active, without either of those call sites needing to know
+    // which one that is. GLSurfaceView.queueEvent() is a plain overridable
+    // method (not final), so this is the single point of branching rather
+    // than a mode check duplicated at every call site.
+    override fun queueEvent(r: Runnable) {
+        if (data.graphicsApi == GraphicsApi.VULKAN) {
+            // No surface/thread yet, or already torn down: silently dropping
+            // mirrors GLSurfaceView's own queueEvent(), which likewise no-ops
+            // once its GLThread has exited rather than throwing.
+            vulkanEmulationHandler?.post(r)
+        } else {
+            super.queueEvent(r)
+        }
+    }
+
+    private inner class VulkanSurfaceCallback : SurfaceHolder.Callback {
+        // SurfaceHolder.Callback fires on the main thread (unlike
+        // GLSurfaceView.Renderer's callbacks, which it internally redispatches
+        // onto GLThread) — every native Vulkan call below is therefore posted
+        // to vulkanEmulationHandler rather than invoked inline, so it can never
+        // run concurrently with presentFrame() on that same dedicated thread.
+        override fun surfaceCreated(holder: SurfaceHolder) {
+            val thread = HandlerThread(VULKAN_THREAD_NAME).apply { start() }
+            val handler = Handler(thread.looper)
+            vulkanEmulationThread = thread
+            vulkanEmulationHandler = handler
+
+            handler.post {
+                Thread.currentThread().priority = Thread.MAX_PRIORITY
+                initializeCore(holder.surface)
+                lifecycle?.coroutineScope?.launch {
+                    retroGLEventsSubject.emit(GLRetroEvents.SurfaceCreated)
+                }
+                schedulePresentLoop(handler)
+            }
+        }
+
+        override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+            surfaceWidth = width
+            surfaceHeight = height
+            vulkanEmulationHandler?.post {
+                catchExceptions { LibretroDroid.onVulkanSurfaceChanged(width, height) }
+            }
+            postToEmulationThread { refreshStretchToFillOverride() }
+        }
+
+        override fun surfaceDestroyed(holder: SurfaceHolder) {
+            isEmulationReady = false
+
+            val handler = vulkanEmulationHandler
+            val thread = vulkanEmulationThread
+            vulkanEmulationHandler = null
+            vulkanEmulationThread = null
+
+            // Posted (not awaited): surfaceDestroyed() must return promptly, and
+            // the native side is safe to tear down slightly after the Java
+            // Surface reference is gone (it already holds its own VkSurfaceKHR-
+            // internal reference — see libretrodroidjni.cpp's onVulkanSurfaceCreated).
+            handler?.post {
+                catchExceptions { LibretroDroid.onVulkanSurfaceDestroyed() }
+                thread?.quitSafely()
+            }
+        }
+    }
+
+    private fun schedulePresentLoop(handler: Handler) {
+        handler.post(object : Runnable {
+            override fun run() {
+                // Stale loop from a surface generation that has since been torn
+                // down (or replaced by a new one) — stop reposting rather than
+                // spin forever on a thread that's about to (or already did) quit.
+                if (vulkanEmulationHandler !== handler) return
+
+                catchExceptions {
+                    if (isEmulationReady) {
+                        LibretroDroid.step(this@GLRetroView)
+                        lifecycle?.coroutineScope?.launch {
+                            retroGLEventsSubject.emit(GLRetroEvents.FrameRendered)
+                        }
+                    }
+                }
+                handler.post(this)
+            }
+        })
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
@@ -190,7 +293,8 @@ class GLRetroView(
             data.enableMicrophone,
             data.skipDuplicateFrames,
             data.immersiveMode,
-            getDeviceLanguage()
+            getDeviceLanguage(),
+            data.graphicsApi.nativeValue
         )
         LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
     }
@@ -421,14 +525,22 @@ class GLRetroView(
             // go through queueEvent — can null-deref if resume() wins the race against
             // onSurfaceCreated(), or otherwise data-race with a concurrent renderFrame().
             runOnEmulationThread(true) { LibretroDroid.resume() }
-            onResume()
+            // GLSurfaceView's own pause/resume control GLThread specifically, which is
+            // never started in GraphicsApi.VULKAN mode (setRenderer() is what starts
+            // it — see init{}); calling them there would at best be a no-op on a null
+            // GLThread reference and at worst assume GL state that doesn't exist.
+            if (data.graphicsApi == GraphicsApi.OPENGL_ES) {
+                onResume()
+            }
             isEmulationReady = true
         }
 
         @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         private fun pause() = catchExceptions {
             isEmulationReady = false
-            onPause()
+            if (data.graphicsApi == GraphicsApi.OPENGL_ES) {
+                onPause()
+            }
             LibretroDroid.pause()
         }
     }
@@ -461,8 +573,8 @@ class GLRetroView(
         }
     }
 
-    // These functions are called from the GL thread.
-    private fun initializeCore() = catchExceptions {
+    // These functions are called from the GL/Vulkan emulation thread.
+    private fun initializeCore(surface: Surface? = null) = catchExceptions {
         if (isGameLoaded) return@catchExceptions
         when {
             data.gameFilePath != null -> loadGameFromPath(data.gameFilePath!!)
@@ -473,7 +585,11 @@ class GLRetroView(
             LibretroDroid.unserializeSRAM(data.saveRAMState)
             data.saveRAMState = null
         }
-        LibretroDroid.onSurfaceCreated()
+        if (surface != null) {
+            LibretroDroid.onVulkanSurfaceCreated(surface)
+        } else {
+            LibretroDroid.onSurfaceCreated()
+        }
         isGameLoaded = true
 
         KtUtils.runOnUIThread {
@@ -517,7 +633,7 @@ class GLRetroView(
     }
 
     private fun <T> runOnEmulationThread(useEmulationThread: Boolean, block: () -> T): T {
-        if (!useEmulationThread || Thread.currentThread().name.startsWith("GLThread")) {
+        if (!useEmulationThread || isOnEmulationThread()) {
             return block()
         }
 
@@ -549,11 +665,21 @@ class GLRetroView(
      * the value is picked up the moment the emulation object exists, with no caller stall.
      */
     private inline fun postToEmulationThread(crossinline block: () -> Unit) {
-        if (Thread.currentThread().name.startsWith("GLThread")) {
+        if (isOnEmulationThread()) {
             block()
         } else {
             queueEvent { block() }
         }
+    }
+
+    // GraphicsApi.OPENGL_ES names its thread "GLThread ..." (GLSurfaceView's own
+    // convention); GraphicsApi.VULKAN names its equivalent VULKAN_THREAD_NAME (see
+    // VulkanSurfaceCallback). Checking both, in one place, is what lets every
+    // existing runOnEmulationThread/postToEmulationThread call site work correctly
+    // under either backend without needing to know which one is active.
+    private fun isOnEmulationThread(): Boolean {
+        val name = Thread.currentThread().name
+        return name.startsWith("GLThread") || name == VULKAN_THREAD_NAME
     }
 
     private fun buildShader(config: ShaderConfig): GLRetroShader {
@@ -668,6 +794,13 @@ class GLRetroView(
         const val ERROR_GENERIC = LibretroDroid.ERROR_GENERIC
 
         private val TOUCH_EVENT_OUTSIDE = PointF(-10f, 10f)
+
+        // Name of the dedicated thread driving the present loop in GraphicsApi.VULKAN
+        // mode, taking the place of GLSurfaceView's own internal "GLThread" naming —
+        // runOnEmulationThread()/postToEmulationThread() recognize both prefixes as
+        // "already on the target thread", so a Vulkan-mode caller already on this
+        // thread runs synchronously instead of deadlocking by posting to itself.
+        const val VULKAN_THREAD_NAME = "VulkanEmulationThread"
 
         // Neutral top/bottom 50-50 split, sent natively when dualScreenConfig is set back to
         // null. setDualScreenConfig's `enabled=false` flag is what actually turns off the

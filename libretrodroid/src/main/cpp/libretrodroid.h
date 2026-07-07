@@ -21,6 +21,7 @@
 #include <jni.h>
 
 #include <EGL/egl.h>
+#include <android/native_window.h>
 
 #include <string>
 #include <vector>
@@ -35,12 +36,14 @@
 #include "audio.h"
 #include "video.h"
 #include "renderers/renderer.h"
+#include "renderers/vulkan/vulkancontext.h"
 #include "fpssync.h"
 #include "input.h"
 #include "rumble.h"
 #include "shadermanager.h"
 #include "utils/javautils.h"
 #include "environment.h"
+#include "graphicsapi.h"
 #include "vfs/vfsfile.h"
 #include "renderers/es3/framebufferrenderer.h"
 #include "renderers/es2/imagerendereres2.h"
@@ -87,6 +90,17 @@ public:
     void onSurfaceCreated();
     void onSurfaceChanged(unsigned int width, unsigned int height);
 
+    // Vulkan-mode counterparts of onSurfaceCreated()/onSurfaceChanged(), driven
+    // by the Kotlin SurfaceHolder.Callback used when GraphicsApi.VULKAN is
+    // selected instead of GLSurfaceView's EGL-driven onSurfaceCreated(). Safe
+    // to call even when the negotiated/selected backend ends up not being
+    // Vulkan (e.g. preference was Vulkan but the core forced GLES) — in that
+    // case initialization is skipped and these become no-ops rather than
+    // producing a half-initialized context; see onVulkanSurfaceCreated().
+    void onVulkanSurfaceCreated(ANativeWindow* window);
+    void onVulkanSurfaceChanged(unsigned int width, unsigned int height);
+    void onVulkanSurfaceDestroyed();
+
     void create(
         unsigned int GLESVersion,
         const std::string& soFilePath,
@@ -100,7 +114,8 @@ public:
         bool enableMicrophone,
         bool duplicateFrames,
         std::optional<ImmersiveMode::Config> immersiveModeConfig,
-        const std::string& language
+        const std::string& language,
+        GraphicsApi preferredGraphicsApi
     );
     void resume();
     void step();
@@ -207,6 +222,7 @@ private:
     std::unique_ptr<Core> core;
     std::unique_ptr<Audio> audio;
     std::unique_ptr<Video> video;
+    std::unique_ptr<VulkanContext> vulkanContext;
     std::unique_ptr<FPSSync> fpsSync;
     std::unique_ptr<Input> input;
     std::unique_ptr<Rumble> rumble;

@@ -29,6 +29,7 @@ import com.swordfish.chimeroid.lib.library.db.entity.Game
 import com.swordfish.chimeroid.lib.storage.RomFiles
 import com.swordfish.libretrodroid.GLRetroView
 import com.swordfish.libretrodroid.GLRetroViewData
+import com.swordfish.libretrodroid.GraphicsApi
 import com.swordfish.libretrodroid.ImmersiveMode
 import com.swordfish.libretrodroid.Variable
 import kotlinx.coroutines.CoroutineScope
@@ -154,6 +155,7 @@ class GameViewModelRetroGameView(
             val directLoad = settingsManager.allowDirectGameLoad()
             val enableImmersiveMode = settingsManager.enableImmersiveMode()
             val aspectRatioMode = settingsManager.aspectRatioMode()
+            val rendererBackend = settingsManager.rendererBackend()
 
             val hasMicrophonePermission =
                 ContextCompat.checkSelfPermission(
@@ -205,6 +207,7 @@ class GameViewModelRetroGameView(
                                         enableMicrophone,
                                         enableImmersiveMode,
                                         aspectRatioMode,
+                                        rendererBackend,
                                     )
                                 GameState.Loaded(
                                     gameData = loadingState.gameData,
@@ -331,6 +334,7 @@ class GameViewModelRetroGameView(
         requestMicrophone: Boolean,
         enableImmersiveMode: Boolean,
         aspectRatioMode: String,
+        rendererBackend: String,
     ): GLRetroViewData {
         return GLRetroViewData(appContext).apply {
             coreFilePath = gameData.coreLibrary
@@ -355,6 +359,7 @@ class GameViewModelRetroGameView(
             enableMicrophone = requestMicrophone
             immersiveMode = buildImmersiveModeConfiguration(enableImmersiveMode)
             stretchToFill = (aspectRatioMode == "stretch")
+            graphicsApi = if (rendererBackend == "vulkan") GraphicsApi.VULKAN else GraphicsApi.OPENGL_ES
         }
     }
 

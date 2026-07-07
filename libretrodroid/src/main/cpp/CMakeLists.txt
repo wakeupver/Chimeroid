@@ -19,6 +19,7 @@ set (LIBRETRO_COMMON
         libretro/libretro-common/encodings/encoding_utf.c
         libretro/libretro-common/file/file_path.c
         libretro/libretro-common/time/rtime.c
+        libretro/libretro-common/vulkan/vulkan_symbol_wrapper.c
 )
 
 add_library(libretrodroid SHARED
@@ -26,6 +27,7 @@ add_library(libretrodroid SHARED
         libretrodroidjni.cpp
         libretrodroid.h
         libretrodroid.cpp
+        graphicsapi.h
         log.h
         core.h
         core.cpp
@@ -37,6 +39,8 @@ add_library(libretrodroid SHARED
         videolayout.cpp
         renderers/renderer.h
         renderers/renderer.cpp
+        renderers/vulkan/vulkancontext.h
+        renderers/vulkan/vulkancontext.cpp
         renderers/es3/es3utils.h
         renderers/es3/es3utils.cpp
         renderers/es3/framebufferrenderer.h
@@ -99,4 +103,5 @@ target_link_libraries(libretrodroid
                       EGL
                       oboe
                       GLESv3
+                      dl
 )
