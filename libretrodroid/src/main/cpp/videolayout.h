@@ -67,6 +67,12 @@ private:
 
     void updateRelativeForegroundBounds();
 
+    // Shared by getRelativePosition/getRelativePositionClamped: the NDC
+    // bounding box of foregroundVertices (x as-is, y sign-flipped so "down"
+    // is positive), used to normalize a touch point to [0,1] game space.
+    struct Bounds { float xMin, xMax, yMin, yMax; };
+    Bounds computeForegroundBounds() const;
+
 private:
     std::array<float, 12> foregroundVertices = {
         -1.0F,

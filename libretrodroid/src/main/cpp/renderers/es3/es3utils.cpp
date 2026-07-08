@@ -17,6 +17,9 @@
 
 #include "es3utils.h"
 
+#include <cmath>
+#include <stdexcept>
+
 #include "../../log.h"
 
 namespace libretrodroid {
@@ -98,23 +101,23 @@ std::unique_ptr<ES3Utils::Framebuffers> ES3Utils::buildShaderPasses(
     unsigned int height,
     const libretrodroid::ShaderManager::Chain &shaders
 ) {
-    auto result = std::make_unique<std::vector<std::unique_ptr<ES3Utils::Framebuffer>>>();
-    auto passes = shaders.passes;
+    auto result = std::make_unique<Framebuffers>();
+    const auto& passes = shaders.passes;
 
-    for (int i = 0; i < passes.size() - 1; ++i) {
-        auto pass = passes[i];
-        unsigned int passWidth = std::lround(width * pass.scale);
-        unsigned int passHeight = std::lround(height * pass.scale);
-
-        std::unique_ptr<ES3Utils::Framebuffer> data = ES3Utils::createFramebuffer(
-            passWidth,
-            passHeight,
+    // Intermediate passes only: the last pass renders straight to the screen
+    // and needs no framebuffer of its own, hence `+ 1 < size()` rather than
+    // `< size() - 1` (the latter underflows to a huge unsigned loop bound if
+    // passes were ever empty).
+    for (size_t i = 0; i + 1 < passes.size(); ++i) {
+        const auto& pass = passes[i];
+        result->push_back(ES3Utils::createFramebuffer(
+            std::lround(width * pass.scale),
+            std::lround(height * pass.scale),
             pass.linear,
             false,
             false,
             false
-        );
-        result->push_back(std::move(data));
+        ));
     }
 
     return result;

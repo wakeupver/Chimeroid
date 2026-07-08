@@ -15,6 +15,10 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cmath>
+#include <cstddef>
+#include <limits>
+
 #include "videolayout.h"
 #include "log.h"
 
@@ -193,7 +197,7 @@ void VideoLayout::updateRotation(float rotation) {
     updateBuffers();
 }
 
-std::pair<float, float> VideoLayout::getRelativePosition(float touchX, float touchY) {
+VideoLayout::Bounds VideoLayout::computeForegroundBounds() const {
     float xMin = std::numeric_limits<float>::max();
     float xMax = std::numeric_limits<float>::lowest();
     float yMin = std::numeric_limits<float>::max();
@@ -208,12 +212,19 @@ std::pair<float, float> VideoLayout::getRelativePosition(float touchX, float tou
         yMax = std::max(yMax, -y);
     }
 
-    if (touchX < xMin || touchX > xMax || touchY < yMin || touchY > yMax) {
+    return {xMin, xMax, yMin, yMax};
+}
+
+std::pair<float, float> VideoLayout::getRelativePosition(float touchX, float touchY) {
+    const auto bounds = computeForegroundBounds();
+
+    if (touchX < bounds.xMin || touchX > bounds.xMax ||
+        touchY < bounds.yMin || touchY > bounds.yMax) {
         return {-10.0f, -10.0f};
     }
 
-    float relativeX = (touchX - xMin) / (xMax - xMin);
-    float relativeY = (touchY - yMin) / (yMax - yMin);
+    float relativeX = (touchX - bounds.xMin) / (bounds.xMax - bounds.xMin);
+    float relativeY = (touchY - bounds.yMin) / (bounds.yMax - bounds.yMin);
 
     LOGD("Computed relative touch position: %.2f, %.2f", relativeX, relativeY);
 
@@ -243,32 +254,20 @@ std::pair<float, float> VideoLayout::getRelativePositionClamped(float touchX, fl
     }
 
     // Touch is within the panel. Compute game-content bounds (same as getRelativePosition).
-    float xMin = std::numeric_limits<float>::max();
-    float xMax = std::numeric_limits<float>::lowest();
-    float yMin = std::numeric_limits<float>::max();
-    float yMax = std::numeric_limits<float>::lowest();
-
-    for (size_t i = 0; i < foregroundVertices.size(); i += 2) {
-        float x = foregroundVertices[i];
-        float y = foregroundVertices[i + 1];
-        xMin = std::min(xMin, x);
-        xMax = std::max(xMax, x);
-        yMin = std::min(yMin, -y);
-        yMax = std::max(yMax, -y);
-    }
+    const auto bounds = computeForegroundBounds();
 
     // Clamp to [0, 1] so letterbox/pillarbox dead-zones still produce a valid
     // game coordinate rather than "outside". This makes the full panel touchable.
     auto clamp01 = [](float v) { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); };
 
-    float relativeX = clamp01((touchX - xMin) / (xMax - xMin));
-    float relativeY = clamp01((touchY - yMin) / (yMax - yMin));
+    float relativeX = clamp01((touchX - bounds.xMin) / (bounds.xMax - bounds.xMin));
+    float relativeY = clamp01((touchY - bounds.yMin) / (bounds.yMax - bounds.yMin));
 
     LOGD(
         "[dualtouch] ndc=(%.3f,%.3f) panel=[x:%.3f,%.3f y:%.3f,%.3f] content=[x:%.3f,%.3f y:%.3f,%.3f] -> rel=(%.3f,%.3f)",
         touchX, touchY,
         panelLeft, panelRight, panelTop, panelBottom,
-        xMin, xMax, yMin, yMax,
+        bounds.xMin, bounds.xMax, bounds.yMin, bounds.yMax,
         relativeX, relativeY
     );
     return {relativeX, relativeY};

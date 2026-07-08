@@ -23,6 +23,12 @@ namespace libretrodroid {
 ImageRendererES2::ImageRendererES2() {
     glGenTextures(1, &currentTexture);
     glBindTexture(GL_TEXTURE_2D, currentTexture);
+
+    // Wrap mode is a fixed property of this renderer's texture object (never
+    // toggled after construction), so it only ever needs to be set once here
+    // instead of being reissued on every onNewFrame().
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 void ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
@@ -33,13 +39,16 @@ void ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned hei
     if (pixelFormat == RETRO_PIXEL_FORMAT_XRGB8888) {
         convertDataFromRGB8888(data, pitch * height);
     } else if (pixelFormat == RETRO_PIXEL_FORMAT_0RGB1555) {
-        convertDataFrom0RGB1555(data, width, height, pitch);
+        Renderer::unpackRGB1555InPlace(const_cast<void*>(data), (pitch * height) / bytesPerPixel);
     }
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // Min/mag filter is the one sampler param that can change at runtime (via
+    // setShaders()), so it's the only one reissued, and only when it changed.
+    if (filterDirty) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
+        filterDirty = false;
+    }
 
     if (lastFrameSize.first != width || lastFrameSize.second != height) {
         glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, nullptr);
@@ -50,9 +59,9 @@ void ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned hei
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, glFormat, glType, data);
     } else {
         // Here we are forced to take the long and slow way to upload the padded texture.
-        for (int i = 0; i < height; i++) {
-            auto row = (char*) data + (pitch) * i;
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, i, width, 1, glFormat, glType, row);
+        const auto* base = static_cast<const char*>(data);
+        for (unsigned int i = 0; i < height; i++) {
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, i, width, 1, glFormat, glType, base + pitch * i);
         }
     }
 
@@ -62,13 +71,16 @@ void ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned hei
 }
 
 void ImageRendererES2::convertDataFromRGB8888(const void *data, size_t size) {
-    char* pixelData = (char*) data;
-
-    for (int i = 0; i < size - 4; i += 4) {
-        auto currentRed = pixelData[i + 0];
-        auto currentBlue = pixelData[i + 2];
-        pixelData[i + 0] = currentBlue;
-        pixelData[i + 2] = currentRed;
+    // Swap R/B in place, 4 bytes (one pixel) at a time: one 32-bit load, one
+    // store, versus the original's 2 byte-loads + 2 byte-stores per pixel.
+    // Iterating by whole pixels also fixes an off-by-one in the old `size - 4`
+    // bound, which silently skipped the final pixel, and avoids an unsigned
+    // underflow (huge loop / out-of-bounds writes) if size were ever < 4.
+    auto *pixels = static_cast<uint32_t*>(const_cast<void*>(data));
+    const size_t pixelCount = size / 4;
+    for (size_t i = 0; i < pixelCount; ++i) {
+        const uint32_t p = pixels[i];
+        pixels[i] = (p & 0xFF00FF00u) | ((p & 0x00FF0000u) >> 16) | ((p & 0x000000FFu) << 16);
     }
 }
 
@@ -102,16 +114,6 @@ void ImageRendererES2::setPixelFormat(int pixelFormat) {
     }
 }
 
-void ImageRendererES2::convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch) const {
-    auto castData = (uint16_t*) data;
-
-    for (int i = 0; i < height * pitch / bytesPerPixel; ++i) {
-         castData[i] = ((0x1Fu) & castData[i])
-            | (((0x1Fu << 5) & castData[i]) << 1)
-            | (((0x1Fu << 10) & castData[i]) << 1);
-    }
-}
-
 void ImageRendererES2::updateRenderedResolution(unsigned int width, unsigned int height) {}
 
 bool ImageRendererES2::rendersInVideoCallback() {
@@ -119,7 +121,10 @@ bool ImageRendererES2::rendersInVideoCallback() {
 }
 
 void ImageRendererES2::setShaders(ShaderManager::Chain shaders) {
-    this->linear = shaders.linearTexture;
+    if (this->linear != shaders.linearTexture) {
+        this->linear = shaders.linearTexture;
+        this->filterDirty = true;
+    }
 }
 
 // ES2 Renderer doesn't currently support multiple passes.

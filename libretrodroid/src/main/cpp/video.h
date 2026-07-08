@@ -21,6 +21,7 @@
 #include <GLES3/gl3.h>
 #include <optional>
 #include <array>
+#include <memory>
 
 #include "renderers/renderer.h"
 #include "shadermanager.h"
@@ -131,6 +132,12 @@ public:
 private:
     void updateProgram();
 
+    // Compiles GL programs for a resolved shader chain into shadersChain.
+    // Shared by updateProgram() (runtime shader switches) and
+    // initializeRenderer() (startup), so the chain is only ever resolved
+    // once per actual change instead of being fetched twice on startup.
+    void compileShaderChain(const ShaderManager::Chain& shaders);
+
     float getScreenDensity();
     float getTextureWidth();
     float getTextureHeight();
@@ -174,7 +181,7 @@ private:
     // Secondary layout used only in dual-screen mode.
     VideoLayout secondaryLayout;
 
-    Renderer* renderer;
+    std::unique_ptr<Renderer> renderer;
 
     // VBO used for rendering quads. Prevents GLES 3.0 issues where a raw
     // float* passed to glVertexAttribPointer is misinterpreted as a VBO
@@ -184,6 +191,13 @@ private:
 
     bool      bottomLeftOrigin = false;
     DualScreenCfg dualCfg;
+
+    // UV quads for the dual-screen panels, derived from dualCfg. Computed once
+    // in setDualScreenConfig() (config-change-rate) rather than every
+    // renderFrame() call (frame-rate), since they don't depend on anything
+    // that changes between frames.
+    std::array<float, 12> primaryUV{};
+    std::array<float, 12> secondaryUV{};
 };
 
 }

@@ -104,7 +104,34 @@ Video::~Video() {
         glDeleteBuffers(1, &quadVbo);
         quadVbo = 0;
     }
-    delete renderer;
+    // renderer is a unique_ptr: cleaned up automatically, including on the
+    // exception path if construction fails partway (e.g. shader compilation
+    // failure in initializeRenderer()), which the previous raw-pointer +
+    // manual `delete` here could not guarantee.
+}
+
+void Video::compileShaderChain(const ShaderManager::Chain& shaders) {
+    shadersChain.clear();
+    shadersChain.reserve(shaders.passes.size());
+
+    for (const auto& item : shaders.passes) {
+        ShaderChainEntry shader{};
+
+        shader.gProgram = createProgram(item.vertex.data(), item.fragment.data());
+        if (!shader.gProgram) {
+            LOGE("Could not create gl program.");
+            throw std::runtime_error("Cannot create gl program");
+        }
+
+        shader.gvPositionHandle = glGetAttribLocation(shader.gProgram, "vPosition");
+        shader.gvCoordinateHandle = glGetAttribLocation(shader.gProgram, "vCoordinate");
+        shader.gTextureHandle = glGetUniformLocation(shader.gProgram, "texture");
+        shader.gPreviousPassTextureHandle = glGetUniformLocation(shader.gProgram, "previousPass");
+        shader.gTextureSizeHandle = glGetUniformLocation(shader.gProgram, "textureSize");
+        shader.gScreenDensityHandle = glGetUniformLocation(shader.gProgram, "screenDensity");
+
+        shadersChain.push_back(shader);
+    }
 }
 
 void Video::updateProgram() {
@@ -115,34 +142,8 @@ void Video::updateProgram() {
     loadedShaderType = requestedShaderConfig;
 
     auto shaders = ShaderManager::getShader(requestedShaderConfig);
-
-    shadersChain = {};
-
-    std::for_each(shaders.passes.begin(), shaders.passes.end(), [&](const auto& item){
-        auto shader = ShaderChainEntry { };
-
-        shader.gProgram = createProgram(item.vertex.data(), item.fragment.data());
-        if (!shader.gProgram) {
-            LOGE("Could not create gl program.");
-            throw std::runtime_error("Cannot create gl program");
-        }
-
-        shader.gvPositionHandle = glGetAttribLocation(shader.gProgram, "vPosition");
-
-        shader.gvCoordinateHandle = glGetAttribLocation(shader.gProgram, "vCoordinate");
-
-        shader.gTextureHandle = glGetUniformLocation(shader.gProgram, "texture");
-
-        shader.gPreviousPassTextureHandle = glGetUniformLocation(shader.gProgram, "previousPass");
-
-        shader.gTextureSizeHandle = glGetUniformLocation(shader.gProgram, "textureSize");
-
-        shader.gScreenDensityHandle = glGetUniformLocation(shader.gProgram, "screenDensity");
-
-        shadersChain.push_back(shader);
-    });
-
-    renderer->setShaders(shaders);
+    compileShaderChain(shaders);
+    renderer->setShaders(std::move(shaders));
 }
 
 void Video::renderFrame() {
@@ -150,6 +151,12 @@ void Video::renderFrame() {
     isDirty = false;
 
     // ── GL state reset ────────────────────────────────────────────────────────
+    // HW-accelerated cores (PPSSPP, SwanStation, ...) render through this same
+    // GL context and can leave blend/cull/stencil/scissor enabled with
+    // arbitrary funcs. Our own quad passes never intend to use any of these,
+    // so they're force-disabled every frame rather than assumed off; leaving
+    // any one enabled can silently turn the composited frame transparent,
+    // clipped, or culled away entirely.
     if (useES3) {
         glBindVertexArray(0);
     }
@@ -157,6 +164,10 @@ void Video::renderFrame() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_STENCIL_TEST);
+    glDisable(GL_SCISSOR_TEST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
@@ -164,7 +175,7 @@ void Video::renderFrame() {
 
     // ── Dual-screen: two single-pass draws, one per panel ────────────────────
     if (dualCfg.enabled && !shadersChain.empty()) {
-        auto& shader = shadersChain.back(); // single-pass only in dual mode
+        const auto& shader = shadersChain.back(); // single-pass only in dual mode
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(
@@ -173,18 +184,10 @@ void Video::renderFrame() {
             videoLayout.getScreenHeight()
         );
 
-        // Primary (top) screen
-        auto primaryUV = buildUVQuad(
-            dualCfg.primaryUVxMin, dualCfg.primaryUVyMin,
-            dualCfg.primaryUVxMax, dualCfg.primaryUVyMax
-        );
+        // primaryUV/secondaryUV are precomputed in setDualScreenConfig(): they
+        // only depend on dualCfg + texture size, not on anything that changes
+        // frame-to-frame.
         drawQuadPass(videoLayout.getForegroundVertices(), primaryUV, shader);
-
-        // Secondary (bottom) screen
-        auto secondaryUV = buildUVQuad(
-            dualCfg.secondaryUVxMin, dualCfg.secondaryUVyMin,
-            dualCfg.secondaryUVxMax, dualCfg.secondaryUVyMax
-        );
         drawQuadPass(secondaryLayout.getForegroundVertices(), secondaryUV, shader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -206,10 +209,20 @@ void Video::renderFrame() {
 
     updateProgram();
 
-    for (int i = 0; i < (int)shadersChain.size(); ++i) {
-        auto  shader    = shadersChain[i];
-        auto  passData  = renderer->getPassData(i);
-        bool  isLastPass = (i == (int)shadersChain.size() - 1);
+    // Loop-invariant across every pass of this frame: the source texture's
+    // size and screen density don't change pass-to-pass, and the UV
+    // coordinate array is the same reference every time. Resolving them once
+    // avoids repeating the same trivial work once per shader pass.
+    const float textureWidth = getTextureWidth();
+    const float textureHeight = getTextureHeight();
+    const float screenDensity = getScreenDensity();
+    const auto& coordinates = videoLayout.getTextureCoordinates();
+    const size_t passCount = shadersChain.size();
+
+    for (size_t i = 0; i < passCount; ++i) {
+        const auto& shader = shadersChain[i];
+        const auto passData = renderer->getPassData(static_cast<unsigned int>(i));
+        const bool isLastPass = (i == passCount - 1);
 
         glBindFramebuffer(GL_FRAMEBUFFER, passData.framebuffer.value_or(0));
 
@@ -222,10 +235,9 @@ void Video::renderFrame() {
 
         glUseProgram(shader.gProgram);
 
-        auto& vertices    = isLastPass
+        const auto& vertices = isLastPass
             ? videoLayout.getForegroundVertices()
             : videoLayout.getFramebufferVertices();
-        auto& coordinates = videoLayout.getTextureCoordinates();
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
@@ -237,8 +249,8 @@ void Video::renderFrame() {
             glUniform1i(shader.gPreviousPassTextureHandle, 1);
         }
 
-        glUniform2f(shader.gTextureSizeHandle,    getTextureWidth(), getTextureHeight());
-        glUniform1f(shader.gScreenDensityHandle,  getScreenDensity());
+        glUniform2f(shader.gTextureSizeHandle, textureWidth, textureHeight);
+        glUniform1f(shader.gScreenDensityHandle, screenDensity);
 
         uploadAndDraw(vertices, coordinates, shader.gvPositionHandle, shader.gvCoordinateHandle);
 
@@ -281,21 +293,21 @@ void Video::uploadAndDraw(
     GLint posHandle,
     GLint coordHandle
 ) {
-    constexpr GLsizeiptr kVerts    = 12;
-    constexpr GLsizeiptr kPosBytes = kVerts * sizeof(float);
-    constexpr GLsizeiptr kUvBytes  = kVerts * sizeof(float);
+    // Positions and UVs are both 12 floats (6 xy/st pairs), so one constant
+    // describes both halves of the interleaved buffer below.
+    constexpr GLsizeiptr kQuadBytes = 12 * sizeof(float);
 
     glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
-    glBufferData(GL_ARRAY_BUFFER, kPosBytes + kUvBytes, nullptr, GL_STREAM_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0,        kPosBytes, vertices.data());
-    glBufferSubData(GL_ARRAY_BUFFER, kPosBytes, kUvBytes,  uvs.data());
+    glBufferData(GL_ARRAY_BUFFER, kQuadBytes * 2, nullptr, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0,          kQuadBytes, vertices.data());
+    glBufferSubData(GL_ARRAY_BUFFER, kQuadBytes, kQuadBytes, uvs.data());
 
     glVertexAttribPointer(posHandle,   2, GL_FLOAT, GL_FALSE, 0,
         reinterpret_cast<void*>(static_cast<uintptr_t>(0)));
     glEnableVertexAttribArray(posHandle);
 
     glVertexAttribPointer(coordHandle, 2, GL_FLOAT, GL_FALSE, 0,
-        reinterpret_cast<void*>(static_cast<uintptr_t>(kPosBytes)));
+        reinterpret_cast<void*>(static_cast<uintptr_t>(kQuadBytes)));
     glEnableVertexAttribArray(coordHandle);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -366,6 +378,17 @@ void Video::setDualScreenConfig(DualScreenCfg cfg) {
         Rect(cfg.secondaryVpX, cfg.secondaryVpY, cfg.secondaryVpW, cfg.secondaryVpH)
     );
     secondaryLayout.updateAspectRatio(secondaryAR);
+
+    // Cache the per-panel UV quads: they only depend on cfg (and
+    // bottomLeftOrigin, which is fixed), so resolving them here means
+    // renderFrame() can reuse them every frame instead of rebuilding two
+    // std::array<float,12> from scratch on every single draw.
+    primaryUV = buildUVQuad(
+        cfg.primaryUVxMin, cfg.primaryUVyMin, cfg.primaryUVxMax, cfg.primaryUVyMax
+    );
+    secondaryUV = buildUVQuad(
+        cfg.secondaryUVxMin, cfg.secondaryUVyMin, cfg.secondaryUVxMax, cfg.secondaryUVyMax
+    );
 }
 
 float Video::getScreenDensity() {
@@ -464,26 +487,32 @@ void Video::updateShaderType(ShaderManager::Config shaderConfig) {
 }
 
 void Video::initializeRenderer(RenderingOptions renderingOptions) {
+    // Resolved once and reused below for both renderer construction (which,
+    // for the HW-accelerated path, needs the Chain to size its FBOs) and the
+    // initial GL program compilation, instead of calling
+    // ShaderManager::getShader() a second time for the same config.
     auto shaders = ShaderManager::getShader(requestedShaderConfig);
 
     if (renderingOptions.hardwareAccelerated) {
-        renderer = new FramebufferRenderer(
+        renderer = std::make_unique<FramebufferRenderer>(
             renderingOptions.width,
             renderingOptions.height,
             renderingOptions.useDepth,
             renderingOptions.useStencil,
-            std::move(shaders)
+            shaders
         );
+    } else if (renderingOptions.openglESVersion >= 3) {
+        renderer = std::make_unique<ImageRendererES3>();
+        renderer->setShaders(shaders);
     } else {
-        if (renderingOptions.openglESVersion >= 3) {
-            renderer = new ImageRendererES3();
-        } else {
-            renderer = new ImageRendererES2();
-        }
+        renderer = std::make_unique<ImageRendererES2>();
+        renderer->setShaders(shaders);
     }
 
     renderer->setPixelFormat(renderingOptions.pixelFormat);
-    updateProgram();
+
+    loadedShaderType = requestedShaderConfig;
+    compileShaderChain(shaders);
 }
 
 void Video::updateAspectRatio(float aspectRatio) {

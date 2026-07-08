@@ -45,7 +45,6 @@ public:
 
 private:
     void convertDataFromRGB8888(const void* pixelData, size_t size);
-    void convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch) const;
 
 private:
     int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
@@ -55,6 +54,11 @@ private:
     unsigned int glFormat = 0;
 
     bool linear = false;
+    // Set whenever `linear` changes (or on first use) so onNewFrame() only
+    // reissues glTexParameteri for the min/max filter when it actually needs
+    // to, instead of every single frame. Wrap mode never changes after
+    // construction so it isn't tracked here at all.
+    bool filterDirty = true;
 
     unsigned int currentTexture = 0;
 };

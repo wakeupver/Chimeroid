@@ -37,7 +37,7 @@ public:
 
     struct Chain {
         std::vector<Pass> passes;
-        bool linearTexture;
+        bool linearTexture = false;
 
         bool operator==(const ShaderManager::Chain &other) const;
         bool operator!=(const ShaderManager::Chain &other) const;
@@ -57,7 +57,7 @@ public:
         Type type;
         std::unordered_map<std::string, std::string> params;
 
-        inline bool operator==(const Config& other) {
+        inline bool operator==(const Config& other) const {
             return type == other.type && params == other.params;
         }
     };

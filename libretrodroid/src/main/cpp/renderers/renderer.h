@@ -53,8 +53,18 @@ public:
 
     virtual ~Renderer() = default;
 
+    // Shared by software-path image renderers (ES2/ES3) to re-pack a decoded
+    // 0RGB1555 buffer in place so it can be uploaded as GL_UNSIGNED_SHORT_5_6_5.
+    // Blue stays put; the 5-bit green/red fields are shifted one bit into the
+    // wider 565 layout. In place, O(pixelCount), zero allocations. No-op on
+    // null data so callers don't need their own guard.
+    static void unpackRGB1555InPlace(void *data, size_t pixelCount);
+
 public:
-    std::pair<int, int> lastFrameSize;
+    // Unsigned to match the width/height parameters it's always derived from
+    // and compared against (onNewFrame, updateRenderedResolution); avoids
+    // signed/unsigned comparison warnings at every call site.
+    std::pair<unsigned int, unsigned int> lastFrameSize;
 };
 
 }

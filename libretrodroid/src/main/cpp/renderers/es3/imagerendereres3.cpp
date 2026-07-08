@@ -28,7 +28,7 @@ ImageRendererES3::ImageRendererES3() {
 
 void ImageRendererES3::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     if (pixelFormat == RETRO_PIXEL_FORMAT_0RGB1555) {
-        convertDataFrom0RGB1555(data, width, height, pitch);
+        Renderer::unpackRGB1555InPlace(const_cast<void*>(data), (pitch * height) / bytesPerPixel);
     }
 
     if (lastFrameSize.first != width || lastFrameSize.second != height || isDirty) {
@@ -113,16 +113,6 @@ void ImageRendererES3::setPixelFormat(int pixelFormat) {
     }
 }
 
-void ImageRendererES3::convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch) const {
-    auto castData = (uint16_t*) data;
-
-    for (int i = 0; i < height * pitch / bytesPerPixel; ++i) {
-        castData[i] = ((0x1Fu) & castData[i])
-            | (((0x1Fu << 5) & castData[i]) << 1)
-            | (((0x1Fu << 10) & castData[i]) << 1);
-    }
-}
-
 void ImageRendererES3::updateRenderedResolution(unsigned int width, unsigned int height) {}
 
 bool ImageRendererES3::rendersInVideoCallback() {
@@ -130,14 +120,16 @@ bool ImageRendererES3::rendersInVideoCallback() {
 }
 
 void ImageRendererES3::setShaders(ShaderManager::Chain newShaders) {
-    this->shaders = newShaders;
-    this->isDirty = true;
+    if (newShaders != this->shaders) {
+        this->shaders = std::move(newShaders);
+        this->isDirty = true;
+    }
 }
 
 Renderer::PassData ImageRendererES3::getPassData(unsigned int layer) {
     PassData result;
 
-    if (layer >= 0 && layer < framebuffers->size()) {
+    if (layer < framebuffers->size()) {
         result.framebuffer = framebuffers->at(layer)->framebuffer;
         result.width = framebuffers->at(layer)->width;
         result.height = framebuffers->at(layer)->height;
