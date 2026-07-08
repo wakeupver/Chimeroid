@@ -89,32 +89,51 @@ JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_ge
     JNIEnv* env,
     jclass obj
 ) {
-    jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
-    jmethodID variableMethodID = env->GetMethodID(variableClass, "<init>", "()V");
-
     auto variables = Environment::getInstance().getVariables();
-    jobjectArray result = env->NewObjectArray(variables.size(), variableClass, nullptr);
+    const auto count = static_cast<jsize>(variables.size());
 
-    for (int i = 0; i < variables.size(); i++) {
-        jobject jVariable = env->NewObject(variableClass, variableMethodID);
-
-        jfieldID jKeyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
-        jfieldID jValueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
-        jfieldID jDescriptionField = env->GetFieldID(
-            variableClass,
-            "description",
-            "Ljava/lang/String;"
-        );
-
-        env->SetObjectField(jVariable, jKeyField, env->NewStringUTF(variables[i].key.data()));
-        env->SetObjectField(jVariable, jValueField, env->NewStringUTF(variables[i].value.data()));
-        env->SetObjectField(
-            jVariable,
-            jDescriptionField,
-            env->NewStringUTF(variables[i].description.data()));
-
-        env->SetObjectArrayElement(result, i, jVariable);
+    jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
+    if (variableClass == nullptr) {
+        return nullptr;
     }
+
+    // Reflection lookups are loop-invariant. Hoisting them turns O(n) redundant
+    // FindClass/GetMethodID/GetFieldID calls into a single O(1) setup.
+    jmethodID variableCtor = env->GetMethodID(variableClass, "<init>", "()V");
+    jfieldID keyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
+    jfieldID valueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
+    jfieldID descriptionField = env->GetFieldID(variableClass, "description", "Ljava/lang/String;");
+    if (variableCtor == nullptr || keyField == nullptr || valueField == nullptr || descriptionField == nullptr) {
+        return nullptr;
+    }
+
+    jobjectArray result = env->NewObjectArray(count, variableClass, nullptr);
+    if (result == nullptr) {
+        return nullptr;
+    }
+
+    for (jsize i = 0; i < count; ++i) {
+        const auto& variable = variables[i];
+
+        jobject jVariable = env->NewObject(variableClass, variableCtor);
+        jstring jKey = env->NewStringUTF(variable.key.c_str());
+        jstring jValue = env->NewStringUTF(variable.value.c_str());
+        jstring jDescription = env->NewStringUTF(variable.description.c_str());
+
+        env->SetObjectField(jVariable, keyField, jKey);
+        env->SetObjectField(jVariable, valueField, jValue);
+        env->SetObjectField(jVariable, descriptionField, jDescription);
+        env->SetObjectArrayElement(result, i, jVariable);
+
+        // Cores with large option sets (e.g. snes9x, ~40+ variables) used to leak
+        // 4 local refs/iteration with no bound, risking JNI local reference table
+        // exhaustion — which silently truncates or corrupts the tail of the list.
+        env->DeleteLocalRef(jDescription);
+        env->DeleteLocalRef(jValue);
+        env->DeleteLocalRef(jKey);
+        env->DeleteLocalRef(jVariable);
+    }
+
     return result;
 }
 
@@ -122,41 +141,56 @@ JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_ge
     JNIEnv* env,
     jclass obj
 ) {
-    jclass variableClass = env->FindClass("[Lcom/swordfish/libretrodroid/Controller;");
-
     auto controllers = Environment::getInstance().getControllers();
-    jobjectArray result = env->NewObjectArray(controllers.size(), variableClass, nullptr);
+    const auto playerCount = static_cast<jsize>(controllers.size());
 
-    for (int i = 0; i < controllers.size(); i++) {
-        jclass variableClass2 = env->FindClass("com/swordfish/libretrodroid/Controller");
-        jobjectArray controllerArray = env->NewObjectArray(
-            controllers[i].size(),
-            variableClass2,
-            nullptr
-        );
-        jmethodID variableMethodID = env->GetMethodID(variableClass2, "<init>", "()V");
+    jclass controllerArrayClass = env->FindClass("[Lcom/swordfish/libretrodroid/Controller;");
+    jclass controllerClass = env->FindClass("com/swordfish/libretrodroid/Controller");
+    if (controllerArrayClass == nullptr || controllerClass == nullptr) {
+        return nullptr;
+    }
 
-        for (int j = 0; j < controllers[i].size(); j++) {
-            jobject jController = env->NewObject(variableClass2, variableMethodID);
+    // Loop-invariant reflection lookups, hoisted once instead of once per
+    // player (ctor) and once per controller type (field ids).
+    jmethodID controllerCtor = env->GetMethodID(controllerClass, "<init>", "()V");
+    jfieldID idField = env->GetFieldID(controllerClass, "id", "I");
+    jfieldID descriptionField = env->GetFieldID(controllerClass, "description", "Ljava/lang/String;");
+    if (controllerCtor == nullptr || idField == nullptr || descriptionField == nullptr) {
+        return nullptr;
+    }
 
-            jfieldID jIdField = env->GetFieldID(variableClass2, "id", "I");
-            jfieldID jDescriptionField = env->GetFieldID(
-                variableClass2,
-                "description",
-                "Ljava/lang/String;"
-            );
+    jobjectArray result = env->NewObjectArray(playerCount, controllerArrayClass, nullptr);
+    if (result == nullptr) {
+        return nullptr;
+    }
 
-            env->SetIntField(jController, jIdField, (int) controllers[i][j].id);
-            env->SetObjectField(
-                jController,
-                jDescriptionField,
-                env->NewStringUTF(controllers[i][j].description.data()));
+    for (jsize i = 0; i < playerCount; ++i) {
+        const auto& playerControllers = controllers[i];
+        const auto typeCount = static_cast<jsize>(playerControllers.size());
 
+        jobjectArray controllerArray = env->NewObjectArray(typeCount, controllerClass, nullptr);
+        if (controllerArray == nullptr) {
+            return nullptr;
+        }
+
+        for (jsize j = 0; j < typeCount; ++j) {
+            const auto& controller = playerControllers[j];
+
+            jobject jController = env->NewObject(controllerClass, controllerCtor);
+            jstring jDescription = env->NewStringUTF(controller.description.c_str());
+
+            env->SetIntField(jController, idField, static_cast<jint>(controller.id));
+            env->SetObjectField(jController, descriptionField, jDescription);
             env->SetObjectArrayElement(controllerArray, j, jController);
+
+            env->DeleteLocalRef(jDescription);
+            env->DeleteLocalRef(jController);
         }
 
         env->SetObjectArrayElement(result, i, controllerArray);
+        env->DeleteLocalRef(controllerArray);
     }
+
     return result;
 }
 

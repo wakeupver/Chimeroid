@@ -25,6 +25,7 @@
 #include <cstring>
 #include <cmath>
 #include <functional>
+#include <mutex>
 #include <EGL/egl.h>
 #include <unordered_map>
 #include <array>
@@ -124,7 +125,7 @@ public:
 
     const std::vector<struct Variable> getVariables() const;
 
-    const std::vector<std::vector<struct Controller>> &getControllers() const;
+    std::vector<std::vector<struct Controller>> getControllers() const;
 
 private:
     bool environment_handle_set_variables(const struct retro_variable* received);
@@ -164,9 +165,18 @@ private:
 
     std::array<libretrodroid::RumbleState, 4> rumbleStates;
 
+    // Guards `variables` + `dirtyVariables`. Writers run on the core/emulation
+    // thread (retro_load_game/retro_run -> environment callbacks); readers run
+    // on whichever thread queries options (typically the UI thread via JNI).
+    // Cores with larger option sets (e.g. snes9x, ~40+ variables) spend more
+    // wall-clock time — and trigger more unordered_map rehashes — while being
+    // populated, which previously widened the window for an unsynchronized
+    // read to observe a torn/mid-rehash map and silently drop entries.
+    mutable std::mutex variablesMutex;
     std::unordered_map<std::string, struct Variable> variables;
     bool dirtyVariables = false;
 
+    mutable std::mutex controllersMutex;
     std::vector<std::vector<struct Controller>> controllers;
 };
 

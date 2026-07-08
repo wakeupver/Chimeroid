@@ -67,9 +67,25 @@ void Environment::deinitialize() {
     avInfoChangedCallback = nullptr;
 
     rumbleStates.fill(libretrodroid::RumbleState {});
+
+    // Environment is a process-lifetime singleton reused across game/core
+    // reloads. Without this, a previous core's variables/controllers persist
+    // and are served alongside (or instead of) the newly loaded core's own
+    // data on the next session.
+    {
+        std::lock_guard<std::mutex> lock(variablesMutex);
+        variables.clear();
+        dirtyVariables = false;
+    }
+    {
+        std::lock_guard<std::mutex> lock(controllersMutex);
+        controllers.clear();
+    }
 }
 
 void Environment::updateVariable(const std::string& key, const std::string& value) {
+    std::lock_guard<std::mutex> lock(variablesMutex);
+
     auto it = variables.find(key);
     if (it != variables.end()) {
         // Key was registered by SET_VARIABLES — update value only if changed.
@@ -89,6 +105,8 @@ void Environment::updateVariable(const std::string& key, const std::string& valu
 }
 
 bool Environment::environment_handle_set_variables(const struct retro_variable* received) {
+    std::lock_guard<std::mutex> lock(variablesMutex);
+
     for (unsigned i = 0; received[i].key != nullptr; ++i) {
         const char* rawKey  = received[i].key;
         const char* rawDesc = received[i].value;   // "Human name; val1|val2|val3"
@@ -129,6 +147,8 @@ bool Environment::environment_handle_set_variables(const struct retro_variable* 
 
 bool Environment::environment_handle_get_variable(struct retro_variable* requested) {
     LOGD("Variable requested %s", requested->key);
+    std::lock_guard<std::mutex> lock(variablesMutex);
+
     auto foundVariable = variables.find(std::string(requested->key));
 
     if (foundVariable == variables.end()) {
@@ -140,6 +160,7 @@ bool Environment::environment_handle_get_variable(struct retro_variable* request
 }
 
 bool Environment::environment_handle_set_controller_info(const struct retro_controller_info* received) {
+    std::lock_guard<std::mutex> lock(controllersMutex);
     controllers.clear();
 
     unsigned player = 0;
@@ -469,10 +490,12 @@ float Environment::getGameGeometryAspectRatio() const {
 
 const std::vector<struct Variable> Environment::getVariables() const {
     std::vector<struct Variable> result;
-    result.reserve(variables.size());
-
-    for (const auto& [key, var] : variables) {
-        result.push_back(var);
+    {
+        std::lock_guard<std::mutex> lock(variablesMutex);
+        result.reserve(variables.size());
+        for (const auto& [key, var] : variables) {
+            result.push_back(var);
+        }
     }
 
     std::sort(
@@ -486,7 +509,8 @@ const std::vector<struct Variable> Environment::getVariables() const {
     return result;
 }
 
-const std::vector<std::vector<struct Controller>> &Environment::getControllers() const {
+std::vector<std::vector<struct Controller>> Environment::getControllers() const {
+    std::lock_guard<std::mutex> lock(controllersMutex);
     return controllers;
 }
 
