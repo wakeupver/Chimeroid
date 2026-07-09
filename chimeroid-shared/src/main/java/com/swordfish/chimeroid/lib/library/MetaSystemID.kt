@@ -113,6 +113,11 @@ enum class MetaSystemID(val titleResId: Int, val imageResId: Int, val systemIDs:
         R.drawable.game_system_3ds,
         listOf(SystemID.NINTENDO_3DS),
     ),
+    PICO8(
+        R.string.game_system_title_pico8,
+        R.drawable.game_system_pico8,
+        listOf(SystemID.PICO8),
+    ),
     ;
 
     fun color(): Int {
@@ -147,6 +152,7 @@ enum class MetaSystemID(val titleResId: Int, val imageResId: Int, val systemIDs:
                 SystemID.WS -> WS
                 SystemID.WSC -> WS
                 SystemID.NINTENDO_3DS -> NINTENDO_3DS
+                SystemID.PICO8 -> PICO8
             }
         }
     }
