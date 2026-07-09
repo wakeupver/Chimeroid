@@ -20,6 +20,7 @@
 package com.swordfish.chimeroid.lib.library
 
 import androidx.annotation.StringRes
+import com.swordfish.chimeroid.common.files.FileUtils
 import com.swordfish.chimeroid.lib.R
 import com.swordfish.chimeroid.lib.core.CoreVariable
 import java.util.Locale
@@ -1183,6 +1184,22 @@ data class GameSystem(
                         secondaryUVxMax = 0.9f,  secondaryUVyMax = 1f,
                     ),
                 ),
+                GameSystem(
+                    SystemID.PICO8,
+                    "PICO-8",
+                    R.string.game_system_title_pico8,
+                    R.string.game_system_abbr_pico8,
+                    listOf(
+                        SystemCoreConfig(
+                            CoreID.FAKE08,
+                            controllerConfigs =
+                                hashMapOf(
+                                    0 to arrayListOf(ControllerConfigs.PICO8),
+                                ),
+                        ),
+                    ),
+                    uniqueExtensions = listOf("p8", "p8.png"),
+                ),
             )
 
         private val byIdCache by lazy { SYSTEMS.associateBy { it.id.dbname } }
@@ -1213,6 +1230,25 @@ data class GameSystem(
 
         fun findByUniqueFileExtension(fileExtension: String): GameSystem? =
             byExtensionCache[fileExtension.lowercase(Locale.US)]
+
+        /**
+         * Resolves [name] to a [GameSystem], trying a compound extension (e.g. "p8.png",
+         * "sfc.zip") before the simple single-segment extension. Needed for systems whose
+         * canonical file format is a dotted double extension — currently only PICO-8's
+         * .p8.png cart-image format. Falls back to the simple extension for every other
+         * system, so behavior for all single-segment extensions is unchanged.
+         */
+        fun findByFileName(name: String): GameSystem? =
+            compoundExtensionOrNull(name)?.let(::findByUniqueFileExtension)
+                ?: findByUniqueFileExtension(FileUtils.extractExtension(name))
+
+        /** Returns "ext1.ext2" from "name.ext1.ext2", or null when [name] has fewer than two dots. */
+        private fun compoundExtensionOrNull(name: String): String? {
+            val lastDot = name.lastIndexOf('.')
+            if (lastDot <= 0) return null
+            val secondDot = name.lastIndexOf('.', lastDot - 1)
+            return if (secondDot >= 0) name.substring(secondDot + 1) else null
+        }
 
         data class ScanOptions(
             val scanByFilename: Boolean = true,

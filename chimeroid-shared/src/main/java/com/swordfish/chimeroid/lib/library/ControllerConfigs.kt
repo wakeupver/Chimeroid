@@ -389,4 +389,17 @@ object ControllerConfigs {
                     TILT_CONFIGURATION_L_R,
                 ),
         )
+
+    val PICO8 =
+        ControllerConfig(
+            "default",
+            R.string.controller_default,
+            TouchControllerID.NES,
+            mergeDPADAndLeftStickEvents = true,
+            tiltConfigurations =
+                listOf(
+                    TILT_CONFIGURATION_DISABLED,
+                    TILT_CONFIGURATION_CROSS,
+                ),
+        )
 }

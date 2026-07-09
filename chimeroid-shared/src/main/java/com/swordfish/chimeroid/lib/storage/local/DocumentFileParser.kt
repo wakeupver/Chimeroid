@@ -53,9 +53,11 @@ object DocumentFileParser {
      * .nes, .sfc, .nds, .n64, .gb, .gbc …). The metadata provider will match it
      * instantly via [findByUniqueExtension] without reading the file contents.
      */
-    private fun parseUniqueExtensionFile(baseStorageFile: BaseStorageFile): StorageFile {
+    private fun parseUniqueExtensionFile(
+        baseStorageFile: BaseStorageFile,
+        system: GameSystem?,
+    ): StorageFile {
         Timber.d("Fast-path (unique extension): ${baseStorageFile.name}")
-        val system = GameSystem.findByUniqueFileExtension(baseStorageFile.extension)
         return StorageFile(
             name = baseStorageFile.name,
             size = baseStorageFile.size,
@@ -109,11 +111,12 @@ object DocumentFileParser {
     ): StorageFile {
         val ext = baseStorageFile.extension.lowercase()
 
-        // ── Fast-path A: unique-extension files (gba, nes, sfc, gb, gbc, nds, n64…) ─
-        // These are unambiguously identified by their extension alone.
+        // ── Fast-path A: unique-extension files (gba, nes, sfc, gb, gbc, nds, n64, p8.png…) ─
+        // These are unambiguously identified by their extension alone (simple or compound).
         // Skip ALL file I/O — the metadata provider will match via findByUniqueExtension.
-        if (GameSystem.findByUniqueFileExtension(ext) != null) {
-            return parseUniqueExtensionFile(baseStorageFile)
+        val uniqueExtensionSystem = GameSystem.findByFileName(baseStorageFile.name)
+        if (uniqueExtensionSystem != null) {
+            return parseUniqueExtensionFile(baseStorageFile, uniqueExtensionSystem)
         }
 
         // ── Fast-path B: disc images (iso, bin, pbp, 3ds) ────────────────────────────

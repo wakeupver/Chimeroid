@@ -111,6 +111,11 @@ enum class CoreID(
         "DosBox Pure",
         "libdosbox_pure_libretro_android.so",
     ),
+    FAKE08(
+        "fake08",
+        "FAKE-08",
+        "libfake08_libretro_android.so",
+    ),
     ;
 
     companion object {

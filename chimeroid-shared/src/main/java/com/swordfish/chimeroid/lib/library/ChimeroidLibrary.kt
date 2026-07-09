@@ -280,7 +280,7 @@ class ChimeroidLibrary(
      * (i.e. can't be reliably identified without reading the file).
      */
     private fun quickStorageFileOrNull(baseStorageFile: BaseStorageFile): StorageFile? {
-        val system = GameSystem.findByUniqueFileExtension(baseStorageFile.extension)
+        val system = GameSystem.findByFileName(baseStorageFile.name)
             ?: return null
         return StorageFile(
             name = baseStorageFile.name,
