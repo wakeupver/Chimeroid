@@ -65,7 +65,7 @@ object ShaderChooser {
             SystemID.WS -> ShaderConfig.LCD
             SystemID.WSC -> ShaderConfig.LCD
             SystemID.NINTENDO_3DS -> ShaderConfig.LCD
-            SystemID.PICO8 -> ShaderConfig.CRT
+            SystemID.PICO8 -> ShaderConfig.Sharp
         }
     }
 
