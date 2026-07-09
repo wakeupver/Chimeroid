@@ -91,10 +91,11 @@ object CoreOptionsPreferenceHelper {
         it: ChimeroidCoreOption,
         systemID: String,
     ): Preference {
-        return if (it.getEntriesValues().toSet() == BOOLEAN_SET) {
+        val entriesData = it.getEntriesData(context)
+        return if (entriesData.values.toSet() == BOOLEAN_SET) {
             buildSwitchPreference(context, it, systemID)
         } else {
-            buildListPreference(context, it, systemID)
+            buildListPreference(context, it, systemID, entriesData)
         }
     }
 
@@ -102,14 +103,15 @@ object CoreOptionsPreferenceHelper {
         context: Context,
         it: ChimeroidCoreOption,
         systemID: String,
+        entriesData: ChimeroidCoreOption.Entries,
     ): ListPreference {
         val preference = ListPreference(context)
         preference.key = CoreVariablesManager.computeSharedPreferenceKey(it.getKey(), systemID)
         preference.title = it.getDisplayName(context)
-        preference.entries = it.getEntries(context).toTypedArray()
-        preference.entryValues = it.getEntriesValues().toTypedArray()
+        preference.entries = entriesData.labels.toTypedArray()
+        preference.entryValues = entriesData.values.toTypedArray()
         preference.setDefaultValue(it.getCurrentValue())
-        preference.setValueIndex(it.getCurrentIndex())
+        preference.setValueIndex(entriesData.currentIndex)
         preference.summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
         preference.isIconSpaceReserved = false
         return preference
@@ -137,13 +139,14 @@ object CoreOptionsPreferenceHelper {
         controllerConfigs: List<ControllerConfig>,
     ): Preference {
         val preference = ListPreference(context)
+        val names = controllerConfigs.map { it.name }
         preference.key = ControllerConfigsManager.getSharedPreferencesId(systemID, coreID, port)
         preference.title = context.getString(R.string.core_settings_controller, (port + 1).toString())
         preference.entries = controllerConfigs.map { context.getString(it.displayName) }.toTypedArray()
-        preference.entryValues = controllerConfigs.map { it.name }.toTypedArray()
+        preference.entryValues = names.toTypedArray()
         preference.summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
         preference.isIconSpaceReserved = false
-        preference.setDefaultValue(controllerConfigs.map { it.name }.first())
+        preference.setDefaultValue(names.first())
         return preference
     }
 

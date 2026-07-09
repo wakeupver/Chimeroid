@@ -70,8 +70,8 @@ private fun CoreOptionItem(
     context: Context,
 ) {
     val prefKey = CoreVariablesManager.computeSharedPreferenceKey(coreOption.getKey(), systemID)
-    val entryValues = coreOption.getEntriesValues()
-    if (entryValues.toSet() == CoreOptionsPreferenceHelper.BOOLEAN_SET) {
+    val entriesData = coreOption.getEntriesData(context)
+    if (entriesData.values.toSet() == CoreOptionsPreferenceHelper.BOOLEAN_SET) {
         ChimeroidSettingsSwitch(
             state = booleanPreferenceState(prefKey, coreOption.getCurrentValue() == "enabled"),
             title = { Text(text = coreOption.getDisplayName(context)) },
@@ -79,11 +79,11 @@ private fun CoreOptionItem(
     } else {
         ChimeroidSettingsList(
             title = { Text(text = coreOption.getDisplayName(context)) },
-            items = coreOption.getEntries(context),
+            items = entriesData.labels,
             state = indexPreferenceState(
                 prefKey,
-                entryValues.firstOrNull() ?: coreOption.getCurrentValue(),
-                entryValues,
+                entriesData.values.firstOrNull() ?: coreOption.getCurrentValue(),
+                entriesData.values,
             ),
         )
     }
@@ -168,19 +168,20 @@ private fun ControllersOptions(
         title = { Text(text = stringResource(R.string.core_settings_category_controllers)) },
     ) {
         visibleControllers.forEach { (port, controllerConfigs) ->
+            val names = controllerConfigs!!.map { it.name }
             ChimeroidSettingsList(
                 title = {
                     Text(text = context.getString(R.string.core_settings_controller, (port + 1).toString()))
                 },
-                items = controllerConfigs!!.map { stringResource(id = it.displayName) },
+                items = controllerConfigs.map { stringResource(id = it.displayName) },
                 state = indexPreferenceState(
                     ControllerConfigsManager.getSharedPreferencesId(
                         gameMenuRequest.game.systemId,
                         gameMenuRequest.coreConfig.coreID,
                         port,
                     ),
-                    controllerConfigs.map { it.name }.first(),
-                    controllerConfigs.map { it.name },
+                    names.first(),
+                    names,
                 ),
             )
         }

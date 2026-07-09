@@ -169,11 +169,9 @@ abstract class BaseGameActivity : ImmersiveActivity() {
 
     private fun transformExposedSetting(
         exposedSetting: ExposedSetting.Registered,
-        coreOptions: List<CoreOption>,
+        coreOptionsByKey: Map<String, CoreOption>,
     ): ChimeroidCoreOption? {
-        return coreOptions
-            .firstOrNull { it.variable.key == exposedSetting.key }
-            ?.let { ChimeroidCoreOption(exposedSetting, it) }
+        return coreOptionsByKey[exposedSetting.key]?.let { ChimeroidCoreOption(exposedSetting, it) }
     }
 
     private fun displayOptionsDialog(
@@ -183,16 +181,20 @@ abstract class BaseGameActivity : ImmersiveActivity() {
         if (baseGameScreenViewModel.loadingState.value) return
 
         val coreOptions = getCoreOptions()
+        // Built once and reused for every registered lookup below, turning what was an
+        // O(registeredSettings * coreOptions) scan (noticeable on option-heavy cores like
+        // snes9x, ~40+ variables) into a single O(coreOptions) pass plus O(1) lookups.
+        val coreOptionsByKey = coreOptions.associateBy { it.variable.key }
 
         val options =
             systemCoreConfig.exposedSettings
                 .filterIsInstance<ExposedSetting.Registered>()
-                .mapNotNull { transformExposedSetting(it, coreOptions) }
+                .mapNotNull { transformExposedSetting(it, coreOptionsByKey) }
 
         val advancedOptions =
             systemCoreConfig.exposedAdvancedSettings
                 .filterIsInstance<ExposedSetting.Registered>()
-                .mapNotNull { transformExposedSetting(it, coreOptions) }
+                .mapNotNull { transformExposedSetting(it, coreOptionsByKey) }
 
         val knownKeys =
             (systemCoreConfig.exposedSettings + systemCoreConfig.exposedAdvancedSettings)
