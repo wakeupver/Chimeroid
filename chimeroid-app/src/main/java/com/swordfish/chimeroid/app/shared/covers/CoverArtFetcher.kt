@@ -11,10 +11,10 @@ import coil.request.Options
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.Request
 import okio.buffer
 import okio.source
 import timber.log.Timber
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 /**
@@ -22,7 +22,8 @@ import java.util.concurrent.TimeUnit
  *
  * Priority:
  *  1. Serve from a previously-saved JPEG in [CoverArtRepository.getCoverFile].
- *  2. Download from [Game.coverFrontUrl], scale + compress, save as JPEG, serve.
+ *  2. Resolve [Game.coverFrontUrl] via [CoverArtRepository.persistCover] — a remote HTTP(S)
+ *     thumbnail or an on-device cart image (e.g. PICO-8's `.p8.png`) — then serve it.
  *  3. Return null → Coil falls back to the drawable set via `fallback`/`error`.
  */
 class CoverArtFetcher(
@@ -38,56 +39,37 @@ class CoverArtFetcher(
 
         // ── 1. Local cache hit ──────────────────────────────────────────────
         if (localFile.exists()) {
-            return SourceResult(
-                source = ImageSource(
-                    source = localFile.source().buffer(),
-                    context = options.context,
-                ),
-                mimeType = "image/jpeg",
-                dataSource = DataSource.DISK,
-            )
+            return toSourceResult(localFile, DataSource.DISK)
         }
 
-        // ── 2. Download & persist ───────────────────────────────────────────
-        val url = game.coverFrontUrl ?: return null
+        // ── 2. Resolve & persist, then serve ────────────────────────────────
+        val coverUrl = game.coverFrontUrl ?: return null
 
         return withContext(Dispatchers.IO) {
-            try {
-                val response = httpClient
-                    .newCall(Request.Builder().url(url).build())
-                    .execute()
-
-                if (!response.isSuccessful) {
-                    Timber.w("Cover download [${response.code}] ${game.title}")
-                    response.close()
-                    return@withContext null
-                }
-
-                val body = response.body ?: run {
-                    response.close()
-                    return@withContext null
-                }
-
-                val saved = body.byteStream().use { stream ->
-                    repository.saveCover(game.id, stream)
-                }
-                response.close()
-
-                if (!saved || !localFile.exists()) return@withContext null
-
-                SourceResult(
-                    source = ImageSource(
-                        source = localFile.source().buffer(),
-                        context = options.context,
-                    ),
-                    mimeType = "image/jpeg",
-                    dataSource = DataSource.NETWORK,
-                )
+            val saved = try {
+                repository.persistCover(game.id, coverUrl, httpClient)
             } catch (e: Exception) {
                 Timber.w(e, "Cover fetch error: ${game.title}")
-                null
+                false
             }
+
+            if (!saved || !localFile.exists()) return@withContext null
+
+            val dataSource =
+                if (CoverArtRepository.isLocalCoverUri(coverUrl)) DataSource.DISK else DataSource.NETWORK
+            toSourceResult(localFile, dataSource)
         }
+    }
+
+    private fun toSourceResult(
+        file: File,
+        dataSource: DataSource,
+    ): SourceResult {
+        return SourceResult(
+            source = ImageSource(source = file.source().buffer(), context = options.context),
+            mimeType = "image/jpeg",
+            dataSource = dataSource,
+        )
     }
 
     // ── Factory ─────────────────────────────────────────────────────────────
@@ -110,3 +92,4 @@ class CoverArtFetcher(
         ): Fetcher = CoverArtFetcher(data, repository, httpClient, options)
     }
 }
+

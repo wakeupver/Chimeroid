@@ -14,7 +14,6 @@ import dagger.android.AndroidInjector
 import dagger.multibindings.IntoMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.Request
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -51,7 +50,8 @@ class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
         val validIds = games.map { it.id }.toSet()
         repository.pruneCovers(validIds)
 
-        // Download missing covers
+        // Download/persist missing covers (remote HTTP(S) thumbnails, or on-device cart images
+        // such as PICO-8's .p8.png — see CoverArtRepository.persistCover for the shared logic).
         var downloaded = 0
         var failed = 0
         games.forEach { game ->
@@ -59,23 +59,9 @@ class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
             val url = game.coverFrontUrl ?: return@forEach
 
             val ok = try {
-                val response = httpClient
-                    .newCall(Request.Builder().url(url).build())
-                    .execute()
-
-                if (!response.isSuccessful) {
-                    response.close()
-                    false
-                } else {
-                    val body = response.body
-                    val saved = body?.byteStream()?.use { stream ->
-                        repository.saveCover(game.id, stream)
-                    } ?: false
-                    response.close()
-                    saved
-                }
+                repository.persistCover(game.id, url, httpClient)
             } catch (e: Exception) {
-                Timber.w(e, "CoverArtSyncWorker: download failed for '${game.title}'")
+                Timber.w(e, "CoverArtSyncWorker: cover fetch failed for '${game.title}'")
                 false
             }
 

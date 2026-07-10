@@ -29,7 +29,6 @@ import com.swordfish.chimeroid.lib.library.metadata.GameMetadataProvider
 import com.swordfish.chimeroid.lib.storage.BaseStorageFile
 import com.swordfish.chimeroid.lib.storage.GroupedStorageFiles
 import com.swordfish.chimeroid.lib.storage.RomFiles
-import com.swordfish.chimeroid.lib.library.GameSystem
 import com.swordfish.chimeroid.lib.storage.StorageFile
 import com.swordfish.chimeroid.lib.storage.StorageProvider
 import com.swordfish.chimeroid.lib.storage.StorageProviderRegistry
@@ -335,23 +334,39 @@ class ChimeroidLibrary(
             return null
         }
 
+        val primaryFile = groupedStorageFile.primaryFile
+
         // If the databased matched a data file (as with bin/cue) we force link the primary filename
         val fileName =
             if (groupedStorageFile.dataFiles.isNotEmpty()) {
-                groupedStorageFile.primaryFile.name
+                primaryFile.name
             } else {
                 storageFile.name
             }
 
         return Game(
             fileName = fileName,
-            fileUri = groupedStorageFile.primaryFile.uri.toString(),
-            title = gameMetadata.name ?: groupedStorageFile.primaryFile.name,
+            fileUri = primaryFile.uri.toString(),
+            title = gameMetadata.name ?: primaryFile.name,
             systemId = gameSystem.id.dbname,
             developer = gameMetadata.developer,
-            coverFrontUrl = gameMetadata.thumbnail,
+            coverFrontUrl = resolveCoverFrontUrl(gameSystem, primaryFile, gameMetadata),
             lastIndexedAt = lastIndexedAt,
         )
+    }
+
+    /**
+     * PICO-8's `.p8.png` cart is itself a valid PNG — its cart data lives in the pixels — so it's
+     * used directly as cover art instead of a libretro thumbnail (which doesn't exist for PICO-8
+     * anyway, so [GameMetadata.thumbnail] is always null for this system).
+     */
+    private fun resolveCoverFrontUrl(
+        gameSystem: GameSystem,
+        primaryFile: BaseStorageFile,
+        gameMetadata: GameMetadata,
+    ): String? {
+        val usesCartAsCover = gameSystem.id == SystemID.PICO8 && GameSystem.isPico8CartImage(primaryFile.name)
+        return if (usesCartAsCover) primaryFile.uri.toString() else gameMetadata.thumbnail
     }
 
     private fun removeDeletedDataFiles(startedAtMs: Long) {

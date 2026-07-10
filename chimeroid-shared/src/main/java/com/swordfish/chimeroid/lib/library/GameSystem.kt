@@ -1198,7 +1198,7 @@ data class GameSystem(
                                 ),
                         ),
                     ),
-                    uniqueExtensions = listOf("p8", "p8.png"),
+                    uniqueExtensions = listOf("p8", PICO8_CART_IMAGE_EXTENSION),
                 ),
             )
 
@@ -1249,6 +1249,16 @@ data class GameSystem(
             val secondDot = name.lastIndexOf('.', lastDot - 1)
             return if (secondDot >= 0) name.substring(secondDot + 1) else null
         }
+
+        /** PICO-8's cart-image cartridge extension — a real PNG with cart data embedded in its pixels. */
+        private const val PICO8_CART_IMAGE_EXTENSION = "p8.png"
+
+        /**
+         * True when [name] is PICO-8's `.p8.png` cart-image format. That file is itself a valid,
+         * directly decodable PNG (fake-08 reads the cart data back out of the pixels), so it can
+         * be used as the game's cover art directly — no thumbnail lookup or network fetch needed.
+         */
+        fun isPico8CartImage(name: String): Boolean = compoundExtensionOrNull(name) == PICO8_CART_IMAGE_EXTENSION
 
         data class ScanOptions(
             val scanByFilename: Boolean = true,

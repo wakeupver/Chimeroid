@@ -3,6 +3,9 @@ package com.swordfish.chimeroid.app.shared.covers
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import timber.log.Timber
 import java.io.File
 import java.io.InputStream
@@ -32,6 +35,12 @@ class CoverArtRepository(private val context: Context) {
         const val COVER_MAX_PX = 512
         const val JPEG_QUALITY = 85
         const val PACK_FILE_NAME = "covers.zip"
+
+        /** Schemes served straight from disk via [android.content.ContentResolver] — no network I/O. */
+        private val LOCAL_URI_SCHEMES = setOf("content", "file")
+
+        /** True when [coverUrl] is an on-device `content://`/`file://` image rather than a remote HTTP(S) thumbnail. */
+        fun isLocalCoverUri(coverUrl: String): Boolean = Uri.parse(coverUrl).scheme in LOCAL_URI_SCHEMES
     }
 
     val coversDir: File
@@ -69,6 +78,40 @@ class CoverArtRepository(private val context: Context) {
         } catch (e: Exception) {
             Timber.e(e, "saveCover failed for game $gameId")
             false
+        }
+    }
+
+    /**
+     * Persists whichever cover source [coverUrl] refers to as this game's cached JPEG — a
+     * remote HTTP(S) thumbnail, or an on-device `content://`/`file://` image such as a PICO-8
+     * `.p8.png` cart (a real PNG in its own right). Single entry point shared by
+     * [CoverArtFetcher] (on-demand) and [CoverArtSyncWorker] (background sync).
+     *
+     * @throws Exception on I/O failure — callers decide how to log/report it.
+     */
+    fun persistCover(
+        gameId: Int,
+        coverUrl: String,
+        httpClient: OkHttpClient,
+    ): Boolean {
+        return if (isLocalCoverUri(coverUrl)) {
+            context.contentResolver.openInputStream(Uri.parse(coverUrl))?.use { saveCover(gameId, it) } ?: false
+        } else {
+            downloadCover(gameId, coverUrl, httpClient)
+        }
+    }
+
+    private fun downloadCover(
+        gameId: Int,
+        url: String,
+        httpClient: OkHttpClient,
+    ): Boolean {
+        httpClient.newCall(Request.Builder().url(url).build()).execute().use { response ->
+            if (!response.isSuccessful) {
+                Timber.w("Cover download [${response.code}] game=$gameId")
+                return false
+            }
+            return response.body?.byteStream()?.use { saveCover(gameId, it) } ?: false
         }
     }
 
