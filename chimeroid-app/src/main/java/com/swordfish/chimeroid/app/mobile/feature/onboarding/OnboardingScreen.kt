@@ -518,9 +518,9 @@ private fun LandscapeContent(
             currentPage = pagerState.currentPage,
             totalPages = uiState.totalPages,
             canContinue = uiState.canContinue,
-            onNext = onNext,
-            onPrevious = onPrevious,
-            onGetStarted = onGetStarted,
+            onNext = actions.onNext,
+            onPrevious = actions.onPrevious,
+            onGetStarted = actions.onGetStarted,
         )
     }
     } // close Box
