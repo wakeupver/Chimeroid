@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -42,15 +43,4 @@ fun ChimeroidSystemImage(system: MetaSystemInfo) {
             contentScale = ContentScale.FillBounds,
         )
     }
-}
-
-// Minimal compositeOver helper so we don't pull in extra dependencies
-private fun Color.compositeOver(background: Color): Color {
-    val a = this.alpha
-    return Color(
-        red   = this.red   * a + background.red   * (1f - a),
-        green = this.green * a + background.green * (1f - a),
-        blue  = this.blue  * a + background.blue  * (1f - a),
-        alpha = 1f,
-    )
 }

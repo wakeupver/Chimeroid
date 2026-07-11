@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -88,6 +89,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -100,6 +102,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val ReadyColor = Color(0xFF1B8A5A)
+
+// Single source of truth for a setup item's (label, color) pair — replaces what was
+// previously a hand-computed ternary/when pair duplicated at every SetupCard call site.
+private enum class SetupItemStatus { READY, REQUIRED, OPTIONAL, INVALID }
 
 @OptIn(ExperimentalFoundationApi::class)
 @SuppressLint("ConfigurationScreenWidthHeight")
@@ -279,33 +285,30 @@ fun OnboardingScreen(
                 .imePadding()
                 .graphicsLayer { alpha = contentAlpha; translationY = contentOffset },
         ) {
+            val onboardingActions = OnboardingActions(
+                onNext = onNext,
+                onPrevious = onPrevious,
+                onGetStarted = onGetStarted,
+                onGrantAllFiles = launchAllFilesAccess,
+                onGrantNotification = launchNotificationPermission,
+                onGrantMicrophone = launchMicrophonePermission,
+                onPickBaseDir = launchBaseDirPicker,
+                onPickRomsFolder = launchRomsFolderPicker,
+            )
+
             if (isLandscape) {
                 LandscapeContent(
                     uiState = uiState,
                     pagerState = pagerState,
                     bottomInset = bottomInset,
-                    onNext = onNext,
-                    onPrevious = onPrevious,
-                    onGetStarted = onGetStarted,
-                    onGrantAllFiles = launchAllFilesAccess,
-                    onGrantNotification = launchNotificationPermission,
-                    onGrantMicrophone = launchMicrophonePermission,
-                    onPickBaseDir = launchBaseDirPicker,
-                    onPickRomsFolder = launchRomsFolderPicker,
+                    actions = onboardingActions,
                 )
             } else {
                 PortraitContent(
                     uiState = uiState,
                     pagerState = pagerState,
                     bottomInset = bottomInset,
-                    onNext = onNext,
-                    onPrevious = onPrevious,
-                    onGetStarted = onGetStarted,
-                    onGrantAllFiles = launchAllFilesAccess,
-                    onGrantNotification = launchNotificationPermission,
-                    onGrantMicrophone = launchMicrophonePermission,
-                    onPickBaseDir = launchBaseDirPicker,
-                    onPickRomsFolder = launchRomsFolderPicker,
+                    actions = onboardingActions,
                 )
             }
         }
@@ -339,6 +342,21 @@ fun OnboardingScreen(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Bundled navigation + permission-request callbacks shared by both orientations
+// ─────────────────────────────────────────────────────────────────────────────
+
+private class OnboardingActions(
+    val onNext: () -> Unit,
+    val onPrevious: () -> Unit,
+    val onGetStarted: () -> Unit,
+    val onGrantAllFiles: () -> Unit,
+    val onGrantNotification: () -> Unit,
+    val onGrantMicrophone: () -> Unit,
+    val onPickBaseDir: () -> Unit,
+    val onPickRomsFolder: () -> Unit,
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Portrait layout
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -346,16 +364,9 @@ fun OnboardingScreen(
 @Composable
 private fun PortraitContent(
     uiState: OnboardingUiState,
-    pagerState: androidx.compose.foundation.pager.PagerState,
-    bottomInset: androidx.compose.ui.unit.Dp,
-    onNext: () -> Unit,
-    onPrevious: () -> Unit,
-    onGetStarted: () -> Unit,
-    onGrantAllFiles: () -> Unit,
-    onGrantNotification: () -> Unit,
-    onGrantMicrophone: () -> Unit,
-    onPickBaseDir: () -> Unit,
-    onPickRomsFolder: () -> Unit,
+    pagerState: PagerState,
+    bottomInset: Dp,
+    actions: OnboardingActions,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
@@ -378,11 +389,11 @@ private fun PortraitContent(
                         Spacer(Modifier.height(32.dp))
                         OnboardingSetupContent(
                             uiState = uiState,
-                            onGrantAllFiles = onGrantAllFiles,
-                            onGrantNotification = onGrantNotification,
-                            onGrantMicrophone = onGrantMicrophone,
-                            onPickBaseDir = onPickBaseDir,
-                            onPickRomsFolder = onPickRomsFolder,
+                            onGrantAllFiles = actions.onGrantAllFiles,
+                            onGrantNotification = actions.onGrantNotification,
+                            onGrantMicrophone = actions.onGrantMicrophone,
+                            onPickBaseDir = actions.onPickBaseDir,
+                            onPickRomsFolder = actions.onPickRomsFolder,
                         )
                     }
                 }
@@ -407,9 +418,9 @@ private fun PortraitContent(
                 currentPage = pagerState.currentPage,
                 totalPages = uiState.totalPages,
                 canContinue = uiState.canContinue,
-                onNext = onNext,
-                onPrevious = onPrevious,
-                onGetStarted = onGetStarted,
+                onNext = actions.onNext,
+                onPrevious = actions.onPrevious,
+                onGetStarted = actions.onGetStarted,
             )
         }
     }
@@ -423,16 +434,9 @@ private fun PortraitContent(
 @Composable
 private fun LandscapeContent(
     uiState: OnboardingUiState,
-    pagerState: androidx.compose.foundation.pager.PagerState,
-    bottomInset: androidx.compose.ui.unit.Dp,
-    onNext: () -> Unit,
-    onPrevious: () -> Unit,
-    onGetStarted: () -> Unit,
-    onGrantAllFiles: () -> Unit,
-    onGrantNotification: () -> Unit,
-    onGrantMicrophone: () -> Unit,
-    onPickBaseDir: () -> Unit,
-    onPickRomsFolder: () -> Unit,
+    pagerState: PagerState,
+    bottomInset: Dp,
+    actions: OnboardingActions,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
@@ -483,11 +487,11 @@ private fun LandscapeContent(
                         Spacer(Modifier.height(24.dp))
                         OnboardingSetupContent(
                             uiState = uiState,
-                            onGrantAllFiles = onGrantAllFiles,
-                            onGrantNotification = onGrantNotification,
-                            onGrantMicrophone = onGrantMicrophone,
-                            onPickBaseDir = onPickBaseDir,
-                            onPickRomsFolder = onPickRomsFolder,
+                            onGrantAllFiles = actions.onGrantAllFiles,
+                            onGrantNotification = actions.onGrantNotification,
+                            onGrantMicrophone = actions.onGrantMicrophone,
+                            onPickBaseDir = actions.onPickBaseDir,
+                            onPickRomsFolder = actions.onPickRomsFolder,
                             modifier = Modifier.padding(horizontal = 32.dp),
                         )
                         Spacer(Modifier.height(24.dp))
@@ -718,10 +722,7 @@ private fun OnboardingSetupContent(
             icon = Icons.Rounded.Lock,
             title = stringResource(R.string.onboarding_all_files_title),
             description = stringResource(R.string.onboarding_all_files_desc),
-            status = if (uiState.allFilesAccessGranted) stringResource(R.string.onboarding_status_ready)
-                     else stringResource(R.string.onboarding_status_required),
-            statusColor = if (uiState.allFilesAccessGranted) ReadyColor
-                          else MaterialTheme.colorScheme.tertiary,
+            status = if (uiState.allFilesAccessGranted) SetupItemStatus.READY else SetupItemStatus.REQUIRED,
             onClick = onGrantAllFiles,
         )
 
@@ -732,10 +733,7 @@ private fun OnboardingSetupContent(
             icon = Icons.Rounded.Notifications,
             title = stringResource(R.string.onboarding_notification_title),
             description = stringResource(R.string.onboarding_notification_desc),
-            status = if (uiState.notificationGranted) stringResource(R.string.onboarding_status_ready)
-                     else stringResource(R.string.onboarding_status_optional),
-            statusColor = if (uiState.notificationGranted) ReadyColor
-                          else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            status = if (uiState.notificationGranted) SetupItemStatus.READY else SetupItemStatus.OPTIONAL,
             onClick = onGrantNotification,
         )
 
@@ -746,10 +744,7 @@ private fun OnboardingSetupContent(
             icon = Icons.Rounded.Mic,
             title = stringResource(R.string.onboarding_microphone_title),
             description = stringResource(R.string.onboarding_microphone_desc),
-            status = if (uiState.microphoneGranted) stringResource(R.string.onboarding_status_ready)
-                     else stringResource(R.string.onboarding_status_optional),
-            statusColor = if (uiState.microphoneGranted) ReadyColor
-                          else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            status = if (uiState.microphoneGranted) SetupItemStatus.READY else SetupItemStatus.OPTIONAL,
             onClick = onGrantMicrophone,
         )
 
@@ -761,10 +756,7 @@ private fun OnboardingSetupContent(
             title = stringResource(R.string.onboarding_base_dir_title),
             description = uiState.baseDirectoryPath?.let { "…/${it.substringAfterLast('/')}" }
                 ?: stringResource(R.string.onboarding_base_dir_desc),
-            status = if (uiState.baseDirectoryValid) stringResource(R.string.onboarding_status_ready)
-                     else stringResource(R.string.onboarding_status_optional),
-            statusColor = if (uiState.baseDirectoryValid) ReadyColor
-                          else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            status = if (uiState.baseDirectoryValid) SetupItemStatus.READY else SetupItemStatus.OPTIONAL,
             onClick = onPickBaseDir,
         )
 
@@ -778,14 +770,9 @@ private fun OnboardingSetupContent(
                 ?.let { Uri.parse(it).lastPathSegment?.substringAfterLast(':') }
                 ?: stringResource(R.string.onboarding_roms_desc),
             status = when {
-                uiState.romsDirectoryUri == null -> stringResource(R.string.onboarding_status_required)
-                uiState.romsDirectoryValid -> stringResource(R.string.onboarding_status_ready)
-                else -> stringResource(R.string.onboarding_status_invalid_folder)
-            },
-            statusColor = when {
-                uiState.romsDirectoryUri == null -> MaterialTheme.colorScheme.tertiary
-                uiState.romsDirectoryValid -> ReadyColor
-                else -> MaterialTheme.colorScheme.error
+                uiState.romsDirectoryUri == null -> SetupItemStatus.REQUIRED
+                uiState.romsDirectoryValid -> SetupItemStatus.READY
+                else -> SetupItemStatus.INVALID
             },
             onClick = onPickRomsFolder,
         )
@@ -828,10 +815,23 @@ private fun SetupCard(
     icon: ImageVector,
     title: String,
     description: String,
-    status: String,
-    statusColor: Color,
+    status: SetupItemStatus,
     onClick: () -> Unit,
 ) {
+    val statusColor = when (status) {
+        SetupItemStatus.READY -> ReadyColor
+        SetupItemStatus.REQUIRED -> MaterialTheme.colorScheme.tertiary
+        SetupItemStatus.OPTIONAL -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+        SetupItemStatus.INVALID -> MaterialTheme.colorScheme.error
+    }
+    val statusText = stringResource(
+        when (status) {
+            SetupItemStatus.READY -> R.string.onboarding_status_ready
+            SetupItemStatus.REQUIRED -> R.string.onboarding_status_required
+            SetupItemStatus.OPTIONAL -> R.string.onboarding_status_optional
+            SetupItemStatus.INVALID -> R.string.onboarding_status_invalid_folder
+        },
+    )
     Surface(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         shape = RoundedCornerShape(32.dp),
@@ -866,7 +866,7 @@ private fun SetupCard(
                 ) {
                     Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(statusColor))
                     Text(
-                        status,
+                        statusText,
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = statusColor,
                     )

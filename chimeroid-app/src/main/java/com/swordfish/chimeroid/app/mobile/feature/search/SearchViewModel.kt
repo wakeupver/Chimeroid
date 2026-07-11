@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.common.paging.buildFlowPaging
 import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,11 +22,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class SearchViewModel(private val retrogradeDb: RetrogradeDatabase) : ViewModel() {
-    class Factory(val retrogradeDb: RetrogradeDatabase) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SearchViewModel(retrogradeDb) as T
-        }
-    }
+    class Factory(
+        retrogradeDb: RetrogradeDatabase,
+    ) : ViewModelProvider.Factory by viewModelFactory({ SearchViewModel(retrogradeDb) })
 
     val queryString = MutableStateFlow("")
 

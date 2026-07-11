@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.swordfish.chimeroid.app.cheats.ChtFileParser
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.lib.library.db.dao.PatchCodeDao
 import com.swordfish.chimeroid.lib.library.db.entity.PatchCode
 import kotlinx.coroutines.Dispatchers
@@ -24,13 +25,9 @@ class GameMenuPatchCodesViewModel(
 ) : ViewModel() {
 
     class Factory(
-        private val gameId: Int,
-        private val patchCodeDao: PatchCodeDao,
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            GameMenuPatchCodesViewModel(gameId, patchCodeDao) as T
-    }
+        gameId: Int,
+        patchCodeDao: PatchCodeDao,
+    ) : ViewModelProvider.Factory by viewModelFactory({ GameMenuPatchCodesViewModel(gameId, patchCodeDao) })
 
     sealed interface ImportResult {
         data class Success(val imported: Int, val skipped: Int) : ImportResult

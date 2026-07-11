@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.mobile.feature.gamemenu.GameMenuActivity
 import com.swordfish.chimeroid.app.shared.gamemenu.GameMenuHelper
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.lib.saves.StatesManager
 import com.swordfish.chimeroid.lib.saves.StatesPreviewManager
 import kotlinx.coroutines.flow.flow
@@ -19,22 +20,20 @@ class GameMenuStatesViewModel(
     private val statesPreviewManager: StatesPreviewManager,
 ) : ViewModel() {
     class Factory(
-        private val application: Application,
-        private val gameMenuRequest: GameMenuActivity.GameMenuRequest,
-        private val statesManager: StatesManager,
-        private val disableMissingEntries: Boolean,
-        private val statesPreviewManager: StatesPreviewManager,
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return GameMenuStatesViewModel(
+        application: Application,
+        gameMenuRequest: GameMenuActivity.GameMenuRequest,
+        statesManager: StatesManager,
+        disableMissingEntries: Boolean,
+        statesPreviewManager: StatesPreviewManager,
+    ) : ViewModelProvider.Factory by viewModelFactory({
+            GameMenuStatesViewModel(
                 application,
                 gameMenuRequest,
                 statesManager,
                 disableMissingEntries,
                 statesPreviewManager,
-            ) as T
-        }
-    }
+            )
+        })
 
     data class StateEntry(
         val title: String,

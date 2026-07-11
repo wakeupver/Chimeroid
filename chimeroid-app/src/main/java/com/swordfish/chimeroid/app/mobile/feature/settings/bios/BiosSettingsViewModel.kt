@@ -3,6 +3,7 @@ package com.swordfish.chimeroid.app.mobile.feature.settings.bios
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.lib.bios.BiosManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flow
@@ -12,11 +13,8 @@ import javax.inject.Inject
 class BiosSettingsViewModel(private val biosManager: BiosManager) : ViewModel() {
     class Factory
         @Inject
-        constructor(private val biosManager: BiosManager) : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return BiosSettingsViewModel(biosManager) as T
-            }
-        }
+        constructor(biosManager: BiosManager) :
+            ViewModelProvider.Factory by viewModelFactory({ BiosSettingsViewModel(biosManager) })
 
     val uiState =
         flow { emit(biosManager.getBiosInfoAsync()) }

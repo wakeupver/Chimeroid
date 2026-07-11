@@ -1,6 +1,8 @@
 package com.swordfish.chimeroid.app.mobile.feature.onboarding
 
+import android.Manifest
 import android.app.Application
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -13,10 +15,12 @@ import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.shared.library.LibraryIndexScheduler
 import com.swordfish.chimeroid.lib.preferences.SharedPreferencesHelper
 import com.swordfish.chimeroid.lib.storage.DirectoriesManager
+import com.swordfish.chimeroid.lib.R as LibR
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -53,19 +57,21 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
 
             // Restore ROMs folder
             val prefs = SharedPreferencesHelper.getLegacySharedPreferences(app)
-            val romsKey = app.getString(com.swordfish.chimeroid.lib.R.string.pref_key_extenral_folder)
+            val romsKey = app.getString(LibR.string.pref_key_extenral_folder)
             val savedRomsUri = prefs.getString(romsKey, null)
 
             // Restore base directory
             val dm = DirectoriesManager(app)
             val baseDirConfigured = dm.isBaseDirConfigured()
 
-            updateState(
-                romsDirectoryUri = savedRomsUri,
-                romsDirectoryValid = savedRomsUri != null,
-                baseDirectoryPath = if (baseDirConfigured) dm.getBaseDirDisplay() else null,
-                baseDirectoryValid = baseDirConfigured,
-            )
+            updateState {
+                copy(
+                    romsDirectoryUri = savedRomsUri,
+                    romsDirectoryValid = savedRomsUri != null,
+                    baseDirectoryPath = if (baseDirConfigured) dm.getBaseDirDisplay() else null,
+                    baseDirectoryValid = baseDirConfigured,
+                )
+            }
         }
     }
 
@@ -84,10 +90,10 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
                 app.contentResolver.takePersistableUriPermission(uri, flags)
             }
             val prefs = SharedPreferencesHelper.getLegacySharedPreferences(app)
-            val romsKey = app.getString(com.swordfish.chimeroid.lib.R.string.pref_key_extenral_folder)
+            val romsKey = app.getString(LibR.string.pref_key_extenral_folder)
             prefs.edit().putString(romsKey, uri.toString()).apply()
             LibraryIndexScheduler.scheduleLibrarySync(app)
-            updateState(romsDirectoryUri = uri.toString(), romsDirectoryValid = true)
+            updateState { copy(romsDirectoryUri = uri.toString(), romsDirectoryValid = true) }
         }
     }
 
@@ -98,10 +104,13 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     fun refreshBaseDirectory() {
         val app = getApplication<Application>()
         val dm = DirectoriesManager(app)
-        updateState(
-            baseDirectoryPath = if (dm.isBaseDirConfigured()) dm.getBaseDirDisplay() else null,
-            baseDirectoryValid = dm.isBaseDirConfigured(),
-        )
+        val baseDirConfigured = dm.isBaseDirConfigured()
+        updateState {
+            copy(
+                baseDirectoryPath = if (baseDirConfigured) dm.getBaseDirDisplay() else null,
+                baseDirectoryValid = baseDirConfigured,
+            )
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -109,7 +118,7 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     // -------------------------------------------------------------------------
 
     fun refreshAllFilesAccess() {
-        updateState(allFilesAccessGranted = hasAllFilesAccess())
+        updateState { copy(allFilesAccessGranted = hasAllFilesAccess()) }
     }
 
     // -------------------------------------------------------------------------
@@ -117,7 +126,7 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     // -------------------------------------------------------------------------
 
     fun refreshNotificationPermission() {
-        updateState(notificationGranted = hasNotificationPermission(getApplication()))
+        updateState { copy(notificationGranted = hasNotificationPermission(getApplication())) }
     }
 
     // -------------------------------------------------------------------------
@@ -125,7 +134,7 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     // -------------------------------------------------------------------------
 
     fun refreshMicrophonePermission() {
-        updateState(microphoneGranted = hasMicrophonePermission(getApplication()))
+        updateState { copy(microphoneGranted = hasMicrophonePermission(getApplication())) }
     }
 
     // -------------------------------------------------------------------------
@@ -133,7 +142,7 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     // -------------------------------------------------------------------------
 
     fun setCurrentPage(page: Int) {
-        updateState(currentPage = page.coerceIn(0, _uiState.value.totalPages - 1))
+        updateState { copy(currentPage = page.coerceIn(0, ONBOARDING_TOTAL_PAGES - 1)) }
     }
 
     // -------------------------------------------------------------------------
@@ -155,28 +164,15 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     // Internal
     // -------------------------------------------------------------------------
 
-    private fun updateState(
-        romsDirectoryUri: String? = _uiState.value.romsDirectoryUri,
-        romsDirectoryValid: Boolean = _uiState.value.romsDirectoryValid,
-        baseDirectoryPath: String? = _uiState.value.baseDirectoryPath,
-        baseDirectoryValid: Boolean = _uiState.value.baseDirectoryValid,
-        allFilesAccessGranted: Boolean = _uiState.value.allFilesAccessGranted,
-        notificationGranted: Boolean = _uiState.value.notificationGranted,
-        microphoneGranted: Boolean = _uiState.value.microphoneGranted,
-        currentPage: Int = _uiState.value.currentPage,
-    ) {
-        _uiState.value = OnboardingUiState(
-            romsDirectoryUri = romsDirectoryUri,
-            romsDirectoryValid = romsDirectoryValid,
-            baseDirectoryPath = baseDirectoryPath,
-            baseDirectoryValid = baseDirectoryValid,
-            allFilesAccessGranted = allFilesAccessGranted,
-            notificationGranted = notificationGranted,
-            microphoneGranted = microphoneGranted,
-            canContinue = romsDirectoryValid && allFilesAccessGranted,
-            currentPage = currentPage,
-            totalPages = ONBOARDING_TOTAL_PAGES,
-        )
+    // Callers arrive from both the Main thread (DisposableEffect ON_RESUME refreshes) and
+    // IO-dispatched coroutines (init, setRomsDirectory). MutableStateFlow.update applies
+    // `transform` via an atomic compare-and-set retry loop, so concurrent callers can never
+    // clobber each other's changes the way a plain read-then-`_uiState.value = ...` would.
+    private inline fun updateState(transform: OnboardingUiState.() -> OnboardingUiState) {
+        _uiState.update { current ->
+            val next = current.transform()
+            next.copy(canContinue = next.romsDirectoryValid && next.allFilesAccessGranted)
+        }
     }
 
     companion object {
@@ -187,20 +183,20 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
                 true
             }
 
-        fun hasNotificationPermission(context: android.content.Context): Boolean =
+        fun hasNotificationPermission(context: Context): Boolean =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 PackageManager.PERMISSION_GRANTED ==
                     ContextCompat.checkSelfPermission(
-                        context, android.Manifest.permission.POST_NOTIFICATIONS,
+                        context, Manifest.permission.POST_NOTIFICATIONS,
                     )
             } else {
                 true // Granted implicitly on API < 33
             }
 
-        fun hasMicrophonePermission(context: android.content.Context): Boolean =
+        fun hasMicrophonePermission(context: Context): Boolean =
             PackageManager.PERMISSION_GRANTED ==
                 ContextCompat.checkSelfPermission(
-                    context, android.Manifest.permission.RECORD_AUDIO,
+                    context, Manifest.permission.RECORD_AUDIO,
                 )
     }
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.swordfish.chimeroid.app.shared.library.LibraryIndexScheduler
 import com.swordfish.chimeroid.app.shared.library.PendingOperationsMonitor
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.lib.core.CoresSelection
 import com.swordfish.chimeroid.lib.library.GameSystem
 import com.swordfish.chimeroid.lib.library.SystemCoreConfig
@@ -16,13 +17,9 @@ class CoresSelectionViewModel(
     private val coresSelection: CoresSelection,
 ) : ViewModel() {
     class Factory(
-        val context: Context,
-        val coresSelection: CoresSelection,
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return CoresSelectionViewModel(context, coresSelection) as T
-        }
-    }
+        context: Context,
+        coresSelection: CoresSelection,
+    ) : ViewModelProvider.Factory by viewModelFactory({ CoresSelectionViewModel(context, coresSelection) })
 
     val indexingInProgress = PendingOperationsMonitor(context).anyLibraryOperationInProgress()
 

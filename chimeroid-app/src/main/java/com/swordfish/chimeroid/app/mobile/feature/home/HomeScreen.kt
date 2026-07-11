@@ -45,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +54,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -63,12 +63,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.lifecycle.Lifecycle
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.swordfish.chimeroid.R
-import com.swordfish.chimeroid.app.shared.covers.CoverRequest
-import com.swordfish.chimeroid.app.shared.covers.CoverUtils
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.GameCoverImage
 import com.swordfish.chimeroid.app.utils.android.ComposableLifecycle
 import com.swordfish.chimeroid.app.utils.games.GameUtils
 import com.swordfish.chimeroid.common.displayDetailsSettingsScreen
@@ -107,27 +103,27 @@ fun HomeScreen(
             if (!isGranted) context.displayDetailsSettingsScreen()
         }
 
-    val state = viewModel.getViewStates().collectAsState(HomeViewModel.UIState())
+    val state = viewModel.uiState.collectAsState()
     HomeScreen(
-        modifier,
-        state.value,
-        onGameClick,
-        onGameLongClick,
-        onOpenCoreSelection,
-        onOpenSystems,
-        onOpenFavorites,
-        onHelpPressed,
-        onSettingsClick,
-        saveSyncEnabled,
-        operationInProgress,
-        onSyncClick,
-        {
+        modifier = modifier,
+        state = state.value,
+        onGameClicked = onGameClick,
+        onGameLongClick = onGameLongClick,
+        onOpenCoreSelection = onOpenCoreSelection,
+        onOpenSystems = onOpenSystems,
+        onOpenFavorites = onOpenFavorites,
+        onHelpPressed = onHelpPressed,
+        onSettingsClick = onSettingsClick,
+        saveSyncEnabled = saveSyncEnabled,
+        operationInProgress = operationInProgress,
+        onSyncClick = onSyncClick,
+        onEnableNotificationsClicked = {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@HomeScreen
             permissionsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         },
-        { permissionsLauncher.launch(Manifest.permission.RECORD_AUDIO) },
-        { viewModel.changeLocalStorageFolder(context) },
-        { viewModel.selectStorageLocation(context) },
+        onEnableMicrophoneClicked = { permissionsLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+        onSetDirectoryClicked = { viewModel.changeLocalStorageFolder(context) },
+        onSelectStorageLocationClicked = { viewModel.selectStorageLocation(context) },
     )
 }
 
@@ -169,12 +165,12 @@ private fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(PaddingValues(
+                .padding(
                     top = expandedHeaderDp,
                     start = 20.dp,
                     end = 20.dp,
                     bottom = 32.dp,
-                )),
+                ),
         ) {
             // ── Notification banners ─────────────────────────────────────────
             AnimatedVisibility(state.showNoNotificationPermissionCard) {
@@ -260,13 +256,14 @@ private fun HomeScreen(
                 Spacer(Modifier.height(12.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     state.recentGames.take(5).forEach { game ->
-                        HomeGameListItem(
-                            game = game,
-                            accentColor = MaterialTheme.colorScheme.primaryContainer,
-                            onAccentContent = MaterialTheme.colorScheme.onPrimaryContainer,
-                            onClick = { onGameClicked(game) },
-                            onLongClick = { onGameLongClick(game) },
-                        )
+                        key(game.id) {
+                            HomeGameListItem(
+                                game = game,
+                                accentColor = MaterialTheme.colorScheme.primaryContainer,
+                                onClick = { onGameClicked(game) },
+                                onLongClick = { onGameLongClick(game) },
+                            )
+                        }
                     }
                 }
                 Spacer(Modifier.height(28.dp))
@@ -278,13 +275,14 @@ private fun HomeScreen(
                 Spacer(Modifier.height(12.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     state.favoritesGames.take(4).forEach { game ->
-                        HomeGameListItem(
-                            game = game,
-                            accentColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            onAccentContent = MaterialTheme.colorScheme.onTertiaryContainer,
-                            onClick = { onGameClicked(game) },
-                            onLongClick = { onGameLongClick(game) },
-                        )
+                        key(game.id) {
+                            HomeGameListItem(
+                                game = game,
+                                accentColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                onClick = { onGameClicked(game) },
+                                onLongClick = { onGameLongClick(game) },
+                            )
+                        }
                     }
                 }
                 Spacer(Modifier.height(28.dp))
@@ -296,13 +294,14 @@ private fun HomeScreen(
                 Spacer(Modifier.height(12.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     state.discoveryGames.take(4).forEach { game ->
-                        HomeGameListItem(
-                            game = game,
-                            accentColor = MaterialTheme.colorScheme.secondaryContainer,
-                            onAccentContent = MaterialTheme.colorScheme.onSecondaryContainer,
-                            onClick = { onGameClicked(game) },
-                            onLongClick = { onGameLongClick(game) },
-                        )
+                        key(game.id) {
+                            HomeGameListItem(
+                                game = game,
+                                accentColor = MaterialTheme.colorScheme.secondaryContainer,
+                                onClick = { onGameClicked(game) },
+                                onLongClick = { onGameLongClick(game) },
+                            )
+                        }
                     }
                 }
             }
@@ -434,7 +433,6 @@ private fun BentoContinuePlayingCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
-    val context = LocalContext.current
     val primaryContainer = MaterialTheme.colorScheme.primaryContainer
     val onPrimaryContainer = MaterialTheme.colorScheme.onPrimaryContainer
 
@@ -450,15 +448,10 @@ private fun BentoContinuePlayingCard(
                 .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         ) {
             if (game != null) {
-                val fallbackDrawable = remember(game) { CoverUtils.getFallbackDrawable(game) }
-                val fallbackPainter = rememberDrawablePainter(fallbackDrawable)
-                AsyncImage(
-                    model = ImageRequest.Builder(context).data(CoverRequest(game)).build(),
-                    contentDescription = null,
+                GameCoverImage(
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    fallback = fallbackPainter,
-                    error = fallbackPainter,
+                    game = game,
+                    contentDescription = null,
                 )
             }
             Box(
@@ -593,14 +586,11 @@ private fun HomeSectionHeader(title: String) {
 private fun HomeGameListItem(
     game: Game,
     accentColor: Color,
-    onAccentContent: Color,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val subtitle = remember(game.id) { GameUtils.getGameSubtitle(context, game) }
-    val fallbackDrawable = remember(game) { CoverUtils.getFallbackDrawable(game) }
-    val fallbackPainter = rememberDrawablePainter(fallbackDrawable)
 
     Surface(
         modifier = Modifier
@@ -621,13 +611,10 @@ private fun HomeGameListItem(
                     .background(accentColor),
                 contentAlignment = Alignment.Center,
             ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context).data(CoverRequest(game)).build(),
-                    contentDescription = null,
+                GameCoverImage(
                     modifier = Modifier.fillMaxSize().clip(CircleShape),
-                    contentScale = ContentScale.Crop,
-                    fallback = fallbackPainter,
-                    error = fallbackPainter,
+                    game = game,
+                    contentDescription = null,
                 )
             }
             Column(

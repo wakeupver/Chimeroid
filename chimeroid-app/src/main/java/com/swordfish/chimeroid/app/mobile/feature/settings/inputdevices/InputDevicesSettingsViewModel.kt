@@ -10,6 +10,7 @@ import com.swordfish.chimeroid.app.shared.input.InputKey
 import com.swordfish.chimeroid.app.shared.input.RetroKey
 import com.swordfish.chimeroid.app.shared.input.chimeroiddevice.getChimeroidInputDevice
 import com.swordfish.chimeroid.app.shared.settings.GameShortcut
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.common.kotlin.reverseLookup
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,13 +24,11 @@ class InputDevicesSettingsViewModel(
     private val inputDeviceManager: InputDeviceManager,
 ) : ViewModel() {
     class Factory(
-        val appContext: Context,
-        val inputDeviceManager: InputDeviceManager,
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return InputDevicesSettingsViewModel(appContext, inputDeviceManager) as T
-        }
-    }
+        appContext: Context,
+        inputDeviceManager: InputDeviceManager,
+    ) : ViewModelProvider.Factory by viewModelFactory({
+            InputDevicesSettingsViewModel(appContext, inputDeviceManager)
+        })
 
     data class DeviceView(
         val name: String,

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.swordfish.chimeroid.app.shared.settings.SettingsInteractor
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.lib.storage.DirectoriesManager
 import com.swordfish.chimeroid.lib.storage.cache.CacheCleaner
 import kotlinx.coroutines.flow.Flow
@@ -20,13 +21,12 @@ class AdvancedSettingsViewModel(
     private val directoriesManager: DirectoriesManager,
 ) : ViewModel() {
     class Factory(
-        private val appContext: Context,
-        private val settingsInteractor: SettingsInteractor,
-        private val directoriesManager: DirectoriesManager,
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            AdvancedSettingsViewModel(appContext, settingsInteractor, directoriesManager) as T
-    }
+        appContext: Context,
+        settingsInteractor: SettingsInteractor,
+        directoriesManager: DirectoriesManager,
+    ) : ViewModelProvider.Factory by viewModelFactory({
+            AdvancedSettingsViewModel(appContext, settingsInteractor, directoriesManager)
+        })
 
     data class CacheState(
         val default: String,

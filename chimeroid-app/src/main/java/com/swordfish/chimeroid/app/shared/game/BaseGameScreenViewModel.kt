@@ -28,6 +28,7 @@ import com.swordfish.chimeroid.app.shared.input.InputDeviceManager
 import com.swordfish.chimeroid.app.shared.rumble.RumbleManager
 import com.swordfish.chimeroid.app.shared.settings.ControllerConfigsManager
 import com.swordfish.chimeroid.app.shared.settings.HapticFeedbackMode
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.common.longAnimationDuration
 import com.swordfish.chimeroid.lib.controller.ControllerConfig
 import com.swordfish.chimeroid.lib.core.CoreVariablesManager
@@ -67,22 +68,21 @@ class BaseGameScreenViewModel(
 ) : ViewModel(), DefaultLifecycleObserver {
 
     class Factory(
-        private val appContext: Context,
-        private val game: Game,
-        private val settingsManager: SettingsManager,
-        private val inputDeviceManager: InputDeviceManager,
-        private val controllerConfigsManager: ControllerConfigsManager,
-        private val system: GameSystem,
-        private val systemCoreConfig: SystemCoreConfig,
-        private val sharedPreferences: SharedPreferences,
-        private val savesManager: SavesManager,
-        private val statesManager: StatesManager,
-        private val statesPreviewManager: StatesPreviewManager,
-        private val coreVariablesManager: CoreVariablesManager,
-        private val rumbleManager: RumbleManager,
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return BaseGameScreenViewModel(
+        appContext: Context,
+        game: Game,
+        settingsManager: SettingsManager,
+        inputDeviceManager: InputDeviceManager,
+        controllerConfigsManager: ControllerConfigsManager,
+        system: GameSystem,
+        systemCoreConfig: SystemCoreConfig,
+        sharedPreferences: SharedPreferences,
+        savesManager: SavesManager,
+        statesManager: StatesManager,
+        statesPreviewManager: StatesPreviewManager,
+        coreVariablesManager: CoreVariablesManager,
+        rumbleManager: RumbleManager,
+    ) : ViewModelProvider.Factory by viewModelFactory({
+            BaseGameScreenViewModel(
                 appContext,
                 game,
                 settingsManager,
@@ -96,9 +96,8 @@ class BaseGameScreenViewModel(
                 statesPreviewManager,
                 coreVariablesManager,
                 rumbleManager,
-            ) as T
-        }
-    }
+            )
+        })
 
     private val sideEffects = GameViewModelSideEffects(viewModelScope)
     val retroGameView =

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.common.paging.buildFlowPaging
 import com.swordfish.chimeroid.lib.library.MetaSystemID
 import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
@@ -20,13 +21,9 @@ class GamesViewModel(
     initialMetaSystem: MetaSystemID,
 ) : ViewModel() {
     class Factory(
-        private val retrogradeDb: RetrogradeDatabase,
-        private val initialMetaSystem: MetaSystemID,
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return GamesViewModel(retrogradeDb, initialMetaSystem) as T
-        }
-    }
+        retrogradeDb: RetrogradeDatabase,
+        initialMetaSystem: MetaSystemID,
+    ) : ViewModelProvider.Factory by viewModelFactory({ GamesViewModel(retrogradeDb, initialMetaSystem) })
 
     private val metaSystemId = MutableStateFlow(initialMetaSystem)
 

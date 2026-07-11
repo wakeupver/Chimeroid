@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.swordfish.chimeroid.app.shared.library.PendingOperationsMonitor
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.lib.savesync.SaveSyncManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -14,13 +15,9 @@ import kotlinx.coroutines.flow.stateIn
 
 class MainViewModel(appContext: Context, private val saveSyncManager: SaveSyncManager) : ViewModel() {
     class Factory(
-        private val appContext: Context,
-        private val saveSyncManager: SaveSyncManager,
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return MainViewModel(appContext, saveSyncManager) as T
-        }
-    }
+        appContext: Context,
+        saveSyncManager: SaveSyncManager,
+    ) : ViewModelProvider.Factory by viewModelFactory({ MainViewModel(appContext, saveSyncManager) })
 
     data class UiState(
         val operationInProgress: Boolean = false,

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.swordfish.chimeroid.app.shared.library.PendingOperationsMonitor
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.lib.library.CoreID
 import com.swordfish.chimeroid.lib.savesync.SaveSyncManager
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,13 +19,9 @@ class SaveSyncSettingsViewModel(
     private val saveSyncManager: SaveSyncManager,
 ) : ViewModel() {
     class Factory(
-        private val application: Application,
-        private val saveSyncManager: SaveSyncManager,
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SaveSyncSettingsViewModel(application, saveSyncManager) as T
-        }
-    }
+        application: Application,
+        saveSyncManager: SaveSyncManager,
+    ) : ViewModelProvider.Factory by viewModelFactory({ SaveSyncSettingsViewModel(application, saveSyncManager) })
 
     val saveSyncInProgress = PendingOperationsMonitor(getContext()).anySaveOperationInProgress()
 

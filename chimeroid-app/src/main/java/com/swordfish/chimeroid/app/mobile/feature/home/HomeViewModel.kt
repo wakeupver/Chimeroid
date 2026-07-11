@@ -9,18 +9,23 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.swordfish.chimeroid.app.shared.library.PendingOperationsMonitor
+import com.swordfish.chimeroid.app.shared.settings.StorageBaseDirPicker
 import com.swordfish.chimeroid.app.shared.settings.StorageFrameworkPickerLauncher
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.common.coroutines.combine
 import com.swordfish.chimeroid.lib.core.CoresSelection
 import com.swordfish.chimeroid.lib.library.CoreID
 import com.swordfish.chimeroid.lib.library.SystemID
 import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
 import com.swordfish.chimeroid.lib.library.db.entity.Game
+import com.swordfish.chimeroid.lib.storage.DirectoriesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -35,7 +40,7 @@ class HomeViewModel(
     appContext: Context,
     retrogradeDb: RetrogradeDatabase,
     private val coresSelection: CoresSelection,
-    private val directoriesManager: com.swordfish.chimeroid.lib.storage.DirectoriesManager,
+    private val directoriesManager: DirectoriesManager,
 ) : ViewModel() {
     companion object {
         const val CAROUSEL_MAX_ITEMS = 10
@@ -43,15 +48,13 @@ class HomeViewModel(
     }
 
     class Factory(
-        val appContext: Context,
-        val retrogradeDb: RetrogradeDatabase,
-        val coresSelection: CoresSelection,
-        val directoriesManager: com.swordfish.chimeroid.lib.storage.DirectoriesManager,
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return HomeViewModel(appContext, retrogradeDb, coresSelection, directoriesManager) as T
-        }
-    }
+        appContext: Context,
+        retrogradeDb: RetrogradeDatabase,
+        coresSelection: CoresSelection,
+        directoriesManager: DirectoriesManager,
+    ) : ViewModelProvider.Factory by viewModelFactory({
+            HomeViewModel(appContext, retrogradeDb, coresSelection, directoriesManager)
+        })
 
     data class UIState(
         val favoritesGames: List<Game> = emptyList(),
@@ -69,17 +72,14 @@ class HomeViewModel(
     private val notificationsPermissionEnabledState = MutableStateFlow(true)
     private val storageLocationSetState = MutableStateFlow(directoriesManager.isBaseDirSet())
     private val uiStates = MutableStateFlow(UIState())
-
-    fun getViewStates(): Flow<UIState> {
-        return uiStates
-    }
+    val uiState: StateFlow<UIState> = uiStates.asStateFlow()
 
     fun changeLocalStorageFolder(context: Context) {
         StorageFrameworkPickerLauncher.pickFolder(context)
     }
 
     fun selectStorageLocation(context: Context) {
-        com.swordfish.chimeroid.app.shared.settings.StorageBaseDirPicker.launch(context)
+        StorageBaseDirPicker.launch(context)
     }
 
     fun updatePermissions(context: Context) {

@@ -57,6 +57,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -382,6 +383,16 @@ private fun GameScreenRunningCentralMenu(
 // Edit Controls dialog (sliders + macro management)
 // ────────────────────────────────────────────────────────────────────────────
 
+// Backs the data-driven loop below — avoids repeating the same
+// MenuEditTouchControlRow + Slider wiring once per settable dimension.
+private data class SliderRowSpec(
+    val icon: ImageVector,
+    val label: String,
+    val iconRotation: Float = 0f,
+    val value: Float,
+    val onValueChange: (Float) -> Unit,
+)
+
 @Composable
 private fun MenuEditTouchControls(
     viewModel: BaseGameScreenViewModel,
@@ -462,66 +473,63 @@ private fun MenuEditTouchControls(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 2.dp),
                     )
-                    MenuEditTouchControlRow(
-                        icon = Icons.Default.OpenInFull,
-                        label = stringResource(R.string.touch_customize_scale),
-                        iconRotation = 0f,
-                        value = touchControllerSettings.scale,
-                    ) {
-                        Slider(
-                            value = touchControllerSettings.scale,
-                            onValueChange = {
-                                viewModel.updateTouchControllerSettings(
-                                    touchControllerSettings.copy(scale = it),
-                                )
-                            },
-                        )
-                    }
-                    MenuEditTouchControlRow(
-                        icon = Icons.Default.Height,
-                        label = stringResource(R.string.touch_customize_margin_h),
-                        iconRotation = 90f,
-                        value = touchControllerSettings.marginX,
-                    ) {
-                        Slider(
-                            value = touchControllerSettings.marginX,
-                            onValueChange = {
-                                viewModel.updateTouchControllerSettings(
-                                    touchControllerSettings.copy(marginX = it),
-                                )
-                            },
-                        )
-                    }
-                    MenuEditTouchControlRow(
-                        icon = Icons.Default.Height,
-                        label = stringResource(R.string.touch_customize_margin_v),
-                        iconRotation = 0f,
-                        value = touchControllerSettings.marginY,
-                    ) {
-                        Slider(
-                            value = touchControllerSettings.marginY,
-                            onValueChange = {
-                                viewModel.updateTouchControllerSettings(
-                                    touchControllerSettings.copy(marginY = it),
-                                )
-                            },
-                        )
-                    }
-                    if (controllerConfig.allowTouchRotation) {
-                        MenuEditTouchControlRow(
-                            icon = Icons.Default.RotateLeft,
-                            label = stringResource(R.string.touch_customize_rotate),
-                            iconRotation = 0f,
-                            value = touchControllerSettings.rotation,
-                        ) {
-                            Slider(
-                                value = touchControllerSettings.rotation,
+                    val sliderRows = buildList {
+                        add(
+                            SliderRowSpec(
+                                icon = Icons.Default.OpenInFull,
+                                label = stringResource(R.string.touch_customize_scale),
+                                value = touchControllerSettings.scale,
                                 onValueChange = {
-                                    viewModel.updateTouchControllerSettings(
-                                        touchControllerSettings.copy(rotation = it),
-                                    )
+                                    viewModel.updateTouchControllerSettings(touchControllerSettings.copy(scale = it))
                                 },
+                            ),
+                        )
+                        add(
+                            SliderRowSpec(
+                                icon = Icons.Default.Height,
+                                label = stringResource(R.string.touch_customize_margin_h),
+                                iconRotation = 90f,
+                                value = touchControllerSettings.marginX,
+                                onValueChange = {
+                                    viewModel.updateTouchControllerSettings(touchControllerSettings.copy(marginX = it))
+                                },
+                            ),
+                        )
+                        add(
+                            SliderRowSpec(
+                                icon = Icons.Default.Height,
+                                label = stringResource(R.string.touch_customize_margin_v),
+                                value = touchControllerSettings.marginY,
+                                onValueChange = {
+                                    viewModel.updateTouchControllerSettings(touchControllerSettings.copy(marginY = it))
+                                },
+                            ),
+                        )
+                        if (controllerConfig.allowTouchRotation) {
+                            add(
+                                SliderRowSpec(
+                                    icon = Icons.Default.RotateLeft,
+                                    label = stringResource(R.string.touch_customize_rotate),
+                                    value = touchControllerSettings.rotation,
+                                    onValueChange = {
+                                        viewModel.updateTouchControllerSettings(
+                                            touchControllerSettings.copy(rotation = it),
+                                        )
+                                    },
+                                ),
                             )
+                        }
+                    }
+                    sliderRows.forEach { row ->
+                        key(row.label) {
+                            MenuEditTouchControlRow(
+                                icon = row.icon,
+                                label = row.label,
+                                iconRotation = row.iconRotation,
+                                value = row.value,
+                            ) {
+                                Slider(value = row.value, onValueChange = row.onValueChange)
+                            }
                         }
                     }
                 }

@@ -5,9 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.fredporciuncula.flow.preferences.FlowSharedPreferences
-import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.shared.library.PendingOperationsMonitor
 import com.swordfish.chimeroid.app.shared.settings.SettingsInteractor
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
+import com.swordfish.chimeroid.lib.R as LibR
 import com.swordfish.chimeroid.lib.savesync.SaveSyncManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,20 +23,18 @@ class SettingsViewModel(
     sharedPreferences: FlowSharedPreferences,
 ) : ViewModel() {
     class Factory(
-        private val context: Context,
-        private val settingsInteractor: SettingsInteractor,
-        private val saveSyncManager: SaveSyncManager,
-        private val sharedPreferences: FlowSharedPreferences,
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SettingsViewModel(
+        context: Context,
+        settingsInteractor: SettingsInteractor,
+        saveSyncManager: SaveSyncManager,
+        sharedPreferences: FlowSharedPreferences,
+    ) : ViewModelProvider.Factory by viewModelFactory({
+            SettingsViewModel(
                 context,
                 settingsInteractor,
                 saveSyncManager,
                 sharedPreferences,
-            ) as T
-        }
-    }
+            )
+        })
 
     data class State(
         val currentDirectory: String = "",
@@ -47,7 +46,7 @@ class SettingsViewModel(
     val directoryScanInProgress = PendingOperationsMonitor(context).isDirectoryScanInProgress()
 
     val uiState =
-        sharedPreferences.getString(context.getString(com.swordfish.chimeroid.lib.R.string.pref_key_extenral_folder))
+        sharedPreferences.getString(context.getString(LibR.string.pref_key_extenral_folder))
             .asFlow()
             .flowOn(Dispatchers.IO)
             .stateIn(viewModelScope, SharingStarted.Lazily, "")

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.swordfish.chimeroid.app.shared.systems.MetaSystemInfo
+import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.lib.library.GameSystem
 import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
 import com.swordfish.chimeroid.lib.library.metaSystemID
@@ -12,13 +13,9 @@ import kotlinx.coroutines.flow.map
 
 class MetaSystemsViewModel(retrogradeDb: RetrogradeDatabase, appContext: Context) : ViewModel() {
     class Factory(
-        val retrogradeDb: RetrogradeDatabase,
-        val appContext: Context,
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return MetaSystemsViewModel(retrogradeDb, appContext) as T
-        }
-    }
+        retrogradeDb: RetrogradeDatabase,
+        appContext: Context,
+    ) : ViewModelProvider.Factory by viewModelFactory({ MetaSystemsViewModel(retrogradeDb, appContext) })
 
     val availableMetaSystems: Flow<List<MetaSystemInfo>> =
         retrogradeDb.gameDao()
