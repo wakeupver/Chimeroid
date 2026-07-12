@@ -29,14 +29,11 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VideogameAsset
-import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
@@ -64,6 +61,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.lifecycle.Lifecycle
 import com.swordfish.chimeroid.R
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidTopBarActions
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidTopBarChrome
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidTopBarDefaults
 import com.swordfish.chimeroid.app.mobile.shared.compose.ui.GameCoverImage
 import com.swordfish.chimeroid.app.utils.android.ComposableLifecycle
 import com.swordfish.chimeroid.app.utils.games.GameUtils
@@ -156,8 +156,8 @@ private fun HomeScreen(
         derivedStateOf { (scrollState.value.toFloat() / thresholdPx).coerceIn(0f, 1f) }
     }
 
-    val expandedHeaderDp = 156.dp
-    val collapsedHeaderDp = 56.dp
+    val expandedHeaderDp = ChimeroidTopBarDefaults.HomeExpandedHeight
+    val collapsedHeaderDp = ChimeroidTopBarDefaults.Height
 
     Box(modifier = modifier.fillMaxSize()) {
         // ── Scrollable body ──────────────────────────────────────────────────
@@ -350,50 +350,39 @@ private fun HomeCollapsingHeader(
     Surface(
         modifier = modifier.height(headerHeight),
         color = MaterialTheme.colorScheme.background,
-        shadowElevation = lerp(0.dp, 4.dp, fraction),
+        shadowElevation = lerp(0.dp, ChimeroidTopBarDefaults.ShadowElevation, fraction),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 4.dp), // slight inset so IconButtons align nicely
-        ) {
-            // ── Action icons — always at top-right ───────────────────────────
-            // Mirrors ChimeroidTopBarActions: Info | CloudSync? | Settings
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 4.dp),
-            ) {
-                IconButton(onClick = onHelpPressed) {
-                    Icon(
-                        imageVector = Icons.Outlined.Info,
-                        contentDescription = stringResource(R.string.mobile_settings_help),
+        Box(modifier = Modifier.fillMaxSize()) {
+            // ── Pinned chrome — identical component to every other route's top
+            // bar, so the two can never visually drift apart again. Actions stay
+            // fully opaque; only the title crossfades with the collapsed state.
+            ChimeroidTopBarChrome(
+                title = {
+                    Text(
+                        text = appName,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.alpha(collapsedAlpha),
                     )
-                }
-                if (saveSyncEnabled) {
-                    IconButton(
-                        onClick = onSyncClick,
-                        enabled = !operationInProgress,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.CloudSync,
-                            contentDescription = stringResource(R.string.save_sync),
-                        )
-                    }
-                }
-                IconButton(onClick = onSettingsClick) {
-                    Icon(
-                        imageVector = Icons.Outlined.Settings,
-                        contentDescription = stringResource(R.string.settings),
+                },
+                actions = {
+                    ChimeroidTopBarActions(
+                        onHelpPressed = onHelpPressed,
+                        onSyncClick = onSyncClick,
+                        onSettingsClick = onSettingsClick,
+                        saveSyncEnabled = saveSyncEnabled,
+                        operationInProgress = operationInProgress,
                     )
-                }
-            }
+                },
+            )
 
             // ── Expanded greeting — at the bottom of the header ──────────────
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(start = 20.dp, bottom = 14.dp)
+                    .padding(start = ChimeroidTopBarDefaults.TitleStartPadding, bottom = 14.dp)
                     .alpha(expandedAlpha),
             ) {
                 Text(
@@ -407,17 +396,6 @@ private fun HomeCollapsingHeader(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-
-            // ── Collapsed app name — centred vertically ─────────────────────
-            Text(
-                text = appName,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 20.dp)
-                    .alpha(collapsedAlpha),
-            )
         }
     }
 }

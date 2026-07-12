@@ -1,10 +1,7 @@
 package com.swordfish.chimeroid.app.mobile.feature.main
 
-import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,10 +9,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.CloudSync
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -24,8 +17,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -42,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.swordfish.chimeroid.R
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidTopBarActions
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidTopBarChrome
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidTopBarDefaults
 import com.swordfish.chimeroid.app.shared.savesync.SaveSyncWork
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -60,7 +54,7 @@ fun MainTopBar(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.background,
-        shadowElevation = 4.dp,
+        shadowElevation = ChimeroidTopBarDefaults.ShadowElevation,
     ) {
         Column {
             ChimeroidTopAppBar(
@@ -84,7 +78,6 @@ fun MainTopBar(
 //   • Title        → titleLarge + FontWeight.Bold
 //   • Actions      → Info | CloudSync? | Settings?
 // ─────────────────────────────────────────────────────────────────────────────
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChimeroidTopAppBar(
     route: MainRoute,
@@ -95,19 +88,12 @@ fun ChimeroidTopAppBar(
 ) {
     val context = LocalContext.current
 
-    TopAppBar(
-        // ── Container: transparent so the outer Surface colour shows through ──
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.Transparent,
-            scrolledContainerColor = Color.Transparent,
-            navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
-            titleContentColor = MaterialTheme.colorScheme.onBackground,
-            actionIconContentColor = MaterialTheme.colorScheme.onBackground,
-        ),
-
+    // Built on the same ChimeroidTopBarChrome HomeScreen pins inside its
+    // collapsing header, so height/insets can never drift from HomeScreen again.
+    ChimeroidTopBarChrome(
         // ── Nav icon: back arrow for sub-routes only ─────────────────────────
-        navigationIcon = {
-            if (route.parent != null) {
+        navigationIcon = if (route.parent != null) {
+            {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -115,6 +101,8 @@ fun ChimeroidTopAppBar(
                     )
                 }
             }
+        } else {
+            null
         },
 
         // ── Title: search view or bold page name ─────────────────────────────
@@ -135,61 +123,18 @@ fun ChimeroidTopAppBar(
             }
         },
 
-        // ── Actions: same as HomeCollapsingHeader (Info | CloudSync? | Settings?) ──
+        // ── Actions: same shared composable HomeScreen uses ───────────────────
         actions = {
             ChimeroidTopBarActions(
-                route = route,
-                navController = navController,
-                context = context,
-                saveSyncEnabled = mainUIState.saveSyncEnabled,
                 onHelpPressed = onHelpPressed,
-                operationsInProgress = mainUIState.operationInProgress,
+                onSyncClick = { SaveSyncWork.enqueueManualWork(context.applicationContext) },
+                onSettingsClick = { navController.navigate(MainRoute.SETTINGS.route) },
+                saveSyncEnabled = mainUIState.saveSyncEnabled,
+                operationInProgress = mainUIState.operationInProgress,
+                showSettingsAction = route.showBottomNavigation,
             )
         },
     )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Action icons — unchanged from original; extracted to allow HomeScreen reuse
-// ─────────────────────────────────────────────────────────────────────────────
-@Composable
-fun ChimeroidTopBarActions(
-    route: MainRoute,
-    navController: NavController,
-    context: Context,
-    saveSyncEnabled: Boolean,
-    operationsInProgress: Boolean,
-    onHelpPressed: () -> Unit,
-) {
-    Row {
-        IconButton(onClick = { onHelpPressed() }) {
-            Icon(
-                imageVector = Icons.Outlined.Info,
-                contentDescription = stringResource(R.string.mobile_settings_help),
-            )
-        }
-        if (saveSyncEnabled) {
-            IconButton(
-                onClick = { SaveSyncWork.enqueueManualWork(context.applicationContext) },
-                enabled = !operationsInProgress,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.CloudSync,
-                    contentDescription = stringResource(R.string.save_sync),
-                )
-            }
-        }
-        if (route.showBottomNavigation) {
-            IconButton(
-                onClick = { navController.navigate(MainRoute.SETTINGS.route) },
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = stringResource(R.string.settings),
-                )
-            }
-        }
-    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
