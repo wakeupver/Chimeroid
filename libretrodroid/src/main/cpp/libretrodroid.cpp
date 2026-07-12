@@ -582,8 +582,19 @@ void LibretroDroid::resume() {
 
     input = std::make_unique<Input>();
 
-    fpsSync->reset();
-    audio->start();
+    // fpsSync/audio are constructed in afterGameLoad(), well after video is (see the
+    // matching guard already in refreshAspectRatio() below). resume() can still be
+    // queued ahead of that point for heavier cores — NDS/3DS most reliably — so both
+    // need the same null-guard as video, not just an assumption the race can't reach
+    // them. Skipping is correct here: afterGameLoad()'s make_unique construction
+    // already leaves fpsSync/audio in a valid started state, so there is nothing to
+    // reset/start yet when this fires early.
+    if (fpsSync != nullptr) {
+        fpsSync->reset();
+    }
+    if (audio != nullptr) {
+        audio->start();
+    }
     refreshAspectRatio();
 }
 

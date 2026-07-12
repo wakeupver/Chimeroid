@@ -414,15 +414,22 @@ class GLRetroView(
     private inner class RenderLifecycleObserver : LifecycleObserver {
         @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
         private fun resume() = catchExceptions {
-            // ON_RESUME fires on the lifecycle-owner (main) thread. LibretroDroid.resume()
-            // reaches refreshAspectRatio() -> video->updateAspectRatio(), and `video` is
-            // owned by the GL thread (created in onSurfaceCreated, read in step()). Calling
-            // it directly here — unlike every touch/motion handler in this class, which all
-            // go through queueEvent — can null-deref if resume() wins the race against
-            // onSurfaceCreated(), or otherwise data-race with a concurrent renderFrame().
-            runOnEmulationThread(true) { LibretroDroid.resume() }
+            // ON_RESUME fires on the lifecycle-owner (main) thread at the same moment the
+            // GL thread enters onSurfaceCreated() to load the core/ROM — multiple seconds
+            // for heavier cores, longer still for NDS/3DS with their two-screen FBO/shader
+            // setup. runOnEmulationThread(true) blocked this thread on a CountDownLatch
+            // until that load finished: the multi-second freeze/ANR reported opening
+            // dual-screen games — same issue already fixed below for viewport/
+            // dualScreenConfig, just never migrated to this call site. Posting instead of
+            // blocking removes the stall; isEmulationReady is flipped inside the posted
+            // block so its write and the GL-thread read in Renderer.onDrawFrame() stay on
+            // one thread. LibretroDroid.resume() is itself null-guarded natively against
+            // running before onSurfaceCreated() finishes (see its fpsSync/audio checks).
+            postToEmulationThread {
+                LibretroDroid.resume()
+                isEmulationReady = true
+            }
             onResume()
-            isEmulationReady = true
         }
 
         @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
