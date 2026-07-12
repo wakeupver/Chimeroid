@@ -2,8 +2,13 @@ package com.swordfish.chimeroid.app.mobile.feature.main
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
@@ -56,7 +61,11 @@ fun MainTopBar(
         color = MaterialTheme.colorScheme.background,
         shadowElevation = ChimeroidTopBarDefaults.ShadowElevation,
     ) {
-        Column {
+        Column(
+            modifier = Modifier.windowInsetsPadding(
+                WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
+            ),
+        ) {
             ChimeroidTopAppBar(
                 route = currentRoute,
                 navController = navController,
