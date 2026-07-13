@@ -3,6 +3,7 @@ package com.swordfish.chimeroid.common.bitmap
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import kotlin.math.roundToInt
 
 fun Bitmap.cropToSquare(): Bitmap {
     val newWidth = if (height > width) width else height
@@ -14,6 +15,23 @@ fun Bitmap.cropToSquare(): Bitmap {
     cropH = if (cropH < 0) 0 else cropH
 
     return Bitmap.createBitmap(this, cropW, cropH, newWidth, newHeight)
+}
+
+/**
+ * Returns a bitmap whose longer side is at most [maxDimensionPx], scaling both
+ * dimensions by the same factor so the original aspect ratio is preserved.
+ *
+ * Returns `this` (same instance) when already within bounds, so callers can safely
+ * decide whether to recycle the source by checking referential equality on the result.
+ */
+fun Bitmap.downscaledToFit(maxDimensionPx: Int): Bitmap {
+    val longerSide = maxOf(width, height)
+    if (longerSide <= maxDimensionPx) return this
+
+    val scale = maxDimensionPx / longerSide.toFloat()
+    val targetWidth = (width * scale).roundToInt().coerceAtLeast(1)
+    val targetHeight = (height * scale).roundToInt().coerceAtLeast(1)
+    return Bitmap.createScaledBitmap(this, targetWidth, targetHeight, true)
 }
 
 fun Drawable.toBitmap(

@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import com.swordfish.chimeroid.common.bitmap.downscaledToFit
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import timber.log.Timber
@@ -36,6 +37,12 @@ class CoverArtRepository(private val context: Context) {
         const val JPEG_QUALITY = 85
         const val PACK_FILE_NAME = "covers.zip"
 
+        private const val PREFS_NAME = "cover_art_repository"
+        private const val KEY_ASPECT_FIX_VERSION = "aspect_fix_version"
+
+        /** Bump when a change to [CoverArtRepository.saveCover] invalidates previously cached JPEGs. */
+        private const val CURRENT_ASPECT_FIX_VERSION = 1
+
         /** Schemes served straight from disk via [android.content.ContentResolver] — no network I/O. */
         private val LOCAL_URI_SCHEMES = setOf("content", "file")
 
@@ -50,23 +57,48 @@ class CoverArtRepository(private val context: Context) {
     val packFile: File
         get() = File(coversDir, PACK_FILE_NAME)
 
+    /** Every persisted cover JPEG currently in [coversDir]. */
+    private val coverJpegFiles: List<File>
+        get() = coversDir.listFiles { f -> f.extension == "jpg" }?.toList() ?: emptyList()
+
     fun getCoverFile(gameId: Int): File = File(coversDir, "$gameId.jpg")
 
     fun hasCover(gameId: Int): Boolean = getCoverFile(gameId).exists()
 
     /**
-     * Decodes [inputStream] as a bitmap, scales it down to [COVER_MAX_PX]×[COVER_MAX_PX],
-     * and writes a JPEG to disk. Returns true on success.
+     * Cover JPEGs saved before [CURRENT_ASPECT_FIX_VERSION] were forced into an exact
+     * [COVER_MAX_PX]×[COVER_MAX_PX] square, squishing any non-square box art. Wipes the
+     * cache once so the next sync re-downloads every cover through the corrected
+     * [downscaledToFit] path. Idempotent — a no-op on every call after the first.
+     *
+     * Not thread-safe against concurrent [saveCover] writers; call only from
+     * [CoverArtSyncWorker]'s serialized background sync, before any covers are (re)written.
+     */
+    internal fun invalidateSquishedCoversIfNeeded() {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getInt(KEY_ASPECT_FIX_VERSION, 0) >= CURRENT_ASPECT_FIX_VERSION) return
+
+        coverJpegFiles.forEach { it.delete() }
+        if (packFile.exists()) packFile.delete()
+        prefs.edit().putInt(KEY_ASPECT_FIX_VERSION, CURRENT_ASPECT_FIX_VERSION).apply()
+        Timber.i("invalidateSquishedCoversIfNeeded: cleared cover cache for pre-fix squished covers")
+    }
+
+    /**
+     * Decodes [inputStream] as a bitmap, downscales it — preserving aspect ratio — so its
+     * longer side is at most [COVER_MAX_PX]px, and writes a JPEG to disk. Returns true on
+     * success.
      */
     fun saveCover(gameId: Int, inputStream: InputStream): Boolean {
         return try {
             val raw = BitmapFactory.decodeStream(inputStream) ?: return false
-            val scaled = if (raw.width > COVER_MAX_PX || raw.height > COVER_MAX_PX) {
-                Bitmap.createScaledBitmap(raw, COVER_MAX_PX, COVER_MAX_PX, true)
-                    .also { if (it !== raw) raw.recycle() }
-            } else {
-                raw
+            if (raw.width <= 0 || raw.height <= 0) {
+                raw.recycle()
+                return false
             }
+
+            val scaled = raw.downscaledToFit(COVER_MAX_PX)
+                .also { if (it !== raw) raw.recycle() }
 
             val outFile = getCoverFile(gameId)
             outFile.outputStream().buffered().use { out ->
@@ -122,9 +154,7 @@ class CoverArtRepository(private val context: Context) {
      * @return the final pack file.
      */
     fun packCovers(): File {
-        val covers = coversDir.listFiles { f ->
-            f.extension == "jpg"
-        } ?: emptyArray<File>()
+        val covers = coverJpegFiles
 
         if (covers.isEmpty()) {
             Timber.i("packCovers: nothing to pack")
@@ -155,13 +185,12 @@ class CoverArtRepository(private val context: Context) {
      * Deletes cover files for game IDs that are no longer in [validGameIds].
      */
     fun pruneCovers(validGameIds: Set<Int>) {
-        coversDir.listFiles { f -> f.extension == "jpg" }
-            ?.forEach { file ->
-                val id = file.nameWithoutExtension.toIntOrNull() ?: return@forEach
-                if (id !in validGameIds) {
-                    file.delete()
-                    Timber.d("pruneCovers: removed $id.jpg")
-                }
+        coverJpegFiles.forEach { file ->
+            val id = file.nameWithoutExtension.toIntOrNull() ?: return@forEach
+            if (id !in validGameIds) {
+                file.delete()
+                Timber.d("pruneCovers: removed $id.jpg")
             }
+        }
     }
 }

@@ -39,6 +39,10 @@ class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
         val repository = CoverArtRepository(applicationContext)
         val httpClient = CoverArtFetcher.Factory(applicationContext).httpClient
 
+        // One-time cache wipe so pre-fix squished covers get re-downloaded below
+        // through CoverArtRepository.saveCover's corrected aspect-ratio-preserving path.
+        repository.invalidateSquishedCoversIfNeeded()
+
         val games = try {
             retrogradeDb.gameDao().selectAll()
         } catch (e: Exception) {
