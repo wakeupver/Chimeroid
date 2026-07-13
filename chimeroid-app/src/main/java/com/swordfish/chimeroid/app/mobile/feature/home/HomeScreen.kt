@@ -14,12 +14,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -158,6 +162,7 @@ private fun HomeScreen(
 
     val expandedHeaderDp = ChimeroidTopBarDefaults.HomeExpandedHeight
     val collapsedHeaderDp = ChimeroidTopBarDefaults.Height
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Box(modifier = modifier.fillMaxSize()) {
         // ── Scrollable body ──────────────────────────────────────────────────
@@ -166,7 +171,7 @@ private fun HomeScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
                 .padding(
-                    top = expandedHeaderDp,
+                    top = expandedHeaderDp + statusBarHeight,
                     start = 20.dp,
                     end = 20.dp,
                     bottom = 32.dp,
@@ -348,53 +353,60 @@ private fun HomeCollapsingHeader(
     val collapsedAlpha = ((fraction - 0.4f) / 0.6f).coerceIn(0f, 1f)
 
     Surface(
-        modifier = modifier.height(headerHeight),
+        modifier = modifier,
         color = MaterialTheme.colorScheme.background,
         shadowElevation = lerp(0.dp, ChimeroidTopBarDefaults.ShadowElevation, fraction),
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // ── Pinned chrome — identical component to every other route's top
-            // bar, so the two can never visually drift apart again. Actions stay
-            // fully opaque; only the title crossfades with the collapsed state.
-            ChimeroidTopBarChrome(
-                title = {
-                    Text(
-                        text = appName,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.alpha(collapsedAlpha),
-                    )
-                },
-                actions = {
-                    ChimeroidTopBarActions(
-                        onHelpPressed = onHelpPressed,
-                        onSyncClick = onSyncClick,
-                        onSettingsClick = onSettingsClick,
-                        saveSyncEnabled = saveSyncEnabled,
-                        operationInProgress = operationInProgress,
-                    )
-                },
-            )
-
-            // ── Expanded greeting — at the bottom of the header ──────────────
-            Column(
+        Column {
+            Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+            Box(
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = ChimeroidTopBarDefaults.TitleStartPadding, bottom = 14.dp)
-                    .alpha(expandedAlpha),
+                    .fillMaxWidth()
+                    .height(headerHeight),
             ) {
-                Text(
-                    text = stringResource(R.string.home_greeting),
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Black,
+                // ── Pinned chrome — identical component to every other route's top
+                // bar, so the two can never visually drift apart again. Actions stay
+                // fully opaque; only the title crossfades with the collapsed state.
+                ChimeroidTopBarChrome(
+                    title = {
+                        Text(
+                            text = appName,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.alpha(collapsedAlpha),
+                        )
+                    },
+                    actions = {
+                        ChimeroidTopBarActions(
+                            onHelpPressed = onHelpPressed,
+                            onSyncClick = onSyncClick,
+                            onSettingsClick = onSettingsClick,
+                            saveSyncEnabled = saveSyncEnabled,
+                            operationInProgress = operationInProgress,
+                        )
+                    },
                 )
-                Text(
-                    text = stringResource(R.string.home_greeting_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+
+                // ── Expanded greeting — at the bottom of the header ──────────────
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = ChimeroidTopBarDefaults.TitleStartPadding, bottom = 14.dp)
+                        .alpha(expandedAlpha),
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_greeting),
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Text(
+                        text = stringResource(R.string.home_greeting_subtitle),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }

@@ -6,6 +6,8 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,6 +18,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -206,8 +209,18 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                     startDestination = MainRoute.HOME.route,
                 ) {
                     composable(MainRoute.HOME) {
+                        val layoutDirection = LocalLayoutDirection.current
                         HomeScreen(
-                            modifier = Modifier.padding(padding),
+                            // top intentionally excluded: HomeCollapsingHeader
+                            // self-handles the status-bar inset directly, decoupled
+                            // from Scaffold's shared `padding` (see MainTopBar's
+                            // empty-topBar-for-HOME comment above) so Home's layout
+                            // can't jump when another route's topBar mounts/unmounts.
+                            modifier = Modifier.padding(
+                                start = padding.calculateStartPadding(layoutDirection),
+                                end = padding.calculateEndPadding(layoutDirection),
+                                bottom = padding.calculateBottomPadding(),
+                            ),
                             viewModel =
                                 viewModel(
                                     factory =
