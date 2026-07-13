@@ -1,6 +1,11 @@
 package com.swordfish.chimeroid.app.mobile.feature.main
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -99,51 +104,61 @@ fun ChimeroidTopAppBar(
 
     // Built on the same ChimeroidTopBarChrome HomeScreen pins inside its
     // collapsing header, so height/insets can never drift from HomeScreen again.
-    ChimeroidTopBarChrome(
-        // ── Nav icon: back arrow for sub-routes only ─────────────────────────
-        navigationIcon = if (route.parent != null) {
-            {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back),
+    // Wrapped in AnimatedContent so nav-icon/title/actions crossfade together on
+    // route change instead of popping instantly while NavHost's content is still
+    // mid-transition — that pop was the top-bar flicker.
+    AnimatedContent(
+        targetState = route,
+        transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(150)) },
+        modifier = Modifier.fillMaxWidth(),
+        label = "topBarChrome",
+    ) { targetRoute ->
+        ChimeroidTopBarChrome(
+            // ── Nav icon: back arrow for sub-routes only ─────────────────────
+            navigationIcon = if (targetRoute.parent != null) {
+                {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                        )
+                    }
+                }
+            } else {
+                null
+            },
+
+            // ── Title: search view or bold page name ─────────────────────────
+            title = {
+                if (targetRoute == MainRoute.SEARCH) {
+                    ChimeroidSearchView(
+                        mainUIState = mainUIState,
+                        onUpdateQueryString = onUpdateQueryString,
+                    )
+                } else {
+                    Text(
+                        text = stringResource(targetRoute.titleId),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
-            }
-        } else {
-            null
-        },
+            },
 
-        // ── Title: search view or bold page name ─────────────────────────────
-        title = {
-            if (route == MainRoute.SEARCH) {
-                ChimeroidSearchView(
-                    mainUIState = mainUIState,
-                    onUpdateQueryString = onUpdateQueryString,
+            // ── Actions: same shared composable HomeScreen uses ───────────────
+            actions = {
+                ChimeroidTopBarActions(
+                    onHelpPressed = onHelpPressed,
+                    onSyncClick = { SaveSyncWork.enqueueManualWork(context.applicationContext) },
+                    onSettingsClick = { navController.navigate(MainRoute.SETTINGS.route) },
+                    saveSyncEnabled = mainUIState.saveSyncEnabled,
+                    operationInProgress = mainUIState.operationInProgress,
+                    showSettingsAction = targetRoute.showBottomNavigation,
                 )
-            } else {
-                Text(
-                    text = stringResource(route.titleId),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        },
-
-        // ── Actions: same shared composable HomeScreen uses ───────────────────
-        actions = {
-            ChimeroidTopBarActions(
-                onHelpPressed = onHelpPressed,
-                onSyncClick = { SaveSyncWork.enqueueManualWork(context.applicationContext) },
-                onSettingsClick = { navController.navigate(MainRoute.SETTINGS.route) },
-                saveSyncEnabled = mainUIState.saveSyncEnabled,
-                operationInProgress = mainUIState.operationInProgress,
-                showSettingsAction = route.showBottomNavigation,
-            )
-        },
-    )
+            },
+        )
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
