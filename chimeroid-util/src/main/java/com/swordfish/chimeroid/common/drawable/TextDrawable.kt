@@ -4,7 +4,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorFilter
 import android.graphics.Paint
-import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.text.TextPaint
@@ -14,14 +13,12 @@ class TextDrawable(private val text: String, private val color: Int) : Drawable(
         private const val DEFAULT_COLOR = Color.WHITE
     }
 
-    private val mTextBounds = Rect()
     private val mPaint: TextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
 
     init {
         mPaint.color = DEFAULT_COLOR
         mPaint.textAlign = Paint.Align.CENTER
         mPaint.typeface = Typeface.MONOSPACE
-        mPaint.getTextBounds(text, 0, text.length, mTextBounds)
     }
 
     override fun draw(canvas: Canvas) {

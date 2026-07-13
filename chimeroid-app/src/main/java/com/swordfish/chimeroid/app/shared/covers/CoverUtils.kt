@@ -1,10 +1,7 @@
 package com.swordfish.chimeroid.app.shared.covers
 
 import android.content.Context
-import android.widget.ImageView
 import coil.ImageLoader
-import coil.imageLoader
-import coil.load
 import coil.memory.MemoryCache
 import com.swordfish.chimeroid.common.drawable.TextDrawable
 import com.swordfish.chimeroid.common.graphics.ColorUtils
@@ -12,22 +9,6 @@ import com.swordfish.chimeroid.lib.library.db.entity.Game
 import kotlinx.coroutines.Dispatchers
 
 object CoverUtils {
-
-    /**
-     * Loads a cover into [imageView] using the app-wide ImageLoader.
-     * Data is a [CoverRequest] so our [CoverArtFetcher] handles it.
-     */
-    fun loadCover(
-        game: Game,
-        imageView: ImageView?,
-    ) {
-        if (imageView == null) return
-        imageView.load(CoverRequest(game), imageView.context.imageLoader) {
-            val fallback = getFallbackDrawable(game)
-            fallback(fallback)
-            error(fallback)
-        }
-    }
 
     /**
      * Builds the global Coil [ImageLoader].
@@ -56,12 +37,6 @@ object CoverUtils {
     }
 
     fun getFallbackDrawable(game: Game) = TextDrawable(computeTitle(game), computeColor(game))
-
-    fun getFallbackRemoteUrl(game: Game): String {
-        val color = Integer.toHexString(computeColor(game)).substring(2)
-        val title = computeTitle(game)
-        return "https://fakeimg.pl/512x512/$color/fff/?font=bebas&text=$title"
-    }
 
     private fun computeTitle(game: Game): String {
         val sanitizedName =
