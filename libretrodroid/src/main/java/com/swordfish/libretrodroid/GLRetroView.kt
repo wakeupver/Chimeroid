@@ -648,6 +648,20 @@ class GLRetroView(
         }
     }
 
+    /**
+     * This function gets called from the jni side, from the GL thread, inside step(), whenever
+     * requiresVideoRefresh() is true. Looked up by name via JNI reflection
+     * (GetMethodID(cls, "refreshAspectRatio", "()V")) rather than any Kotlin call site, so it
+     * must not be removed as dead code: doing so leaves the native lookup resolving to a null
+     * jmethodID, which aborts the process on the next CallVoidMethod (JNI DETECTED ERROR:
+     * mid == null).
+     */
+    private fun refreshAspectRatio() {
+        runOnEmulationThread(true) {
+            LibretroDroid.refreshAspectRatio()
+        }
+    }
+
     sealed class GLRetroEvents {
         object FrameRendered : GLRetroEvents()
         object SurfaceCreated : GLRetroEvents()
