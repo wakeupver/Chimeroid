@@ -1,10 +1,10 @@
 package com.swordfish.chimeroid.app.shared.game
 
-import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import com.swordfish.chimeroid.app.shared.game.viewmodel.GameViewModelRetroGameView
 import kotlinx.coroutines.delay
 
-private const val GAME_READY_TRANSITION_MS = 220
+private const val SPLASH_EXIT_MS = 220
 
 @Composable
 fun BaseGameScreen(
@@ -48,21 +48,27 @@ fun BaseGameScreen(
 
     val readyToShowGame = isGameReady && splashMinDurationElapsed
 
-    // readyToShowGame only ever flips false -> true once per session (isGameReady never regresses
-    // per GameViewModelRetroGameView's state machine, and splashMinDurationElapsed is a one-shot
-    // latch), so this AnimatedContent never has to cope with a reverse transition: the AndroidView
-    // hosting the GL surface inside gameScreen() is composed exactly once.
-    AnimatedContent(
-        targetState = readyToShowGame,
-        transitionSpec = {
-            fadeIn(tween(GAME_READY_TRANSITION_MS)) togetherWith fadeOut(tween(GAME_READY_TRANSITION_MS))
-        },
-        modifier = Modifier.fillMaxSize(),
-        label = "game_screen_ready",
-    ) { ready ->
-        if (ready) {
+    // gameScreen (MobileGameScreen: touch controls, the AndroidView hosting the GL surface, etc.)
+    // is heavy on its first pass. It is intentionally a plain `if`, not an animated enter: animating
+    // alpha/size over that first composition is what caused the loading -> gameplay hitch, since
+    // Compose would interpolate a layer while simultaneously measuring/laying out the whole screen
+    // for the first time. It now simply appears at full opacity the instant readyToShowGame flips
+    // (zero animation cost of its own), while only the cheap splash below — drawn after it, so on
+    // top in Box z-order — animates, fading out over what's already fully rendered underneath.
+    // readyToShowGame is monotonic (false -> true once: isGameReady never regresses per
+    // GameViewModelRetroGameView's state machine, and the duration latch is one-shot), so
+    // gameScreen is composed exactly once and never torn down again for the session.
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (readyToShowGame) {
             gameScreen(viewModel)
-        } else {
+        }
+
+        AnimatedVisibility(
+            visible = !readyToShowGame,
+            modifier = Modifier.fillMaxSize(),
+            enter = EnterTransition.None,
+            exit = fadeOut(tween(SPLASH_EXIT_MS)),
+        ) {
             val loadingMessage = (gameState as? GameViewModelRetroGameView.GameState.Loading)?.message
             GameOpeningSplash(gameTitle = gameTitle, loadingMessage = loadingMessage)
         }
