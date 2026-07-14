@@ -51,10 +51,7 @@ class GameViewModelSaves(
     suspend fun loadSlot(index: Int) {
         try {
             statesManager.getSlotSave(game, systemCoreConfig.coreID, index)?.let {
-                val loaded =
-                    withContext(Dispatchers.IO) {
-                        loadSaveState(it)
-                    }
+                val loaded = loadSaveState(it)
 
                 if (!loaded) {
                     sideEffects.showToast(appContext.getString(R.string.game_toast_load_state_failed))
@@ -104,19 +101,20 @@ class GameViewModelSaves(
         }
     }
 
-    private fun getCurrentSaveState(useEmulationThread: Boolean = true): SaveState? {
-        val retroGameView = retroGameView.retroGameView ?: return null
-        val currentDisk =
-            if (system.hasMultiDiskSupport) {
-                retroGameView.getCurrentDisk(useEmulationThread)
-            } else {
-                0
-            }
-        return SaveState(
-            retroGameView.serializeState(useEmulationThread),
-            SaveState.Metadata(currentDisk, systemCoreConfig.statesVersion),
-        )
-    }
+    private suspend fun getCurrentSaveState(useEmulationThread: Boolean = true): SaveState? =
+        withContext(Dispatchers.IO) {
+            val retroGameView = retroGameView.retroGameView ?: return@withContext null
+            val currentDisk =
+                if (system.hasMultiDiskSupport) {
+                    retroGameView.getCurrentDisk(useEmulationThread)
+                } else {
+                    0
+                }
+            SaveState(
+                retroGameView.serializeState(useEmulationThread),
+                SaveState.Metadata(currentDisk, systemCoreConfig.statesVersion),
+            )
+        }
 
     private suspend fun isAutoSaveEnabled(): Boolean {
         return systemCoreConfig.statesSupported && settingsManager.autoSave()
@@ -141,29 +139,30 @@ class GameViewModelSaves(
         }
     }
 
-    private fun loadSaveState(saveState: SaveState): Boolean {
-        val retroGameView = retroGameView.retroGameView ?: return false
+    private suspend fun loadSaveState(saveState: SaveState): Boolean =
+        withContext(Dispatchers.IO) {
+            val retroGameView = retroGameView.retroGameView ?: return@withContext false
 
-        if (systemCoreConfig.statesVersion != saveState.metadata.version) {
-            throw IncompatibleStateException()
+            if (systemCoreConfig.statesVersion != saveState.metadata.version) {
+                throw IncompatibleStateException()
+            }
+
+            if (system.hasMultiDiskSupport &&
+                retroGameView.getAvailableDisks() > 1 &&
+                retroGameView.getCurrentDisk() != saveState.metadata.diskIndex
+            ) {
+                retroGameView.changeDisk(saveState.metadata.diskIndex)
+            }
+
+            retroGameView.unserializeState(saveState.state)
         }
 
-        if (system.hasMultiDiskSupport &&
-            retroGameView.getAvailableDisks() > 1 &&
-            retroGameView.getCurrentDisk() != saveState.metadata.diskIndex
-        ) {
-            retroGameView.changeDisk(saveState.metadata.diskIndex)
-        }
-
-        return retroGameView.unserializeState(saveState.state)
-    }
-
-    fun saveQuickSave() {
+    suspend fun saveQuickSave() {
         currentQuickSave = getCurrentSaveState()
         sideEffects.showToast(appContext.getString(R.string.game_toast_quick_save_saved))
     }
 
-    fun loadQuickSave() {
+    suspend fun loadQuickSave() {
         loadSaveState(currentQuickSave ?: return)
         sideEffects.showToast(appContext.getString(R.string.game_toast_quick_save_loaded))
     }
