@@ -35,11 +35,20 @@ import com.swordfish.chimeroid.R
 private const val ICON_ANIM_MS = 420
 private const val TITLE_ANIM_MS = 380
 private const val TITLE_DELAY_MS = 160
+private const val HOLD_AFTER_REVEAL_MS = 300
 private const val MIN_ICON_SCALE = 0.7f
 private const val TITLE_SLIDE_PX = 24f
 private val ICON_SIZE = 64.dp
 private val SPINNER_SIZE = 28.dp
 private val SPINNER_STROKE = 2.5.dp
+
+/**
+ * Total time [GameOpeningSplash]'s entrance needs to read as finished: title delay + title's own
+ * fade/slide, plus a short hold so the fully-revealed title is actually readable for a beat.
+ * [BaseGameScreen] uses this to hold the crossfade to gameplay until the splash has genuinely
+ * finished playing, even if the core loads faster than that.
+ */
+internal const val SPLASH_MIN_VISIBLE_MS = TITLE_DELAY_MS + TITLE_ANIM_MS + HOLD_AFTER_REVEAL_MS
 
 /**
  * Branded loading splash shown by [BaseGameScreen] while the core boots: the Chimeroid mark
