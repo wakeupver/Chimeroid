@@ -5,7 +5,6 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update
 import com.swordfish.chimeroid.lib.library.db.entity.PatchCode
 import kotlinx.coroutines.flow.Flow
 
@@ -20,15 +19,8 @@ interface PatchCodeDao {
     @Query("SELECT * FROM patch_codes WHERE gameId = :gameId ORDER BY id ASC")
     suspend fun getCodesForGameOnce(gameId: Int): List<PatchCode>
 
-    /** Only the enabled codes – useful for applying on resume. */
-    @Query("SELECT * FROM patch_codes WHERE gameId = :gameId AND enabled = 1 ORDER BY id ASC")
-    suspend fun getEnabledCodesForGame(gameId: Int): List<PatchCode>
-
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(code: PatchCode): Long
-
-    @Update
-    suspend fun update(code: PatchCode)
 
     @Delete
     suspend fun delete(code: PatchCode)
@@ -36,7 +28,4 @@ interface PatchCodeDao {
     /** Toggle enabled flag without loading the full object. */
     @Query("UPDATE patch_codes SET enabled = :enabled WHERE id = :id")
     suspend fun setEnabled(id: Int, enabled: Boolean)
-
-    @Query("DELETE FROM patch_codes WHERE gameId = :gameId")
-    suspend fun deleteAllForGame(gameId: Int)
 }

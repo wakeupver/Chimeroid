@@ -29,7 +29,6 @@ import java.io.Serializable
         ),
     ],
     indices = [
-        Index("id", unique = true),
         Index("gameId"),
     ],
 )

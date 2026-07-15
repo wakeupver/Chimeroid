@@ -12,8 +12,10 @@ import timber.log.Timber
  *  1. Call [retro_cheat_reset] to clear all previously applied codes.
  *  2. Call [retro_cheat_set(index, enabled, code)] for each code (enabled or not).
  *
- * We mirror this behaviour: every call to [applyAll] resets and then re-applies
- * every code in the list so disabled codes are explicitly marked as such.
+ * We mirror this behaviour: every call to [applyAll] resets and then re-applies every code
+ * in the list — via [GLRetroView.resetAndApplyCheats] — so codes removed from the list (or
+ * left over from a previous, longer list) don't linger active in the core, and so disabled
+ * codes are explicitly marked as such.
  */
 object PatchCodesManager {
 
@@ -26,19 +28,10 @@ object PatchCodesManager {
         codes: List<PatchCode>,
     ) {
         Timber.d("Applying ${codes.size} patch code(s) to emulator.")
-        // Index 0 with empty code acts as the reset trigger for most cores
-        if (codes.isEmpty()) {
-            retroView.setCheat(index = 0, enable = false, code = "")
-            return
+        codes.forEach { code ->
+            Timber.d("  ${if (code.enabled) "ON " else "OFF"} '${code.description}': ${code.code}")
         }
-        codes.forEachIndexed { index, code ->
-            Timber.d("  [$index] ${if (code.enabled) "ON " else "OFF"} '${code.description}': ${code.code}")
-            retroView.setCheat(
-                index = index,
-                enable = code.enabled,
-                code = code.code,
-            )
-        }
+        retroView.resetAndApplyCheats(codes.map { GLRetroView.CheatCode(it.enabled, it.code) })
     }
 
     /**

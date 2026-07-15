@@ -779,7 +779,13 @@ void LibretroDroid::resetCheat() {
 void LibretroDroid::setCheat(unsigned index, bool enabled, const std::string& code) {
     std::lock_guard<std::mutex> lock(coreLock);
 
-    core->retro_cheat_set(index, enabled, Utils::cloneToCString(code));
+    // retro_cheat_set() is synchronous and takes a plain `const char*`: cores that need to
+    // retain the code copy it internally before returning, so the clone only needs to stay
+    // alive for the duration of this call. Freeing it here (instead of never) closes a
+    // per-call heap leak that otherwise accumulates on every patch-code apply/re-apply.
+    const char* clonedCode = Utils::cloneToCString(code);
+    core->retro_cheat_set(index, enabled, clonedCode);
+    delete[] clonedCode;
 }
 
 bool LibretroDroid::requiresVideoRefresh() const {

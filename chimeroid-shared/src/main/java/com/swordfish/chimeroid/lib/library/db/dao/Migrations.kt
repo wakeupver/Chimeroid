@@ -73,4 +73,16 @@ object Migrations {
                 )
             }
         }
+
+    val VERSION_10_11: Migration =
+        object : Migration(10, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // `id` is already the table's PRIMARY KEY, so SQLite maintains an implicit
+                // unique index for it automatically. The explicit index created in
+                // VERSION_9_10 was a redundant duplicate — same lookups, double the
+                // write-time index maintenance. Drop it; index_patch_codes_gameId (used by
+                // every DAO query's WHERE gameId = ...) is unaffected.
+                database.execSQL("DROP INDEX IF EXISTS `index_patch_codes_id`")
+            }
+        }
 }

@@ -286,6 +286,37 @@ class GLRetroView(
         }
     }
 
+    /** Clears every previously applied cheat (native retro_cheat_reset()). */
+    fun resetCheat(useEmulationThread: Boolean = true) {
+        runOnEmulationThread(useEmulationThread) {
+            LibretroDroid.resetCheat()
+        }
+    }
+
+    /** One cheat slot: `enabled` flag plus its raw libretro code string. */
+    data class CheatCode(val enabled: Boolean, val code: String)
+
+    /**
+     * Resets all previously applied cheats and applies [codes] by list position, in a single
+     * non-blocking post to the GL/emulation thread.
+     *
+     * This is the batched equivalent of calling [resetCheat] followed by N [setCheat] calls:
+     * doing that from a caller thread instead would mean N sequential blocking round-trips
+     * (each via runOnEmulationThread's CountDownLatch), which is the exact ANR pattern
+     * [postToEmulationThread]'s kdoc documents for viewport/dualScreenConfig — here it also
+     * scales with the cheat list size, so it matters even more for larger imported lists.
+     * Resetting first (rather than only setting indices 0..codes.lastIndex) also avoids
+     * leaving a stale/"ghost" cheat active at any index beyond the new list's size.
+     */
+    fun resetAndApplyCheats(codes: List<CheatCode>) {
+        postToEmulationThread {
+            LibretroDroid.resetCheat()
+            codes.forEachIndexed { index, cheat ->
+                LibretroDroid.setCheat(index, cheat.enabled, cheat.code)
+            }
+        }
+    }
+
     fun unserializeState(data: ByteArray, useEmulationThread: Boolean = true): Boolean {
         return runOnEmulationThread(useEmulationThread) {
             LibretroDroid.unserializeState(data)

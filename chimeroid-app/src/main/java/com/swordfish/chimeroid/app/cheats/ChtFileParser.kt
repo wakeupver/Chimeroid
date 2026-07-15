@@ -35,7 +35,6 @@ object ChtFileParser {
     data class ParseResult(
         val cheats: List<ParsedCheat>,
         val skippedCount: Int,
-        val errorMessage: String? = null,
     )
 
     fun parse(content: String): ParseResult {

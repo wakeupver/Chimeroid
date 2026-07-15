@@ -137,7 +137,12 @@ abstract class ChimeroidApplicationModule {
         fun retrogradeDb(app: ChimeroidApplication) =
             Room.databaseBuilder(app, RetrogradeDatabase::class.java, RetrogradeDatabase.DB_NAME)
                 .addCallback(GameSearchDao.CALLBACK)
-                .addMigrations(GameSearchDao.MIGRATION, Migrations.VERSION_8_9, Migrations.VERSION_9_10)
+                .addMigrations(
+                    GameSearchDao.MIGRATION,
+                    Migrations.VERSION_8_9,
+                    Migrations.VERSION_9_10,
+                    Migrations.VERSION_10_11,
+                )
                 .fallbackToDestructiveMigration()
                 // WAL mode allows concurrent reads without blocking writers,
                 // which is essential now that scan batches run in parallel.

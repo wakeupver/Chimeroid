@@ -31,7 +31,7 @@ import com.swordfish.chimeroid.lib.library.db.entity.PatchCode
 
 @Database(
     entities = [Game::class, DataFile::class, PatchCode::class],
-    version = 10,
+    version = 11,
     exportSchema = true,
 )
 abstract class RetrogradeDatabase : RoomDatabase() {

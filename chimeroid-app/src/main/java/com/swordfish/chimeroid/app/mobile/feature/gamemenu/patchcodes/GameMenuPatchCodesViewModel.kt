@@ -42,7 +42,8 @@ class GameMenuPatchCodesViewModel(
     private val _importResult = MutableSharedFlow<ImportResult>()
     val importResult: SharedFlow<ImportResult> = _importResult
 
-    val isImporting = MutableStateFlow(false)
+    private val _isImporting = MutableStateFlow(false)
+    val isImporting: StateFlow<Boolean> = _isImporting
 
     fun addCode(description: String, code: String): Boolean {
         val trimmedDesc = description.trim()
@@ -58,12 +59,12 @@ class GameMenuPatchCodesViewModel(
 
     fun importChtFile(context: Context, uri: Uri) {
         viewModelScope.launch {
-            isImporting.value = true
+            _isImporting.value = true
             val result = withContext(Dispatchers.IO) {
                 runCatching { readAndParse(context, uri) }
                     .getOrElse { e -> ImportResult.Error(e.message ?: "Unknown error reading file") }
             }
-            isImporting.value = false
+            _isImporting.value = false
             _importResult.emit(result)
         }
     }
