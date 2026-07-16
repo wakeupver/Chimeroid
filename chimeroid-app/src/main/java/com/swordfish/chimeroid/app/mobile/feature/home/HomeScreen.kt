@@ -83,7 +83,6 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onGameClick: (Game) -> Unit,
     onGameLongClick: (Game) -> Unit,
-    onOpenCoreSelection: () -> Unit,
     onOpenSystems: () -> Unit,
     onOpenFavorites: () -> Unit,
     onHelpPressed: () -> Unit,
@@ -113,7 +112,6 @@ fun HomeScreen(
         state = state.value,
         onGameClicked = onGameClick,
         onGameLongClick = onGameLongClick,
-        onOpenCoreSelection = onOpenCoreSelection,
         onOpenSystems = onOpenSystems,
         onOpenFavorites = onOpenFavorites,
         onHelpPressed = onHelpPressed,
@@ -140,7 +138,6 @@ private fun HomeScreen(
     state: HomeViewModel.UIState,
     onGameClicked: (Game) -> Unit,
     onGameLongClick: (Game) -> Unit,
-    onOpenCoreSelection: () -> Unit,
     onOpenSystems: () -> Unit,
     onOpenFavorites: () -> Unit,
     onHelpPressed: () -> Unit,
@@ -205,13 +202,6 @@ private fun HomeScreen(
                     message = stringResource(R.string.home_microphone_title),
                     actionId = R.string.home_microphone_action,
                     onAction = onEnableMicrophoneClicked,
-                )
-            }
-            AnimatedVisibility(state.showDesmumeDeprecatedCard) {
-                HomeNotificationBanner(
-                    message = stringResource(R.string.home_notification_desmume_deprecated_title),
-                    actionId = R.string.home_notification_desmume_deprecated_action,
-                    onAction = onOpenCoreSelection,
                 )
             }
 

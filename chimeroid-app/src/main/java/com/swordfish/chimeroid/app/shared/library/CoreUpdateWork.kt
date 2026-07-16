@@ -7,7 +7,6 @@ import androidx.work.WorkerParameters
 import com.swordfish.chimeroid.app.mobile.shared.NotificationsManager
 import com.swordfish.chimeroid.app.utils.android.createSyncForegroundInfo
 import com.swordfish.chimeroid.lib.core.CoreUpdater
-import com.swordfish.chimeroid.lib.core.CoresSelection
 import com.swordfish.chimeroid.lib.injection.AndroidWorkerInjection
 import com.swordfish.chimeroid.lib.injection.WorkerKey
 import com.swordfish.chimeroid.lib.library.GameSystem
@@ -29,9 +28,6 @@ class CoreUpdateWork(context: Context, workerParams: WorkerParameters) :
     @Inject
     lateinit var coreUpdater: CoreUpdater
 
-    @Inject
-    lateinit var coresSelection: CoresSelection
-
     override suspend fun doWork(): Result {
         AndroidWorkerInjection.inject(this)
 
@@ -51,9 +47,7 @@ class CoreUpdateWork(context: Context, workerParams: WorkerParameters) :
             val cores =
                 retrogradeDatabase.gameDao().selectSystems()
                     .asFlow()
-                    .map { GameSystem.findById(it) }
-                    .map { coresSelection.getCoreConfigForSystem(it) }
-                    .map { it.coreID }
+                    .map { GameSystem.findById(it).systemCoreConfigs.first().coreID }
                     .toList()
 
             coreUpdater.downloadCores(applicationContext, cores)

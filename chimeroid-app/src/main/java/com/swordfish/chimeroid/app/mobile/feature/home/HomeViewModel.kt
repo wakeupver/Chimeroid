@@ -13,8 +13,6 @@ import com.swordfish.chimeroid.app.shared.settings.StorageBaseDirPicker
 import com.swordfish.chimeroid.app.shared.settings.StorageFrameworkPickerLauncher
 import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.common.coroutines.combine
-import com.swordfish.chimeroid.lib.core.CoresSelection
-import com.swordfish.chimeroid.lib.library.CoreID
 import com.swordfish.chimeroid.lib.library.SystemID
 import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
 import com.swordfish.chimeroid.lib.library.db.entity.Game
@@ -39,7 +37,6 @@ import kotlinx.coroutines.launch
 class HomeViewModel(
     appContext: Context,
     retrogradeDb: RetrogradeDatabase,
-    private val coresSelection: CoresSelection,
     private val directoriesManager: DirectoriesManager,
 ) : ViewModel() {
     companion object {
@@ -50,10 +47,9 @@ class HomeViewModel(
     class Factory(
         appContext: Context,
         retrogradeDb: RetrogradeDatabase,
-        coresSelection: CoresSelection,
         directoriesManager: DirectoriesManager,
     ) : ViewModelProvider.Factory by viewModelFactory({
-            HomeViewModel(appContext, retrogradeDb, coresSelection, directoriesManager)
+            HomeViewModel(appContext, retrogradeDb, directoriesManager)
         })
 
     data class UIState(
@@ -64,7 +60,6 @@ class HomeViewModel(
         val showNoNotificationPermissionCard: Boolean = false,
         val showNoMicrophonePermissionCard: Boolean = false,
         val showNoGamesCard: Boolean = false,
-        val showDesmumeDeprecatedCard: Boolean = false,
         val showStorageLocationCard: Boolean = false,
     )
 
@@ -119,7 +114,6 @@ class HomeViewModel(
         indexInProgress: Boolean,
         notificationsPermissionEnabled: Boolean,
         showMicrophoneCard: Boolean,
-        showDesmumeWarning: Boolean,
         storageLocationSet: Boolean,
     ): UIState {
         val noGames = recentGames.isEmpty() && favoritesGames.isEmpty() && discoveryGames.isEmpty()
@@ -132,7 +126,6 @@ class HomeViewModel(
             showNoNotificationPermissionCard = !notificationsPermissionEnabled,
             showNoMicrophonePermissionCard = showMicrophoneCard,
             showNoGamesCard = noGames,
-            showDesmumeDeprecatedCard = showDesmumeWarning,
             showStorageLocationCard = !storageLocationSet,
         )
     }
@@ -147,7 +140,6 @@ class HomeViewModel(
                     indexingInProgress(appContext),
                     notificationsPermissionEnabledState,
                     microphoneNotification(retrogradeDb),
-                    desmumeWarningNotification(),
                     storageLocationSetState,
                     ::buildViewState,
                 )
@@ -189,21 +181,9 @@ class HomeViewModel(
                 if (isMicrophoneEnabled) {
                     flowOf(false)
                 } else {
-                    combine(
-                        coresSelection.getSelectedCores(),
-                        dsGamesCount(db),
-                    ) { cores, dsCount ->
-                        cores.any { it.coreConfig.supportsMicrophone } &&
-                            dsCount > 0
-                    }
+                    dsGamesCount(db).map { it > 0 }
                 }
                     .distinctUntilChanged()
             }
-    }
-
-    private fun desmumeWarningNotification(): Flow<Boolean> {
-        return coresSelection.getSelectedCores()
-            .map { cores -> cores.any { it.coreConfig.coreID == CoreID.DESMUME } }
-            .distinctUntilChanged()
     }
 }

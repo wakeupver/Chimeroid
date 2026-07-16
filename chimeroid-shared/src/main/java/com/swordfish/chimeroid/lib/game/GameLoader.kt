@@ -30,7 +30,7 @@ import com.swordfish.chimeroid.lib.library.ChimeroidLibrary
 import com.swordfish.chimeroid.lib.library.SystemCoreConfig
 import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
 import com.swordfish.chimeroid.lib.library.db.entity.Game
-import com.swordfish.chimeroid.lib.migration.DesmumeMigrationHandler
+import com.swordfish.chimeroid.lib.migration.NdsSaveMigrationHandler
 import com.swordfish.chimeroid.lib.saves.SaveState
 import com.swordfish.chimeroid.lib.saves.SavesCoherencyEngine
 import com.swordfish.chimeroid.lib.saves.SavesManager
@@ -52,7 +52,7 @@ class GameLoader(
     private val savesCoherencyEngine: SavesCoherencyEngine,
     private val directoriesManager: DirectoriesManager,
     private val biosManager: BiosManager,
-    private val desmumeMigrationHandler: DesmumeMigrationHandler,
+    private val ndsSaveMigrationHandler: NdsSaveMigrationHandler,
 ) {
     sealed class LoadingState {
         object LoadingCore : LoadingState()
@@ -110,7 +110,7 @@ class GameLoader(
                     val saveRAM =
                         runCatching {
                             val data = savesManager.getSaveRAM(game, systemCoreConfig)
-                            desmumeMigrationHandler.resolveSaveData(
+                            ndsSaveMigrationHandler.resolveSaveData(
                                 game,
                                 systemCoreConfig.coreID,
                                 data,

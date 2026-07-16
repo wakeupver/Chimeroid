@@ -79,12 +79,6 @@ enum class MainRoute(
         parent = SETTINGS,
         showBottomNavigation = false,
     ),
-    SETTINGS_CORES_SELECTION(
-        route = "settings/cores",
-        titleId = R.string.settings_title_open_cores_selection,
-        parent = SETTINGS,
-        showBottomNavigation = false,
-    ),
     SETTINGS_INPUT_DEVICES(
         route = "settings/inputdevices",
         titleId = R.string.settings_title_gamepad_settings,

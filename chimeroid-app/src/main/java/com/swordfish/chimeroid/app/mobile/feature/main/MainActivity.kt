@@ -39,8 +39,6 @@ import com.swordfish.chimeroid.app.mobile.feature.settings.advanced.AdvancedSett
 import com.swordfish.chimeroid.app.mobile.feature.settings.advanced.AdvancedSettingsViewModel
 import com.swordfish.chimeroid.app.mobile.feature.settings.bios.BiosScreen
 import com.swordfish.chimeroid.app.mobile.feature.settings.bios.BiosSettingsViewModel
-import com.swordfish.chimeroid.app.mobile.feature.settings.coreselection.CoresSelectionScreen
-import com.swordfish.chimeroid.app.mobile.feature.settings.coreselection.CoresSelectionViewModel
 import com.swordfish.chimeroid.app.mobile.feature.settings.general.SettingsScreen
 import com.swordfish.chimeroid.app.mobile.feature.settings.general.SettingsViewModel
 import com.swordfish.chimeroid.app.mobile.feature.settings.inputdevices.InputDevicesSettingsScreen
@@ -64,7 +62,6 @@ import com.swordfish.chimeroid.common.coroutines.safeLaunch
 import com.swordfish.chimeroid.ext.feature.review.ReviewManager
 import com.swordfish.chimeroid.lib.android.RetrogradeComponentActivity
 import com.swordfish.chimeroid.lib.bios.BiosManager
-import com.swordfish.chimeroid.lib.core.CoresSelection
 import com.swordfish.chimeroid.lib.injection.PerActivity
 import com.swordfish.chimeroid.lib.library.MetaSystemID
 import com.swordfish.chimeroid.lib.library.SystemID
@@ -95,9 +92,6 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
 
     @Inject
     lateinit var biosManager: BiosManager
-
-    @Inject
-    lateinit var coresSelection: CoresSelection
 
     @Inject
     lateinit var settingsInteractor: SettingsInteractor
@@ -227,13 +221,11 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                                         HomeViewModel.Factory(
                                             applicationContext,
                                             retrogradeDb,
-                                            coresSelection,
                                             directoriesManager,
                                         ),
                                 ),
                             onGameClick = onGameClick,
                             onGameLongClick = onGameLongClick,
-                            onOpenCoreSelection = { navController.navigateToRoute(MainRoute.SETTINGS_CORES_SELECTION) },
                             onOpenSystems = { navController.navigateToRoute(MainRoute.SYSTEMS) },
                             onOpenFavorites = { navController.navigateToRoute(MainRoute.FAVORITES) },
                             onHelpPressed = onHelpPressed,
@@ -341,19 +333,6 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                             viewModel =
                                 viewModel(
                                     factory = BiosSettingsViewModel.Factory(biosManager),
-                                ),
-                        )
-                    }
-                    composable(MainRoute.SETTINGS_CORES_SELECTION) {
-                        CoresSelectionScreen(
-                            modifier = Modifier.padding(padding),
-                            viewModel =
-                                viewModel(
-                                    factory =
-                                        CoresSelectionViewModel.Factory(
-                                            applicationContext,
-                                            coresSelection,
-                                        ),
                                 ),
                         )
                     }

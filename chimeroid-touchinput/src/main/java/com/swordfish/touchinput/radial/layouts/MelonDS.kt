@@ -1,16 +1,21 @@
 package com.swordfish.touchinput.radial.layouts
 
 import android.view.KeyEvent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.swordfish.touchinput.controller.R
 import com.swordfish.touchinput.radial.controls.ChimeroidControlButton
 import com.swordfish.touchinput.radial.controls.ChimeroidControlCross
+import com.swordfish.touchinput.radial.layouts.shared.ABYXFaceButtons
 import com.swordfish.touchinput.radial.layouts.shared.ComposeTouchLayouts
 import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonL
 import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonMenu
 import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonMenuPlaceholder
+import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonR
 import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonSelect
+import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonStart
 import com.swordfish.touchinput.radial.settings.TouchControllerSettingsManager
 import gg.padkit.PadKitScope
 import gg.padkit.ids.Id
@@ -47,5 +52,17 @@ fun PadKitScope.MelonDSRight(
     modifier: Modifier = Modifier,
     settings: TouchControllerSettingsManager.Settings,
 ) {
-    DesmumeRight(modifier = modifier, settings = settings)
+    BaseLayoutRight(
+        settings = settings,
+        modifier = modifier,
+        primaryDial = {
+            ABYXFaceButtons()
+        },
+        secondaryDials = {
+            SecondaryButtonR()
+            SecondaryButtonStart(position = 2)
+            SecondaryButtonMenu(settings)
+            Box(modifier = Modifier.fillMaxSize().radialPosition(-120f))
+        },
+    )
 }

@@ -16,7 +16,7 @@ class SavesCoherencyEngine(val savesManager: SavesManager, val statesManager: St
     suspend fun shouldDiscardAutoSaveState(
         game: Game,
         coreID: CoreID,
-        // TODO Get rid of it when desmume is removed
+        // Set when SRAM was resolved from a converted legacy DSV save (see NdsSaveMigrationHandler)
         sramTimestampOverride: Long? = null,
     ): Boolean {
         val autoSRAM =

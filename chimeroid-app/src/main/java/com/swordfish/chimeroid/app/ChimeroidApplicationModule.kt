@@ -43,7 +43,6 @@ import com.swordfish.chimeroid.ext.feature.savesync.SaveSyncManagerImpl
 import com.swordfish.chimeroid.lib.bios.BiosManager
 import com.swordfish.chimeroid.lib.core.CoreUpdater
 import com.swordfish.chimeroid.lib.core.CoreVariablesManager
-import com.swordfish.chimeroid.lib.core.CoresSelection
 import com.swordfish.chimeroid.lib.game.GameLoader
 import com.swordfish.chimeroid.lib.injection.PerActivity
 import com.swordfish.chimeroid.lib.injection.PerApp
@@ -53,7 +52,7 @@ import com.swordfish.chimeroid.lib.library.db.dao.GameSearchDao
 import com.swordfish.chimeroid.lib.library.db.dao.Migrations
 import com.swordfish.chimeroid.lib.library.db.dao.PatchCodeDao
 import com.swordfish.chimeroid.lib.library.metadata.GameMetadataProvider
-import com.swordfish.chimeroid.lib.migration.DesmumeMigrationHandler
+import com.swordfish.chimeroid.lib.migration.NdsSaveMigrationHandler
 import com.swordfish.chimeroid.lib.preferences.SharedPreferencesHelper
 import com.swordfish.chimeroid.lib.saves.SavesCoherencyEngine
 import com.swordfish.chimeroid.lib.saves.SavesManager
@@ -276,7 +275,7 @@ abstract class ChimeroidApplicationModule {
             savesCoherencyEngine: SavesCoherencyEngine,
             directoriesManager: DirectoriesManager,
             biosManager: BiosManager,
-            desmumeMigrationHandler: DesmumeMigrationHandler,
+            ndsSaveMigrationHandler: NdsSaveMigrationHandler,
         ) = GameLoader(
             chimeroidLibrary,
             statesManager,
@@ -286,7 +285,7 @@ abstract class ChimeroidApplicationModule {
             savesCoherencyEngine,
             directoriesManager,
             biosManager,
-            desmumeMigrationHandler,
+            ndsSaveMigrationHandler,
         )
 
         @Provides
@@ -301,14 +300,6 @@ abstract class ChimeroidApplicationModule {
         @PerApp
         @JvmStatic
         fun biosManager(directoriesManager: DirectoriesManager) = BiosManager(directoriesManager)
-
-@Provides
-        @PerApp
-        @JvmStatic
-        fun coresSelection(
-            sharedPreferences: Lazy<SharedPreferences>,
-            desmumeMigrationHandler: DesmumeMigrationHandler,
-        ) = CoresSelection(sharedPreferences, desmumeMigrationHandler)
 
 @Provides
         @PerApp
@@ -329,8 +320,8 @@ abstract class ChimeroidApplicationModule {
         @Provides
         @PerApp
         @JvmStatic
-        fun desmumeMigrationHandler(directoriesManager: DirectoriesManager) =
-            DesmumeMigrationHandler(directoriesManager)
+        fun ndsSaveMigrationHandler(directoriesManager: DirectoriesManager) =
+            NdsSaveMigrationHandler(directoriesManager)
 
         @Provides
         @PerApp
@@ -368,10 +359,7 @@ abstract class ChimeroidApplicationModule {
         @Provides
         @PerApp
         @JvmStatic
-        fun gameLauncher(
-            coresSelection: CoresSelection,
-            gameLaunchTaskHandler: GameLaunchTaskHandler,
-        ) = GameLauncher(coresSelection, gameLaunchTaskHandler)
+        fun gameLauncher(gameLaunchTaskHandler: GameLaunchTaskHandler) = GameLauncher(gameLaunchTaskHandler)
 
         @Provides
         @PerApp

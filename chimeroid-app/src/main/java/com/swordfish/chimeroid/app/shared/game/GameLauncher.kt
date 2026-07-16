@@ -4,7 +4,6 @@ import android.app.Activity
 import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.shared.main.GameLaunchTaskHandler
 import com.swordfish.chimeroid.common.displayToast
-import com.swordfish.chimeroid.lib.core.CoresSelection
 import com.swordfish.chimeroid.lib.library.GameSystem
 import com.swordfish.chimeroid.lib.library.db.entity.Game
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -12,7 +11,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class GameLauncher(
-    private val coresSelection: CoresSelection,
     private val gameLaunchTaskHandler: GameLaunchTaskHandler,
 ) {
     @OptIn(DelicateCoroutinesApi::class)
@@ -28,7 +26,7 @@ class GameLauncher(
 
         GlobalScope.launch {
             val system = GameSystem.findById(game.systemId)
-            val coreConfig = coresSelection.getCoreConfigForSystem(system)
+            val coreConfig = system.systemCoreConfigs.first()
             gameLaunchTaskHandler.handleGameStart(activity.applicationContext)
             BaseGameActivity.launchGame(activity, coreConfig, game, loadSave)
         }

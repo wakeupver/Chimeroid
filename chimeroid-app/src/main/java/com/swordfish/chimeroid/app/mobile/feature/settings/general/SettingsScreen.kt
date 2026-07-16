@@ -83,13 +83,6 @@ private fun MiscSettings(
             )
         }
         ChimeroidSettingsMenuLink(
-            title = { Text(text = stringResource(id = R.string.settings_title_open_cores_selection)) },
-            subtitle = {
-                Text(text = stringResource(id = R.string.settings_description_open_cores_selection))
-            },
-            onClick = { navController.navigateToRoute(MainRoute.SETTINGS_CORES_SELECTION) },
-        )
-        ChimeroidSettingsMenuLink(
             title = { Text(text = stringResource(id = R.string.settings_title_display_bios_info)) },
             subtitle = {
                 Text(text = stringResource(id = R.string.settings_description_display_bios_info))
