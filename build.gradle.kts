@@ -61,10 +61,13 @@ subprojects {
                     targetSdk = deps.android.targetSdkVersion
                     multiDexEnabled = true
                 }
-                lint {
-                    abortOnError = true
+                lintOptions {
+                    isAbortOnError = true
                     // https://issuetracker.google.com/issues/63150366
-                    disable += setOf("UnusedResources", "InvalidPackage", "VectorPath", "TrustAllX509TrustManager")
+                    disable("UnusedResources")
+                    disable("InvalidPackage")
+                    disable("VectorPath")
+                    disable("TrustAllX509TrustManager")
                 }
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_17
