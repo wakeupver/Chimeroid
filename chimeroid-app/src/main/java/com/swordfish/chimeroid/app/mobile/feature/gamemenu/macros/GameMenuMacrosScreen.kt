@@ -116,6 +116,7 @@ fun GameMenuMacrosScreen(
 
     if (showAddMacroDialog) {
         AddMacroDialog(
+            existingButtons = macroButtons,
             onConfirm = { newMacro ->
                 viewModel.addOrUpdateMacro(newMacro)
                 showAddMacroDialog = false
@@ -204,6 +205,7 @@ private fun MacroButtonListItem(
 
 @Composable
 private fun AddMacroDialog(
+    existingButtons: List<MacroButton>,
     onConfirm: (MacroButton) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -289,11 +291,14 @@ private fun AddMacroDialog(
                     Button(
                         onClick = {
                             if (selectedKeys.isNotEmpty()) {
+                                val (spawnX, spawnY) = MacroButton.nextSpawnPosition(existingButtons)
                                 onConfirm(
                                     MacroButton(
                                         label = displayLabel.take(6).ifBlank { "M" },
                                         keyCodes = selectedKeys.toList(),
                                         simultaneous = isSimultaneous,
+                                        xFraction = spawnX,
+                                        yFraction = spawnY,
                                     ),
                                 )
                             }
