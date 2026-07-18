@@ -3,6 +3,7 @@
 package com.swordfish.chimeroid.app.mobile.feature.gamemenu
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowInsetsCompat
@@ -19,7 +20,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,6 +48,8 @@ import androidx.navigation.compose.rememberNavController
 import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.mobile.feature.gamemenu.coreoptions.GameMenuCoreOptionsScreen
 import com.swordfish.chimeroid.app.mobile.feature.gamemenu.coreoptions.GameMenuCoreOptionsViewModel
+import com.swordfish.chimeroid.app.mobile.feature.gamemenu.macros.GameMenuMacrosScreen
+import com.swordfish.chimeroid.app.mobile.feature.gamemenu.macros.GameMenuMacrosViewModel
 import com.swordfish.chimeroid.app.mobile.feature.gamemenu.patchcodes.GameMenuPatchCodesScreen
 import com.swordfish.chimeroid.app.mobile.feature.gamemenu.patchcodes.GameMenuPatchCodesViewModel
 import com.swordfish.chimeroid.app.mobile.feature.gamemenu.states.GameMenuStatesScreen
@@ -56,6 +58,7 @@ import com.swordfish.chimeroid.app.mobile.shared.compose.ui.AppTheme
 import com.swordfish.chimeroid.app.mobile.shared.compose.ui.enableEdgeToEdgeForTheme
 import com.swordfish.chimeroid.app.shared.GameMenuContract
 import com.swordfish.chimeroid.app.shared.coreoptions.ChimeroidCoreOption
+import com.swordfish.chimeroid.app.shared.game.macro.MacroButtonsManager
 import com.swordfish.chimeroid.app.shared.input.InputDeviceManager
 import com.swordfish.chimeroid.common.kotlin.serializable
 import com.swordfish.chimeroid.lib.android.RetrogradeComponentActivity
@@ -81,6 +84,9 @@ class GameMenuActivity : RetrogradeComponentActivity() {
     @Inject
     lateinit var patchCodeDao: PatchCodeDao
 
+    @Inject
+    lateinit var sharedPreferences: SharedPreferences
+
     data class GameMenuRequest(
         val coreOptions: List<ChimeroidCoreOption>,
         val advancedCoreOptions: List<ChimeroidCoreOption>,
@@ -94,6 +100,7 @@ class GameMenuActivity : RetrogradeComponentActivity() {
         val currentDisk: Int,
         val currentTiltConfiguration: TiltConfiguration,
         val allTiltConfigurations: List<TiltConfiguration>,
+        val currentTouchControllerId: String,
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -147,6 +154,8 @@ class GameMenuActivity : RetrogradeComponentActivity() {
                     intent.serializable<Array<TiltConfiguration>>(GameMenuContract.EXTRA_TILT_ALL_CONFIGS)
                         ?.toList()
                         ?: emptyList(),
+                currentTouchControllerId =
+                    extras?.getString(GameMenuContract.EXTRA_CURRENT_TOUCH_CONTROLLER_ID) ?: "default",
             )
 
         setContent {
@@ -263,6 +272,20 @@ class GameMenuActivity : RetrogradeComponentActivity() {
                                 factory = GameMenuCoreOptionsViewModel.Factory(inputDeviceManager),
                             ),
                             gameMenuRequest,
+                        )
+                    }
+                    composable(GameMenuRoute.MACROS) {
+                        GameMenuMacrosScreen(
+                            viewModel(
+                                factory =
+                                    GameMenuMacrosViewModel.Factory(
+                                        MacroButtonsManager(sharedPreferences),
+                                        gameMenuRequest.currentTouchControllerId,
+                                    ),
+                            ),
+                            onPositionOnScreen = {
+                                onResult { putExtra(GameMenuContract.RESULT_POSITION_MACROS, true) }
+                            },
                         )
                     }
                     composable(GameMenuRoute.PATCH_CODES) {

@@ -12,6 +12,7 @@ class GameViewModelSideEffects(private val scope: CoroutineScope) {
         data class ShowMenu(
             val currentTiltConfiguration: TiltConfiguration,
             val tiltConfigurations: List<TiltConfiguration>,
+            val touchControllerId: String,
         ) : UiEffect
 
         data class ShowToast(val message: String) : UiEffect
@@ -42,11 +43,12 @@ class GameViewModelSideEffects(private val scope: CoroutineScope) {
     fun showMenu(
         tilt: GameViewModelTilt,
         inputs: GameViewModelInput,
+        touchControllerId: String,
     ) {
         scope.launch {
             val currentTiltConfiguration = tilt.getTiltConfiguration().firstOrNull() ?: return@launch
             val tiltConfigurations = inputs.getAllTiltConfigurations()
-            uiEffects.emit(UiEffect.ShowMenu(currentTiltConfiguration, tiltConfigurations))
+            uiEffects.emit(UiEffect.ShowMenu(currentTiltConfiguration, tiltConfigurations, touchControllerId))
         }
     }
 

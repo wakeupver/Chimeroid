@@ -178,6 +178,7 @@ abstract class BaseGameActivity : ImmersiveActivity() {
     private fun displayOptionsDialog(
         currentTiltConfiguration: TiltConfiguration,
         tiltConfigurations: List<TiltConfiguration>,
+        touchControllerId: String,
     ) {
         if (baseGameScreenViewModel.loadingState.value) return
 
@@ -233,6 +234,7 @@ abstract class BaseGameActivity : ImmersiveActivity() {
                 )
                 putExtra(GameMenuContract.EXTRA_CURRENT_TILT_CONFIG, currentTiltConfiguration)
                 putExtra(GameMenuContract.EXTRA_TILT_ALL_CONFIGS, tiltConfigurations.toTypedArray())
+                putExtra(GameMenuContract.EXTRA_CURRENT_TOUCH_CONTROLLER_ID, touchControllerId)
             }
         @Suppress("DEPRECATION")
         startActivityForResult(intent, DIALOG_REQUEST)
@@ -255,7 +257,7 @@ abstract class BaseGameActivity : ImmersiveActivity() {
             .collect {
                 when (it) {
                     is GameViewModelSideEffects.UiEffect.ShowMenu ->
-                        displayOptionsDialog(it.currentTiltConfiguration, it.tiltConfigurations)
+                        displayOptionsDialog(it.currentTiltConfiguration, it.tiltConfigurations, it.touchControllerId)
                     is GameViewModelSideEffects.UiEffect.ShowToast -> displayToast(it.message)
                     is GameViewModelSideEffects.UiEffect.SuccessfulFinish -> performSuccessfulActivityFinish()
                     is GameViewModelSideEffects.UiEffect.FailureFinish -> performErrorFinish(it.message)
@@ -390,6 +392,9 @@ abstract class BaseGameActivity : ImmersiveActivity() {
         }
         if (data?.getBooleanExtra(GameMenuContract.RESULT_EDIT_TOUCH_CONTROLS, false) == true) {
             baseGameScreenViewModel.showEditControls(true)
+        }
+        if (data?.getBooleanExtra(GameMenuContract.RESULT_POSITION_MACROS, false) == true) {
+            baseGameScreenViewModel.enterMacroDragMode()
         }
         if (data?.hasExtra(GameMenuContract.RESULT_CHANGE_TILT_CONFIG) == true) {
             val tiltConfig =

@@ -129,6 +129,7 @@
     <string name="game_menu_state">State %1$s</string>
     <string name="game_menu_change_disk_button">Change Disk</string>
     <string name="game_menu_edit_touch_controls">Edit Controls</string>
+    <string name="game_menu_macros">Macros</string>
     <string name="game_menu_mute_audio">Mute</string>
     <string name="game_menu_fast_forward">Fast-Forward</string>
     <string name="game_menu_change_disk_disk">Disk %1$s</string>
@@ -172,7 +173,6 @@
     <string name="game_menu_section_controls">Controls</string>
     <string name="game_menu_section_options">Options</string>
     <string name="game_menu_section_actions">Actions</string>
-    <string name="game_menu_edit_touch_controls_subtitle">Scale, position &amp; macros</string>
 
     <string name="notification_channel_name">All notifications</string>
     <string name="library_index_notification_title">ROMs scanning in progress</string>

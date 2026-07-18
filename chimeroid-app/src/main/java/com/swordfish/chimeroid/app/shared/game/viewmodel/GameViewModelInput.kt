@@ -72,6 +72,10 @@ class GameViewModelInput(
         return controllerConfigsState
     }
 
+    /** Current port-0 touch controller ID, or "default" if not yet resolved. */
+    private fun currentTouchControllerId(): String =
+        controllerConfigsState.value[0]?.touchControllerID?.name ?: "default"
+
     private fun sendStickMotions(
         event: MotionEvent,
         port: Int,
@@ -304,7 +308,7 @@ class GameViewModelInput(
 
                 if (port == 0) {
                     if (bindKeyCode == KeyEvent.KEYCODE_BUTTON_MODE && action == KeyEvent.ACTION_DOWN) {
-                        sideEffects.showMenu(tilt, this)
+                        sideEffects.showMenu(tilt, this, currentTouchControllerId())
                         return@safeCollect
                     }
 
@@ -317,7 +321,7 @@ class GameViewModelInput(
                     shortcuts[device]?.forEach { shortcut ->
                         if (shortcut.keys.isNotEmpty() && pressedKeys.containsAll(shortcut.keys)) {
                             when (shortcut.type) {
-                                GameShortcutType.MENU -> sideEffects.showMenu(tilt, this)
+                                GameShortcutType.MENU -> sideEffects.showMenu(tilt, this, currentTouchControllerId())
                                 GameShortcutType.QUICK_LOAD -> sideEffects.loadQuickSave()
                                 GameShortcutType.QUICK_SAVE -> sideEffects.saveQuickSave()
                                 GameShortcutType.TOGGLE_FAST_FORWARD -> sideEffects.toggleFastForward()

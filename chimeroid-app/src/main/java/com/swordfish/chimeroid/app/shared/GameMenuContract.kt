@@ -13,6 +13,7 @@ object GameMenuContract {
     const val EXTRA_FAST_FORWARD = "EXTRA_FAST_FORWARD"
     const val EXTRA_CURRENT_TILT_CONFIG = "EXTRA_CURRENT_TILT_CONFIG"
     const val EXTRA_TILT_ALL_CONFIGS = "EXTRA_TILT_ALL_CONFIGS"
+    const val EXTRA_CURRENT_TOUCH_CONTROLLER_ID = "EXTRA_CURRENT_TOUCH_CONTROLLER_ID"
 
     const val RESULT_RESET = "RESULT_RESET"
     const val RESULT_SAVE = "RESULT_SAVE"
@@ -20,6 +21,13 @@ object GameMenuContract {
     const val RESULT_QUIT = "RESULT_QUIT"
     const val RESULT_CHANGE_DISK = "RESULT_CHANGE_DISK"
     const val RESULT_EDIT_TOUCH_CONTROLS = "RESULT_EDIT_TOUCH_CONTROLS"
+
+    /**
+     * Returned when the user taps "Position Macros" on the Game Menu's Macros screen.
+     * The host activity should dismiss the menu and enter macro drag-positioning mode
+     * directly on the live game screen (see BaseGameScreenViewModel.enterMacroDragMode).
+     */
+    const val RESULT_POSITION_MACROS = "RESULT_POSITION_MACROS"
     const val RESULT_ENABLE_AUDIO = "RESULT_ENABLE_AUDIO"
     const val RESULT_ENABLE_FAST_FORWARD = "RESULT_ENABLE_FAST_FORWARD"
     const val RESULT_CHANGE_TILT_CONFIG = "RESULT_CHANGE_TILT_CONFIG"

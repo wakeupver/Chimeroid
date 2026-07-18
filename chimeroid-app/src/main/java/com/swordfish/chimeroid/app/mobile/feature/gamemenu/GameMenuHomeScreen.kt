@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -166,6 +167,15 @@ fun GameMenuHomeScreen(
                 onClick = {
                     onResult { putExtra(GameMenuContract.RESULT_EDIT_TOUCH_CONTROLS, true) }
                 },
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            ChimeroidSettingsMenuLink(
+                title = { Text(text = stringResource(id = R.string.game_menu_macros)) },
+                icon = {
+                    Icon(imageVector = Icons.Default.TouchApp, contentDescription = null)
+                },
+                onClick = { navController.navigateToRoute(GameMenuRoute.MACROS) },
             )
 
             if (gameMenuRequest.advancedCoreOptions.isNotEmpty() || gameMenuRequest.coreOptions.isNotEmpty()) {

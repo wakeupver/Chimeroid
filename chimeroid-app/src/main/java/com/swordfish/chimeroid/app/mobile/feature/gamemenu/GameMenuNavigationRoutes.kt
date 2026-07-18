@@ -39,6 +39,11 @@ enum class GameMenuRoute(
         titleId = R.string.game_menu_load,
         parent = HOME,
     ),
+    MACROS(
+        route = "macros",
+        titleId = R.string.game_menu_macros,
+        parent = HOME,
+    ),
     OPTIONS(
         route = "options",
         titleId = R.string.game_menu_settings,

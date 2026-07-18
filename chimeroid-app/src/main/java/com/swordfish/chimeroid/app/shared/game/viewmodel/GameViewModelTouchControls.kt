@@ -152,7 +152,7 @@ class GameViewModelTouchControls(
             loadingMenuJob =
                 scope.launch {
                     delay(MENU_LOADING_ANIMATION_MILLIS.toLong())
-                    sideEffects.showMenu(tilt, inputs)
+                    sideEffects.showMenu(tilt, inputs, touchControlId.value.name)
                 }
         } else {
             loadingMenuJob?.cancel()

@@ -242,7 +242,6 @@ class BaseGameScreenViewModel(
 
     fun showEditControls(show: Boolean) {
         touchControls.showEditControls(show)
-        macro.setEditMode(show)
     }
 
     fun isEditControlShown(): Flow<Boolean> = touchControls.isEditControlsShown()
@@ -259,13 +258,14 @@ class BaseGameScreenViewModel(
     fun releaseMacro(btn: MacroButton) = macro.releaseMacro(btn)
 
     /**
-     * Closes the Edit Controls dialog but keeps macros in drag/edit mode so the
-     * user can reposition them freely on the game screen.
+     * Puts macros into drag/edit mode so the user can reposition them freely on the
+     * game screen, and ensures the Edit Controls dialog is closed so touches reach the
+     * macro overlay. Reached either from the Game Menu's Macros screen (RESULT_POSITION_MACROS)
+     * or from within a live session — self-sufficient either way.
      */
     fun enterMacroDragMode() {
-        // Directly close the dialog without touching macro.editMode
         touchControls.showEditControls(false)
-        // macro.editMode stays true (set by the prior showEditControls(true) call)
+        macro.setEditMode(true)
     }
 
     /** Exits macro drag mode without reopening the Edit Controls dialog. */
