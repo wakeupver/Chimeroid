@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.VibratorManager
 import android.view.InputDevice
 import com.swordfish.chimeroid.app.mobile.feature.settings.SettingsManager
 import com.swordfish.chimeroid.app.shared.input.InputDeviceManager
@@ -26,7 +27,15 @@ class RumbleManager(
     private val settingsManager: SettingsManager,
     private val inputDeviceManager: InputDeviceManager,
 ) {
-    private val deviceVibrator = applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    private val deviceVibrator: Vibrator =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager =
+                applicationContext.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
 
     // limitedParallelism(1) gives single-threaded ordering without leaking a permanent OS thread
     // the way newSingleThreadContext("Rumble") did.
@@ -70,7 +79,16 @@ class RumbleManager(
         return if (gamePads.isEmpty() && enableDeviceRumble) {
             listOf(deviceVibrator)
         } else {
-            gamePads.map { it.vibrator }
+            gamePads.map { it.vibratorCompat() }
+        }
+    }
+
+    private fun InputDevice.vibratorCompat(): Vibrator {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator
         }
     }
 
@@ -89,7 +107,12 @@ class RumbleManager(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && vibrator.hasAmplitudeControl()) {
             vibrator.vibrate(VibrationEffect.createOneShot(MAX_RUMBLE_DURATION_MS, amplitude))
         } else if (amplitude > LEGACY_MIN_RUMBLE_STRENGTH) {
-            vibrator.vibrate(MAX_RUMBLE_DURATION_MS)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(MAX_RUMBLE_DURATION_MS, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(MAX_RUMBLE_DURATION_MS)
+            }
         }
     }
 

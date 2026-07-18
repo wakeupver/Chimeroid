@@ -56,6 +56,7 @@ class StorageBaseDirPicker : RetrogradeActivity() {
             putExtra(Intent.EXTRA_LOCAL_ONLY, true)
         }
         try {
+            @Suppress("DEPRECATION")
             startActivityForResult(intent, REQUEST_CODE_PICK_DIR)
         } catch (e: ActivityNotFoundException) {
             Timber.e(e, "StorageBaseDirPicker: SAF not available")
@@ -63,6 +64,7 @@ class StorageBaseDirPicker : RetrogradeActivity() {
         }
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
@@ -169,6 +171,7 @@ class StorageBaseDirPicker : RetrogradeActivity() {
             val intent = Intent(activity, StorageBaseDirPicker::class.java).apply {
                 putExtra(EXTRA_MANDATORY, mandatory)
             }
+            @Suppress("DEPRECATION")
             activity.startActivityForResult(intent, REQUEST_CODE_PICK_DIR)
         }
     }

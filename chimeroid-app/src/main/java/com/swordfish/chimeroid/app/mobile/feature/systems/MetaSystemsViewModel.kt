@@ -25,7 +25,7 @@ class MetaSystemsViewModel(retrogradeDb: RetrogradeDatabase, appContext: Context
                     .filter { (_, count) -> count > 0 }
                     .map { (systemId, count) -> GameSystem.findById(systemId).metaSystemID() to count }
                     .groupBy { (metaSystemId, _) -> metaSystemId }
-                    .map { (metaSystemId, counts) -> MetaSystemInfo(metaSystemId, counts.sumBy { it.second }) }
+                    .map { (metaSystemId, counts) -> MetaSystemInfo(metaSystemId, counts.sumOf { it.second }) }
                     .sortedBy { it.getName(appContext) }
                     .toList()
             }

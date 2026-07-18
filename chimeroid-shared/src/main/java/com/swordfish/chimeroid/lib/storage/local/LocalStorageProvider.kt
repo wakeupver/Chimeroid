@@ -89,12 +89,12 @@ class LocalStorageProvider(
     // to still be there.
     private fun getDataFile(dataFile: DataFile): File {
         val dataFilePath = Uri.parse(dataFile.fileUri).path
-        return File(dataFilePath)
+        return File(requireNotNull(dataFilePath) { "Data file URI has no path: ${dataFile.fileUri}" })
     }
 
     private fun getGameRom(game: Game): File {
         val gamePath = Uri.parse(game.fileUri).path
-        val originalFile = File(gamePath)
+        val originalFile = File(requireNotNull(gamePath) { "Game file URI has no path: ${game.fileUri}" })
         if (!originalFile.isZipped() || originalFile.name == game.fileName) {
             return originalFile
         }

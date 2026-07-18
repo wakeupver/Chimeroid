@@ -156,6 +156,7 @@ object SerialScanner {
         }
     }
 
+    @OptIn(ExperimentalUnsignedTypes::class)
     private fun standardExtractInfo(openedStream: InputStream): DiskInfo {
         openedStream.mark(READ_BUFFER_SIZE)
         val header = readByteArray(openedStream, ByteArray(READ_BUFFER_SIZE))

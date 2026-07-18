@@ -48,6 +48,7 @@ object deps {
                 const val commonJava8 = "androidx.lifecycle:lifecycle-common-java8:${versions.lifecycle}"
                 const val processor = "androidx.lifecycle:lifecycle-compiler:${versions.lifecycle}"
                 const val runtime = "androidx.lifecycle:lifecycle-runtime-ktx:${versions.lifecycle}"
+                const val runtimeCompose = "androidx.lifecycle:lifecycle-runtime-compose:${versions.lifecycle}"
                 const val reactiveStreams = "android.arch.lifecycle:reactivestreams:1.1.1"
                 const val viewModelCompose = "androidx.lifecycle:lifecycle-viewmodel-compose:2.5.1"
             }

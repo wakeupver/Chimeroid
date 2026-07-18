@@ -57,16 +57,14 @@ subprojects {
                 compileSdkVersion(deps.android.compileSdkVersion)
                 buildToolsVersion(deps.android.buildToolsVersion)
                 defaultConfig {
-                    minSdkVersion(deps.android.minSdkVersion)
-                    targetSdkVersion(deps.android.targetSdkVersion)
+                    minSdk = deps.android.minSdkVersion
+                    targetSdk = deps.android.targetSdkVersion
                     multiDexEnabled = true
                 }
-                lintOptions {
-                    isAbortOnError = true
-                    disable("UnusedResources") // https://issuetracker.google.com/issues/63150366
-                    disable("InvalidPackage")
-                    disable("VectorPath")
-                    disable("TrustAllX509TrustManager")
+                lint {
+                    abortOnError = true
+                    // https://issuetracker.google.com/issues/63150366
+                    disable += setOf("UnusedResources", "InvalidPackage", "VectorPath", "TrustAllX509TrustManager")
                 }
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_17
@@ -85,6 +83,6 @@ subprojects {
 
 tasks {
     "clean"(Delete::class) {
-        delete(buildDir)
+        delete(layout.buildDirectory)
     }
 }

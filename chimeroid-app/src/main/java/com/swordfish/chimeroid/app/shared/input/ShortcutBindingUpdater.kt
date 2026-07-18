@@ -6,6 +6,7 @@ import android.view.InputDevice
 import android.view.KeyEvent
 import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.shared.settings.GameShortcutType
+import com.swordfish.chimeroid.common.kotlin.parcelable
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.runBlocking
 
@@ -58,7 +59,7 @@ class ShortcutBindingUpdater(private val inputDeviceManager: InputDeviceManager,
 
     private fun parseExtras(intent: Intent): IntentExtras {
         val device =
-            intent.extras?.getParcelable<InputDevice>(REQUEST_DEVICE)
+            intent.extras?.parcelable<InputDevice>(REQUEST_DEVICE)
                 ?: throw IllegalArgumentException("REQUEST_DEVICE has not been passed")
 
         val shortcutType =

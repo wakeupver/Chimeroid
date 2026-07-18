@@ -5,6 +5,7 @@ import android.content.Intent
 import android.view.InputDevice
 import android.view.KeyEvent
 import com.swordfish.chimeroid.R
+import com.swordfish.chimeroid.common.kotlin.parcelable
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -55,7 +56,7 @@ class InputBindingUpdater(private val inputDeviceManager: InputDeviceManager, in
 
     private fun parseExtras(intent: Intent): IntentExtras {
         val device =
-            intent.extras?.getParcelable<InputDevice>(REQUEST_DEVICE)
+            intent.extras?.parcelable<InputDevice>(REQUEST_DEVICE)
                 ?: throw IllegalArgumentException("REQUEST_DEVICE has not been passed")
 
         val retroKey =

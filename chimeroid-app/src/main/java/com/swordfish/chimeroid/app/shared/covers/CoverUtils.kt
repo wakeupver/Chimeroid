@@ -6,6 +6,7 @@ import coil.memory.MemoryCache
 import com.swordfish.chimeroid.common.drawable.TextDrawable
 import com.swordfish.chimeroid.common.graphics.ColorUtils
 import com.swordfish.chimeroid.lib.library.db.entity.Game
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 
 object CoverUtils {
@@ -48,7 +49,7 @@ object CoverUtils {
             .take(3)
             .joinToString("")
             .ifBlank { game.title.first().toString() }
-            .capitalize()
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
     }
 
     private fun computeColor(game: Game): Int {

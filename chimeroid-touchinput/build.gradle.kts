@@ -8,13 +8,6 @@ plugins {
 }
 
 android {
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs +=
-            listOf(
-                "-Xcontext-receivers",
-            )
-    }
     namespace = "com.swordfish.touchinput.controller"
 
     buildFeatures {
@@ -23,6 +16,13 @@ android {
 
     composeOptions {
         kotlinCompilerExtensionVersion = deps.versions.kotlinExtension
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        freeCompilerArgs.add("-Xcontext-receivers")
     }
 }
 

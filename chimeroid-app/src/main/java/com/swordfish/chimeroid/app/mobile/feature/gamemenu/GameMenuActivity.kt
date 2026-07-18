@@ -1,4 +1,4 @@
-@file:Suppress("UNUSED", "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:Suppress("UNUSED")
 
 package com.swordfish.chimeroid.app.mobile.feature.gamemenu
 

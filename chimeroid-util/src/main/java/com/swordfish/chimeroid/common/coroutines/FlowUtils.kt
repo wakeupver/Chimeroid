@@ -94,6 +94,7 @@ fun <T1, T2, T3, T4, T5, T6, R> combine(
     transform: suspend (T1, T2, T3, T4, T5, T6) -> R,
 ): Flow<R> =
     kotlinx.coroutines.flow.combine(flow, flow2, flow3, flow4, flow5, flow6) { args: Array<*> ->
+        @Suppress("UNCHECKED_CAST")
         transform(
             args[0] as T1,
             args[1] as T2,
@@ -115,6 +116,7 @@ fun <T1, T2, T3, T4, T5, T6, T7, R> combine(
     transform: suspend (T1, T2, T3, T4, T5, T6, T7) -> R,
 ): Flow<R> =
     kotlinx.coroutines.flow.combine(flow, flow2, flow3, flow4, flow5, flow6, flow7) { args: Array<*> ->
+        @Suppress("UNCHECKED_CAST")
         transform(
             args[0] as T1,
             args[1] as T2,
@@ -138,6 +140,7 @@ fun <T1, T2, T3, T4, T5, T6, T7, T8, R> combine(
     transform: suspend (T1, T2, T3, T4, T5, T6, T7, T8) -> R,
 ): Flow<R> =
     kotlinx.coroutines.flow.combine(flow, flow2, flow3, flow4, flow5, flow6, flow7, flow8) { args: Array<*> ->
+        @Suppress("UNCHECKED_CAST")
         transform(
             args[0] as T1,
             args[1] as T2,

@@ -21,16 +21,18 @@ import android.app.ActivityManager
 import android.content.Context
 import android.graphics.PointF
 import android.graphics.RectF
+import android.hardware.display.DisplayManager
 import android.opengl.GLSurfaceView
+import android.os.Build
 import android.util.Log
+import android.view.Display
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.WindowManager
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.coroutineScope
 import com.swordfish.libretrodroid.KtUtils.awaitUninterruptibly
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
@@ -47,7 +49,7 @@ import kotlinx.coroutines.launch
 class GLRetroView(
     context: Context,
     private val data: GLRetroViewData,
-) : GLSurfaceView(context), LifecycleObserver {
+) : GLSurfaceView(context), DefaultLifecycleObserver {
 
     var audioEnabled: Boolean by Delegates.observable(true) { _, _, value ->
         LibretroDroid.setAudioEnabled(value)
@@ -174,9 +176,8 @@ class GLRetroView(
         keepScreenOn = true
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-    fun onCreate(lifecycleOwner: LifecycleOwner) = catchExceptions {
-        lifecycle = lifecycleOwner.lifecycle
+    override fun onCreate(owner: LifecycleOwner) = catchExceptions {
+        lifecycle = owner.lifecycle
         LibretroDroid.create(
             openGLESVersion,
             data.coreFilePath,
@@ -195,8 +196,7 @@ class GLRetroView(
         LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() = catchExceptions {
+    override fun onDestroy(owner: LifecycleOwner) = catchExceptions {
         LibretroDroid.destroy()
         lifecycle = null
     }
@@ -204,7 +204,13 @@ class GLRetroView(
     private fun getDeviceLanguage() = Locale.getDefault().language
 
     private fun getDefaultRefreshRate(): Float {
-        return (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
+        val display = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            context.getSystemService(DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY)!!
+        } else {
+            @Suppress("DEPRECATION")
+            (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
+        }
+        return display.refreshRate
     }
 
     fun sendKeyEvent(action: Int, keyCode: Int, port: Int = 0) {
@@ -442,9 +448,8 @@ class GLRetroView(
     }
 
     // These functions are called only after the GLSurfaceView has been created.
-    private inner class RenderLifecycleObserver : LifecycleObserver {
-        @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-        private fun resume() = catchExceptions {
+    private inner class RenderLifecycleObserver : DefaultLifecycleObserver {
+        override fun onResume(owner: LifecycleOwner) = catchExceptions {
             // ON_RESUME fires on the lifecycle-owner (main) thread at the same moment the
             // GL thread enters onSurfaceCreated() to load the core/ROM — multiple seconds
             // for heavier cores, longer still for NDS/3DS with their two-screen FBO/shader
@@ -463,8 +468,7 @@ class GLRetroView(
             onResume()
         }
 
-        @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-        private fun pause() = catchExceptions {
+        override fun onPause(owner: LifecycleOwner) = catchExceptions {
             isEmulationReady = false
             onPause()
             LibretroDroid.pause()

@@ -1,3 +1,5 @@
+@file:Suppress("CONTEXT_RECEIVERS_DEPRECATED")
+
 package com.swordfish.touchinput.radial.controls
 
 import androidx.compose.foundation.layout.padding

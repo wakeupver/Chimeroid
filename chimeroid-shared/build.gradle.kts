@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.library")
@@ -7,9 +7,9 @@ plugins {
     id("kotlinx-serialization")
 }
 
-android {
-    kotlinOptions {
-        jvmTarget = "17"
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
     }
 }
 
@@ -30,7 +30,6 @@ dependencies {
     implementation(deps.libs.androidx.fragment.ktx)
     implementation(deps.libs.androidx.activity.activity)
     implementation(deps.libs.androidx.activity.activityKtx)
-    implementation(deps.libs.androidx.ktx.coreKtx)
     implementation(deps.libs.androidx.paging.common)
     implementation(deps.libs.androidx.paging.runtime)
     implementation(deps.libs.androidx.room.common)
@@ -62,8 +61,4 @@ android {
         }
     }
     namespace = "com.swordfish.chimeroid.lib"
-    kotlinOptions {
-        this as KotlinJvmOptions
-        jvmTarget = "17"
-    }
 }

@@ -29,6 +29,7 @@ import com.swordfish.chimeroid.common.coroutines.launchOnState
 import com.swordfish.chimeroid.common.displayToast
 import com.swordfish.chimeroid.common.dump
 import com.swordfish.chimeroid.common.kotlin.serializable
+import com.swordfish.chimeroid.common.overrideFadeTransition
 import com.swordfish.chimeroid.lib.core.CoreVariablesManager
 import com.swordfish.chimeroid.lib.game.GameLoader
 import com.swordfish.chimeroid.lib.library.ExposedSetting
@@ -80,8 +81,8 @@ abstract class BaseGameActivity : ImmersiveActivity() {
         setUpExceptionsHandler()
         GameService.startService(applicationContext, intent)
 
-        game = intent.getSerializableExtra(EXTRA_GAME) as Game
-        systemCoreConfig = intent.getSerializableExtra(EXTRA_SYSTEM_CORE_CONFIG) as SystemCoreConfig
+        game = intent.serializable<Game>(EXTRA_GAME)!!
+        systemCoreConfig = intent.serializable<SystemCoreConfig>(EXTRA_SYSTEM_CORE_CONFIG)!!
         system = GameSystem.findById(game.systemId)
 
         val viewModel by viewModels<BaseGameScreenViewModel> {
@@ -233,8 +234,9 @@ abstract class BaseGameActivity : ImmersiveActivity() {
                 putExtra(GameMenuContract.EXTRA_CURRENT_TILT_CONFIG, currentTiltConfiguration)
                 putExtra(GameMenuContract.EXTRA_TILT_ALL_CONFIGS, tiltConfigurations.toTypedArray())
             }
+        @Suppress("DEPRECATION")
         startActivityForResult(intent, DIALOG_REQUEST)
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        overrideFadeTransition(open = true)
     }
 
     protected abstract fun getDialogClass(): Class<out Activity>
@@ -284,7 +286,7 @@ abstract class BaseGameActivity : ImmersiveActivity() {
         val resultIntent =
             Intent().apply {
                 putExtra(PLAY_GAME_RESULT_SESSION_DURATION, System.currentTimeMillis() - startGameTime)
-                putExtra(PLAY_GAME_RESULT_GAME, intent.getSerializableExtra(EXTRA_GAME))
+                putExtra(PLAY_GAME_RESULT_GAME, intent.serializable<Game>(EXTRA_GAME))
             }
         setResult(RESULT_OK, resultIntent)
         finishAndExitProcess()
@@ -326,7 +328,7 @@ abstract class BaseGameActivity : ImmersiveActivity() {
             GameService.requestTermination()
         }
         finish()
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        overrideFadeTransition(open = false)
     }
 
     open fun onFinishTriggered() = Unit
@@ -426,6 +428,7 @@ abstract class BaseGameActivity : ImmersiveActivity() {
             loadSave: Boolean,
         ) {
             val gameActivity = GameActivity::class.java
+            @Suppress("DEPRECATION")
             activity.startActivityForResult(
                 Intent(activity, gameActivity).apply {
                     putExtra(EXTRA_GAME, game)
@@ -434,7 +437,7 @@ abstract class BaseGameActivity : ImmersiveActivity() {
                 },
                 REQUEST_PLAY_GAME,
             )
-            activity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            activity.overrideFadeTransition(open = true)
         }
     }
 }

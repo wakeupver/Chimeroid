@@ -5,10 +5,13 @@ plugins {
 }
 
 android {
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     namespace = "com.swordfish.chimeroid.ext"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
 }
 
 dependencies {

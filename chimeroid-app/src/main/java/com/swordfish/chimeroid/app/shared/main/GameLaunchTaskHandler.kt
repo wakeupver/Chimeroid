@@ -8,6 +8,7 @@ import com.swordfish.chimeroid.app.shared.game.BaseGameActivity
 import com.swordfish.chimeroid.app.shared.gamecrash.GameCrashActivity
 import com.swordfish.chimeroid.app.shared.savesync.SaveSyncWork
 import com.swordfish.chimeroid.app.shared.storage.cache.CacheCleanerWork
+import com.swordfish.chimeroid.common.kotlin.serializable
 import com.swordfish.chimeroid.ext.feature.review.ReviewManager
 import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
 import com.swordfish.chimeroid.lib.library.db.entity.Game
@@ -73,7 +74,7 @@ class GameLaunchTaskHandler(
         val duration =
             data?.extras?.getLong(BaseGameActivity.PLAY_GAME_RESULT_SESSION_DURATION)
                 ?: 0L
-        val game = data?.extras?.getSerializable(BaseGameActivity.PLAY_GAME_RESULT_GAME) as Game
+        val game = data?.extras?.serializable<Game>(BaseGameActivity.PLAY_GAME_RESULT_GAME)!!
 
         updateGamePlayedTimestamp(game)
         if (enableRatingFlow) {

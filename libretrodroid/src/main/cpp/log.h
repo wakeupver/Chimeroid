@@ -69,7 +69,7 @@ static void MessageCallback(
     }
 }
 
-static bool initializeGLESLogCallbackIfNeeded() {
+[[maybe_unused]] static bool initializeGLESLogCallbackIfNeeded() {
     auto debugCallback = (void (*)(void *, void *)) eglGetProcAddress("glDebugMessageCallback");
     if (debugCallback) {
         glEnable(GL_DEBUG_OUTPUT);
@@ -80,7 +80,7 @@ static bool initializeGLESLogCallbackIfNeeded() {
 
 #else
 
-static bool initializeGLESLogCallbackIfNeeded() {
+[[maybe_unused]] static bool initializeGLESLogCallbackIfNeeded() {
     return false;
 }
 

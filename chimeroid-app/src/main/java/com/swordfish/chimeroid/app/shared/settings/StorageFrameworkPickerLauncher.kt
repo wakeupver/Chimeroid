@@ -29,6 +29,7 @@ class StorageFrameworkPickerLauncher : RetrogradeActivity() {
                     this.putExtra(Intent.EXTRA_LOCAL_ONLY, true)
                 }
             try {
+                @Suppress("DEPRECATION")
                 startActivityForResult(intent, REQUEST_CODE_PICK_FOLDER)
             } catch (e: Exception) {
                 showStorageAccessFrameworkNotSupportedDialog()
@@ -42,6 +43,7 @@ class StorageFrameworkPickerLauncher : RetrogradeActivity() {
         displayErrorDialog(message, actionLabel) { finish() }
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onActivityResult(
         requestCode: Int,
         resultCode: Int,

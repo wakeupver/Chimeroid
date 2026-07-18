@@ -3,9 +3,9 @@ package com.swordfish.touchinput.radial.ui
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -26,10 +26,10 @@ fun ChimeroidCrossForeground(
         directionState = directionState,
         allowDiagonals = allowDiagonals,
         leftDial = {
-            ChimeroidCrossButton(it, Icons.Default.KeyboardArrowLeft)
+            ChimeroidCrossButton(it, Icons.AutoMirrored.Filled.KeyboardArrowLeft)
         },
         rightDial = {
-            ChimeroidCrossButton(it, Icons.Default.KeyboardArrowRight)
+            ChimeroidCrossButton(it, Icons.AutoMirrored.Filled.KeyboardArrowRight)
         },
         topDial = {
             ChimeroidCrossButton(it, Icons.Default.KeyboardArrowUp)

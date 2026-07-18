@@ -33,6 +33,7 @@ import com.swordfish.chimeroid.lib.storage.StorageFile
 import com.swordfish.chimeroid.lib.storage.StorageProvider
 import com.swordfish.chimeroid.lib.storage.StorageProviderRegistry
 import dagger.Lazy
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -67,7 +68,7 @@ class ChimeroidLibrary(
         Timber.i("Library indexing completed in: $executionTime ms")
     }
 
-    @OptIn(FlowPreview::class)
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private suspend fun indexProviders(startedAtMs: Long) {
         val gameMetadata = gameMetadataProvider.get()
         val enabledProviders = storageProviderRegistry.get().enabledProviders
@@ -76,7 +77,7 @@ class ChimeroidLibrary(
             .collect()
     }
 
-    @OptIn(FlowPreview::class)
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private fun indexSingleProvider(
         provider: StorageProvider,
         startedAtMs: Long,

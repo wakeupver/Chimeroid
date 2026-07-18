@@ -19,8 +19,11 @@ dependencies {
 
 android {
     resourcePrefix("libretrodb_")
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     namespace = "com.swordfish.chimeroid.metadata.libretrodb"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
 }

@@ -5,6 +5,9 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.hardware.display.DisplayManager
+import android.os.Build
+import android.view.Display
 import android.view.Surface
 import android.view.WindowManager
 import com.swordfish.chimeroid.common.kotlin.CustomDelegates
@@ -21,7 +24,13 @@ import kotlin.math.sign
 
 class TiltSensor(context: Context) : SensorEventListener {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val primaryDisplay = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
+    private val primaryDisplay: Display =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            context.getSystemService(DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY)!!
+        } else {
+            @Suppress("DEPRECATION")
+            (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
+        }
 
     private val restOrientationsBuffer = mutableListOf<FloatArray>()
     private var restOrientation: FloatArray? = null

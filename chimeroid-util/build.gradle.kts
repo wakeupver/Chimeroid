@@ -6,9 +6,6 @@ plugins {
 }
 
 android {
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     namespace = "com.swordfish.chimeroid.common"
 
     buildFeatures {
@@ -17,6 +14,12 @@ android {
 
     composeOptions {
         kotlinCompilerExtensionVersion = deps.versions.kotlinExtension
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 

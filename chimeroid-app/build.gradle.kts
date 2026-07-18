@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -31,7 +33,7 @@ android {
         // chimeroid-shared / chimeroid-touchinput ship ~30 translated locales; this app's
         // own strings (res/values, res/values-en-rUS) are only maintained in English, so
         // drop the rest here to avoid shipping unused translated resources.
-        resConfigs("en")
+        resourceConfigurations += setOf("en")
     }
 
     splits {
@@ -94,10 +96,13 @@ android {
         kotlinCompilerExtensionVersion = deps.versions.kotlinExtension
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     namespace = "com.swordfish.chimeroid"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
 }
 
 dependencies {
@@ -124,6 +129,7 @@ dependencies {
     implementation(deps.libs.arch.work.runtimeKtx)
     implementation(deps.libs.androidx.lifecycle.commonJava8)
     implementation(deps.libs.androidx.lifecycle.reactiveStreams)
+    implementation(deps.libs.androidx.lifecycle.runtimeCompose)
 
     kapt(deps.libs.androidx.lifecycle.processor)
 

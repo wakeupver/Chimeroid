@@ -16,6 +16,7 @@ import com.swordfish.chimeroid.common.coroutines.launchOnState
 import com.swordfish.chimeroid.common.coroutines.safeLaunch
 import com.swordfish.chimeroid.common.longAnimationDuration
 import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -111,6 +112,8 @@ class ExternalGameLauncherActivity : ImmersiveActivity() {
         return PendingOperationsMonitor(applicationContext).anyOperationInProgress()
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onActivityResult(
         requestCode: Int,
         resultCode: Int,

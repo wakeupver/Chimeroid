@@ -1,3 +1,5 @@
+@file:Suppress("CONTEXT_RECEIVERS_DEPRECATED")
+
 package com.swordfish.touchinput.radial.layouts.shared
 
 import android.view.KeyEvent

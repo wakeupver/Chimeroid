@@ -32,6 +32,7 @@ class TextDrawable(private val text: String, private val color: Int) : Drawable(
         canvas.drawText(text, xPos, yPos, mPaint)
     }
 
+    @Suppress("DEPRECATION")
     override fun getOpacity(): Int = mPaint.alpha
 
     override fun getIntrinsicWidth(): Int = -1

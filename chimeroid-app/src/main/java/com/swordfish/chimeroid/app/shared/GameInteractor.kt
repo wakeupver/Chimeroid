@@ -11,9 +11,11 @@ import com.swordfish.chimeroid.app.shared.main.BusyActivity
 import com.swordfish.chimeroid.common.displayToast
 import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
 import com.swordfish.chimeroid.lib.library.db.entity.Game
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
+@OptIn(DelicateCoroutinesApi::class)
 class GameInteractor(
     private val activity: BusyActivity,
     private val retrogradeDb: RetrogradeDatabase,

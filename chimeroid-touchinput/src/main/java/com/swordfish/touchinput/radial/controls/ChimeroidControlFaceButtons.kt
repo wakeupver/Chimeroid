@@ -15,9 +15,8 @@ import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentListOf
 
-context(PadKitScope)
 @Composable
-fun ChimeroidControlFaceButtons(
+fun PadKitScope.ChimeroidControlFaceButtons(
     modifier: Modifier = Modifier,
     rotationInDegrees: Float = 0f,
     ids: PersistentList<Id.Key>,
@@ -42,9 +41,8 @@ fun ChimeroidControlFaceButtons(
     )
 }
 
-context(PadKitScope)
 @Composable
-fun ChimeroidControlFaceButtons(
+fun PadKitScope.ChimeroidControlFaceButtons(
     modifier: Modifier = Modifier,
     primaryAnchors: PersistentList<Anchor<Id.Key>>,
     background: @Composable () -> Unit = { ChimeroidControlBackground() },

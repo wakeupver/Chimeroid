@@ -12,9 +12,8 @@ import gg.padkit.PadKitScope
 import gg.padkit.controls.ControlCross
 import gg.padkit.ids.Id
 
-context(PadKitScope)
 @Composable
-fun ChimeroidControlCross(
+fun PadKitScope.ChimeroidControlCross(
     modifier: Modifier = Modifier,
     id: Id.DiscreteDirection,
     allowDiagonals: Boolean = true,

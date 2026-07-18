@@ -399,6 +399,7 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
 
     override fun isBusy(): Boolean = mainViewModel.state.value.operationInProgress ?: false
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onActivityResult(
         requestCode: Int,
         resultCode: Int,

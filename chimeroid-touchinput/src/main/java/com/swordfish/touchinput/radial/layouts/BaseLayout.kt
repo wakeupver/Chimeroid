@@ -13,9 +13,8 @@ import gg.padkit.PadKitScope
 import gg.padkit.layouts.radial.LayoutRadial
 import gg.padkit.layouts.radial.secondarydials.LayoutRadialSecondaryDialsScope
 
-context(PadKitScope)
 @Composable
-fun BaseLayoutLeft(
+fun PadKitScope.BaseLayoutLeft(
     modifier: Modifier = Modifier,
     settings: TouchControllerSettingsManager.Settings,
     primaryDial: @Composable () -> Unit,
@@ -45,9 +44,8 @@ fun BaseLayoutLeft(
     )
 }
 
-context(PadKitScope)
 @Composable
-fun BaseLayoutRight(
+fun PadKitScope.BaseLayoutRight(
     modifier: Modifier = Modifier,
     settings: TouchControllerSettingsManager.Settings,
     primaryDial: @Composable () -> Unit,

@@ -13,9 +13,8 @@ import gg.padkit.PadKitScope
 import gg.padkit.controls.ControlAnalog
 import gg.padkit.ids.Id
 
-context(PadKitScope)
 @Composable
-fun ChimeroidControlAnalog(
+fun PadKitScope.ChimeroidControlAnalog(
     modifier: Modifier = Modifier,
     analogPressId: Id.Key? = null,
     id: Id.ContinuousDirection,
