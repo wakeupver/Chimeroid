@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import timber.log.Timber
 
 class GameViewModelMacro(
@@ -96,24 +95,15 @@ class GameViewModelMacro(
     // ------------------------------------------------------------------
 
     /**
-     * Called when the user's finger touches the macro button.
-     *
-     * Simultaneous: sends ACTION_DOWN for every key immediately.
-     * Keys stay held until [releaseMacro] is called on finger-up.
-     *
-     * Sequential: fires the full sequence (DOWN→UP per key) right away.
-     * Hold does not apply — [releaseMacro] is a no-op for sequential macros.
+     * Called when the user's finger touches the macro button: sends ACTION_DOWN for every
+     * key immediately. Keys stay held until [releaseMacro] is called on finger-up.
      */
     fun pressMacro(macro: MacroButton) {
         if (macro.keyCodes.isEmpty()) return
         scope.launch {
             try {
                 val view = retroGameView.retroGameView ?: return@launch
-                if (macro.simultaneous) {
-                    macro.keyCodes.forEach { view.sendKeyEvent(KeyEvent.ACTION_DOWN, it) }
-                } else {
-                    fireSequential(macro.keyCodes)
-                }
+                macro.keyCodes.forEach { view.sendKeyEvent(KeyEvent.ACTION_DOWN, it) }
             } catch (e: Exception) {
                 Timber.e(e, "MacroButtons: error pressing macro '${macro.label}'")
             }
@@ -121,13 +111,11 @@ class GameViewModelMacro(
     }
 
     /**
-     * Called when the user's finger lifts off the macro button.
-     *
-     * Simultaneous: sends ACTION_UP for every held key (reversed order).
-     * Sequential: no-op — sequence already completed on press.
+     * Called when the user's finger lifts off the macro button: sends ACTION_UP for every
+     * held key (reversed order).
      */
     fun releaseMacro(macro: MacroButton) {
-        if (macro.keyCodes.isEmpty() || !macro.simultaneous) return
+        if (macro.keyCodes.isEmpty()) return
         scope.launch {
             try {
                 val view = retroGameView.retroGameView ?: return@launch
@@ -136,20 +124,5 @@ class GameViewModelMacro(
                 Timber.e(e, "MacroButtons: error releasing macro '${macro.label}'")
             }
         }
-    }
-
-    private suspend fun fireSequential(keyCodes: List<Int>) {
-        val view = retroGameView.retroGameView ?: return
-        keyCodes.forEach { keyCode ->
-            view.sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode)
-            delay(KEY_HOLD_MS)
-            view.sendKeyEvent(KeyEvent.ACTION_UP, keyCode)
-            delay(KEY_INTERVAL_MS)
-        }
-    }
-
-    companion object {
-        private const val KEY_HOLD_MS     = 80L
-        private const val KEY_INTERVAL_MS = 40L
     }
 }

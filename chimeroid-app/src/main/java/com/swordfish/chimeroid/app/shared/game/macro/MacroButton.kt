@@ -13,8 +13,6 @@ import kotlin.math.hypot
  * @param keyCodes    List of [KeyEvent.KEYCODE_*] values to send when triggered
  * @param xFraction   Horizontal position as fraction [0.0, 1.0] of screen width
  * @param yFraction   Vertical position as fraction [0.0, 1.0] of screen height
- * @param simultaneous If true, all keys are pressed down at once then released;
- *                     if false, keys are fired sequentially one after another
  */
 @Serializable
 data class MacroButton(
@@ -23,7 +21,6 @@ data class MacroButton(
     val keyCodes: List<Int>,
     val xFraction: Float = 0.5f,
     val yFraction: Float = 0.75f,
-    val simultaneous: Boolean = true,
 ) {
     companion object {
         /** All assignable keys with their display labels. */

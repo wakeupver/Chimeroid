@@ -28,7 +28,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -178,15 +177,6 @@ private fun MacroButtonListItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = if (btn.simultaneous) {
-                    stringResource(R.string.macro_simultaneous_label)
-                } else {
-                    stringResource(R.string.macro_sequential_label)
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
             Icon(
@@ -211,7 +201,6 @@ private fun AddMacroDialog(
 ) {
     var label by remember { mutableStateOf("") }
     var selectedKeys by remember { mutableStateOf(emptySet<Int>()) }
-    var isSimultaneous by remember { mutableStateOf(true) }
 
     // Auto-generate label from selected keys when label is blank
     val autoLabel = remember(selectedKeys) {
@@ -259,25 +248,6 @@ private fun AddMacroDialog(
                     },
                 )
 
-                // Simultaneous / Sequential toggle
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = if (isSimultaneous)
-                            stringResource(R.string.macro_simultaneous_label)
-                        else
-                            stringResource(R.string.macro_sequential_label),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Switch(
-                        checked = isSimultaneous,
-                        onCheckedChange = { isSimultaneous = it },
-                    )
-                }
-
                 // Cancel / OK
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -296,7 +266,6 @@ private fun AddMacroDialog(
                                     MacroButton(
                                         label = displayLabel.take(6).ifBlank { "M" },
                                         keyCodes = selectedKeys.toList(),
-                                        simultaneous = isSimultaneous,
                                         xFraction = spawnX,
                                         yFraction = spawnY,
                                     ),

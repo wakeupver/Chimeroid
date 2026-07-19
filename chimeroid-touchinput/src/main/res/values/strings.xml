@@ -20,8 +20,6 @@
     <string name="macro_dialog_title">New Macro Button</string>
     <string name="macro_label_hint">Label (1–6 chars)</string>
     <string name="macro_keys_label">Keys to press</string>
-    <string name="macro_simultaneous_label">Simultaneous</string>
-    <string name="macro_sequential_label">Sequential</string>
     <string name="macro_delete">Delete</string>
     <string name="macro_cancel">Cancel</string>
     <string name="macro_confirm_add">Add</string>
