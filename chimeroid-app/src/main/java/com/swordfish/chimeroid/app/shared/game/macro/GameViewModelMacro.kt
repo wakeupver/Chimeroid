@@ -34,6 +34,22 @@ class GameViewModelMacro(
         Timber.d("MacroButtons: loaded ${_macroButtons.value.size} macros for $key")
     }
 
+    /**
+     * Forces a re-read of the current controller's macros from persisted storage.
+     *
+     * [setControllerKey] intentionally no-ops when the key is unchanged — it only exists to
+     * react to controller *switches*. The Game Menu's macro manager runs as a separate screen
+     * with its own in-memory list over the same [MacroButtonsManager]-backed store, so edits
+     * made there (add/delete/reposition) never reach this live copy on their own; without this,
+     * newly added macros persist correctly but never render on the live game overlay until the
+     * controller key happens to change or the session restarts. Call this whenever control
+     * returns from a place that could have mutated macros for [controllerKey].
+     */
+    fun reloadMacros() {
+        _macroButtons.value = macroButtonsManager.getMacroButtons(controllerKey)
+        Timber.d("MacroButtons: reloaded ${_macroButtons.value.size} macros for $controllerKey")
+    }
+
     // ------------------------------------------------------------------
     // Edit-mode toggle
     // ------------------------------------------------------------------

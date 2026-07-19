@@ -257,6 +257,9 @@ class BaseGameScreenViewModel(
     fun pressMacro(btn: MacroButton) = macro.pressMacro(btn)
     fun releaseMacro(btn: MacroButton) = macro.releaseMacro(btn)
 
+    /** Re-syncs the live macro list from storage; call after returning from the Game Menu. */
+    fun reloadMacros() = macro.reloadMacros()
+
     /**
      * Puts macros into drag/edit mode so the user can reposition them freely on the
      * game screen, and ensures the Edit Controls dialog is closed so touches reach the

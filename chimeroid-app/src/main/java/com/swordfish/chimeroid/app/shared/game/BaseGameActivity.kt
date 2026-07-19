@@ -360,6 +360,12 @@ abstract class BaseGameActivity : ImmersiveActivity() {
 
         Timber.i("Game menu dialog response: ${data?.extras.dump()}")
 
+        // The Macros screen owns its own in-memory list and can close via several different
+        // result paths (or none at all, e.g. tapping "X"). Always resync the live copy rather
+        // than only reacting to RESULT_POSITION_MACROS, otherwise newly added/edited macros
+        // persist correctly but never appear on the live game overlay.
+        baseGameScreenViewModel.reloadMacros()
+
         if (data?.getBooleanExtra(GameMenuContract.RESULT_RESET, false) == true) {
             lifecycleScope.launch { baseGameScreenViewModel.reset() }
         }
