@@ -24,9 +24,9 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -63,12 +63,25 @@ fun GameMenuMacrosScreen(
 
     Scaffold(
         floatingActionButton = {
-            if (!atLimit) {
-                FloatingActionButton(onClick = { showAddMacroDialog = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.macro_add_button),
-                    )
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (macroButtons.isNotEmpty()) {
+                    SmallFloatingActionButton(onClick = onPositionOnScreen) {
+                        Icon(
+                            imageVector = Icons.Default.OpenWith,
+                            contentDescription = stringResource(R.string.macro_position_button),
+                        )
+                    }
+                }
+                if (!atLimit) {
+                    FloatingActionButton(onClick = { showAddMacroDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = stringResource(R.string.macro_add_button),
+                        )
+                    }
                 }
             }
         },
@@ -96,19 +109,7 @@ fun GameMenuMacrosScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                OutlinedButton(
-                    onClick = onPositionOnScreen,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.OpenWith,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.macro_position_button))
-                }
-                Spacer(Modifier.height(72.dp)) // clears the FAB when scrolled to the end
+                Spacer(Modifier.height(140.dp)) // clears the stacked FAB group when scrolled to the end
             }
         }
     }

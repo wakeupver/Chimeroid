@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -23,9 +24,10 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,13 +41,19 @@ import com.swordfish.chimeroid.app.shared.game.BaseGameScreenViewModel
 import com.swordfish.chimeroid.app.shared.game.macro.MacroButton
 import com.swordfish.touchinput.radial.ChimeroidPadTheme
 import com.swordfish.touchinput.radial.LocalChimeroidPadTheme
+import com.swordfish.touchinput.radial.settings.TouchControllerSettingsManager
 import com.swordfish.touchinput.radial.ui.ChimeroidButtonForeground
 import com.swordfish.touchinput.radial.ui.ChimeroidControlBackground
 import kotlin.math.roundToInt
 
-// Matches native action buttons (e.g. A/B on SNES pad)
-private val BUTTON_SIZE  = 52.dp
-private val DELETE_BADGE = 18.dp
+// Matches native action buttons (e.g. A/B on SNES pad) at scale = 1.0
+private val BUTTON_SIZE    = 52.dp
+private val DELETE_BADGE   = 18.dp
+private val RESIZE_HANDLE  = 18.dp
+
+// Cumulative diagonal drag (px) on the resize handle needed to move the scale by a full 1.0
+// unit. Tuned for a comfortable, non-twitchy feel across the MIN_SCALE..MAX_SCALE span.
+private const val RESIZE_SENSITIVITY_PX = 300f
 
 /**
  * Full-screen overlay that renders virtual macro buttons.
@@ -55,8 +63,11 @@ private val DELETE_BADGE = 18.dp
  * of PadKit lets Compose's own [detectDragGestures] / [detectTapGestures]
  * receive unfiltered input.
  *
- * Normal mode : tap  → fire macro combo
- * Edit mode   : drag → reposition  |  red ✕ badge → delete
+ * Normal mode : tap    → fire macro combo
+ * Edit mode   : drag body → reposition | drag ↘ handle → resize (shares
+ *               [TouchControllerSettingsManager]'s MIN_SCALE/MAX_SCALE, the
+ *               same range the main Edit Controls scale slider uses) | red
+ *               ✕ badge → delete
  */
 @Composable
 fun MacroButtonOverlay(viewModel: BaseGameScreenViewModel) {
@@ -84,6 +95,7 @@ fun MacroButtonOverlay(viewModel: BaseGameScreenViewModel) {
                     onPress   = { viewModel.pressMacro(btn) },
                     onRelease = { viewModel.releaseMacro(btn) },
                     onMoved   = { x, y -> viewModel.updateMacroPosition(btn.id, x, y) },
+                    onScaled  = { s -> viewModel.updateMacroScale(btn.id, s) },
                     onDelete  = { viewModel.deleteMacro(btn.id) },
                 )
             }
@@ -106,18 +118,25 @@ private fun MacroButtonItem(
     onPress: () -> Unit,
     onRelease: () -> Unit,
     onMoved: (xFrac: Float, yFrac: Float) -> Unit,
+    onScaled: (scale: Float) -> Unit,
     onDelete: () -> Unit,
 ) {
-    val half = btnPx / 2f
+    // Size multiplier, independent of position. mutableFloatStateOf avoids boxing on every
+    // drag tick while the resize handle is being dragged.
+    var scale by remember(btn.id) { mutableFloatStateOf(btn.scale) }
+    val scaledBtnPx = btnPx * scale
+    val half = scaledBtnPx / 2f
 
     // Top-left pixel offset of the button body
-    var px by remember(btn.id) { mutableStateOf(btn.xFraction * screenW - half) }
-    var py by remember(btn.id) { mutableStateOf(btn.yFraction * screenH - half) }
+    var px by remember(btn.id) { mutableFloatStateOf(btn.xFraction * screenW - half) }
+    var py by remember(btn.id) { mutableFloatStateOf(btn.yFraction * screenH - half) }
 
-    // Sync when stored fraction changes (orientation flip, external update)
-    LaunchedEffect(btn.xFraction, btn.yFraction, screenW, screenH) {
-        px = (btn.xFraction * screenW - half).coerceIn(0f, (screenW - btnPx).coerceAtLeast(0f))
-        py = (btn.yFraction * screenH - half).coerceIn(0f, (screenH - btnPx).coerceAtLeast(0f))
+    // Sync when stored fraction/scale changes (orientation flip, external update, resize commit)
+    LaunchedEffect(btn.xFraction, btn.yFraction, btn.scale, screenW, screenH) {
+        scale = btn.scale
+        val syncedHalf = (btnPx * btn.scale) / 2f
+        px = (btn.xFraction * screenW - syncedHalf).coerceIn(0f, (screenW - btnPx * btn.scale).coerceAtLeast(0f))
+        py = (btn.yFraction * screenH - syncedHalf).coerceIn(0f, (screenH - btnPx * btn.scale).coerceAtLeast(0f))
     }
 
     // Press state forwarded to the native button layers
@@ -129,8 +148,8 @@ private fun MacroButtonItem(
             detectDragGestures(
                 onDrag = { change, delta ->
                     change.consume()
-                    px = (px + delta.x).coerceIn(0f, screenW - btnPx)
-                    py = (py + delta.y).coerceIn(0f, screenH - btnPx)
+                    px = (px + delta.x).coerceIn(0f, screenW - scaledBtnPx)
+                    py = (py + delta.y).coerceIn(0f, screenH - scaledBtnPx)
                 },
                 onDragEnd = {
                     onMoved(
@@ -164,7 +183,7 @@ private fun MacroButtonItem(
     Box(
         modifier = Modifier
             .offset { IntOffset(px.roundToInt(), py.roundToInt()) }
-            .size(BUTTON_SIZE)
+            .size(BUTTON_SIZE * scale)
             .then(gestureModifier),
     ) {
         // ── Native-style glass button ─────────────────────────────────
@@ -195,6 +214,46 @@ private fun MacroButtonItem(
                 Icon(
                     imageVector        = Icons.Default.Close,
                     contentDescription = "Delete macro",
+                    tint               = Color.White,
+                    modifier           = Modifier.size(10.dp),
+                )
+            }
+        }
+
+        // ── Resize handle (bottom-right, edit mode only) ───────────────
+        // Dragging away from the button (↘) grows it, toward it (↖) shrinks it. Only the
+        // local `scale` updates per-frame for smooth feedback; onScaled (→ persistence)
+        // fires once at drag end/cancel, matching how position drags already behave.
+        AnimatedVisibility(
+            visible  = editMode,
+            enter    = fadeIn(),
+            exit     = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomEnd),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(RESIZE_HANDLE)
+                    .clip(CircleShape)
+                    .drawBehind { drawCircle(Color(0xFF2196F3)) }
+                    .pointerInput(btn.id) {
+                        detectDragGestures(
+                            onDrag = { change, delta ->
+                                change.consume()
+                                val magnitude = delta.x + delta.y
+                                scale = (scale + magnitude / RESIZE_SENSITIVITY_PX).coerceIn(
+                                    TouchControllerSettingsManager.MIN_SCALE,
+                                    TouchControllerSettingsManager.MAX_SCALE,
+                                )
+                            },
+                            onDragEnd = { onScaled(scale) },
+                            onDragCancel = { onScaled(scale) },
+                        )
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector        = Icons.Default.OpenInFull,
+                    contentDescription = "Resize macro",
                     tint               = Color.White,
                     modifier           = Modifier.size(10.dp),
                 )

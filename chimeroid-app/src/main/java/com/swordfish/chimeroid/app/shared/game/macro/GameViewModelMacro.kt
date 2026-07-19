@@ -2,6 +2,7 @@ package com.swordfish.chimeroid.app.shared.game.macro
 
 import com.swordfish.chimeroid.app.shared.game.viewmodel.GameViewModelRetroGameView
 import com.swordfish.chimeroid.app.shared.game.viewmodel.dispatchButtonEvent
+import com.swordfish.touchinput.radial.settings.TouchControllerSettingsManager
 import gg.padkit.inputevents.InputEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -78,6 +79,17 @@ class GameViewModelMacro(
         val updated = _macroButtons.value.map { btn ->
             if (btn.id == macroId) btn.copy(xFraction = xFraction, yFraction = yFraction)
             else btn
+        }
+        persist(updated)
+    }
+
+    fun updateMacroScale(macroId: String, scale: Float) {
+        val clamped = scale.coerceIn(
+            TouchControllerSettingsManager.MIN_SCALE,
+            TouchControllerSettingsManager.MAX_SCALE,
+        )
+        val updated = _macroButtons.value.map { btn ->
+            if (btn.id == macroId) btn.copy(scale = clamped) else btn
         }
         persist(updated)
     }

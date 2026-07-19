@@ -13,6 +13,9 @@ import kotlin.math.hypot
  * @param keyCodes    List of [KeyEvent.KEYCODE_*] values to send when triggered
  * @param xFraction   Horizontal position as fraction [0.0, 1.0] of screen width
  * @param yFraction   Vertical position as fraction [0.0, 1.0] of screen height
+ * @param scale       Size multiplier, clamped to
+ *                    [TouchControllerSettingsManager.MIN_SCALE, TouchControllerSettingsManager.MAX_SCALE]
+ *                    — the same range the main touch-controls Edit Controls scale slider uses.
  */
 @Serializable
 data class MacroButton(
@@ -21,6 +24,7 @@ data class MacroButton(
     val keyCodes: List<Int>,
     val xFraction: Float = 0.5f,
     val yFraction: Float = 0.75f,
+    val scale: Float = 1.0f,
 ) {
     companion object {
         /** All assignable keys with their display labels. */
