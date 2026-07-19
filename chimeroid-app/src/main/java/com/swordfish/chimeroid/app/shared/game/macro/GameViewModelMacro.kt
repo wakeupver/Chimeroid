@@ -1,7 +1,8 @@
 package com.swordfish.chimeroid.app.shared.game.macro
 
-import android.view.KeyEvent
 import com.swordfish.chimeroid.app.shared.game.viewmodel.GameViewModelRetroGameView
+import com.swordfish.chimeroid.app.shared.game.viewmodel.dispatchButtonEvent
+import gg.padkit.inputevents.InputEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -96,14 +97,16 @@ class GameViewModelMacro(
 
     /**
      * Called when the user's finger touches the macro button: sends ACTION_DOWN for every
-     * key immediately. Keys stay held until [releaseMacro] is called on finger-up.
+     * key immediately, via the same [InputEvent.Button] dispatch real touch controls use.
+     * Keys stay held until [releaseMacro] is called on finger-up.
      */
     fun pressMacro(macro: MacroButton) {
         if (macro.keyCodes.isEmpty()) return
         scope.launch {
             try {
-                val view = retroGameView.retroGameView ?: return@launch
-                macro.keyCodes.forEach { view.sendKeyEvent(KeyEvent.ACTION_DOWN, it) }
+                macro.keyCodes.forEach {
+                    retroGameView.dispatchButtonEvent(InputEvent.Button(id = it, pressed = true))
+                }
             } catch (e: Exception) {
                 Timber.e(e, "MacroButtons: error pressing macro '${macro.label}'")
             }
@@ -112,14 +115,15 @@ class GameViewModelMacro(
 
     /**
      * Called when the user's finger lifts off the macro button: sends ACTION_UP for every
-     * held key (reversed order).
+     * held key (reversed order), via the same [InputEvent.Button] dispatch real touch controls use.
      */
     fun releaseMacro(macro: MacroButton) {
         if (macro.keyCodes.isEmpty()) return
         scope.launch {
             try {
-                val view = retroGameView.retroGameView ?: return@launch
-                macro.keyCodes.reversed().forEach { view.sendKeyEvent(KeyEvent.ACTION_UP, it) }
+                macro.keyCodes.reversed().forEach {
+                    retroGameView.dispatchButtonEvent(InputEvent.Button(id = it, pressed = false))
+                }
             } catch (e: Exception) {
                 Timber.e(e, "MacroButtons: error releasing macro '${macro.label}'")
             }
