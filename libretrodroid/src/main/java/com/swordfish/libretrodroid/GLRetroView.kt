@@ -479,9 +479,10 @@ class GLRetroView(
         override fun onDrawFrame(gl: GL10) = catchExceptions {
             if (isEmulationReady) {
                 LibretroDroid.step(this@GLRetroView)
-                lifecycle?.coroutineScope?.launch {
-                    retroGLEventsSubject.emit(GLRetroEvents.FrameRendered)
-                }
+                // tryEmit avoids allocating a new coroutine on every single frame
+                // (this runs at up to 60fps on the GL thread); it's non-suspending
+                // and safe to call directly here, unlike emit().
+                retroGLEventsSubject.tryEmit(GLRetroEvents.FrameRendered)
             }
         }
 
@@ -541,7 +542,7 @@ class GLRetroView(
         LibretroDroid.loadGameFromPath(gameFilePath)
     }
 
-    private fun catchExceptions(block: () -> Unit) {
+    private inline fun catchExceptions(block: () -> Unit) {
         try {
             if (isAborted) return
             block()

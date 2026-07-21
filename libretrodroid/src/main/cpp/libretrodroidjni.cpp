@@ -234,6 +234,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
 
         jbyteArray result = env->NewByteArray(size);
         env->SetByteArrayRegion(result, 0, size, data);
+        delete[] data;
 
         return result;
 
@@ -305,6 +306,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
 
         jbyteArray result = env->NewByteArray(size);
         env->SetByteArrayRegion(result, 0, size, (jbyte *) data);
+        delete[] data;
 
         return result;
 
@@ -435,6 +437,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
             auto jVariable = (jobject) env->GetObjectArrayElement(jVariables, i);
             auto variable = JavaUtils::variableFromJava(env, jVariable);
             variables.push_back(variable);
+            env->DeleteLocalRef(jVariable);
         }
 
         std::optional<ImmersiveMode::Config> parsedConfig = std::nullopt;
@@ -601,21 +604,35 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
     // exception escapes the JNI boundary, the ART runtime calls std::terminate(), which calls
     // abort() → SIGABRT. Wrap the entire function body so any core exception is converted into
     // a Java RetroException that GLRetroView.catchExceptions() can handle gracefully.
+    // Method IDs are stable for as long as the class stays loaded (the process
+    // lifetime here), so they're resolved via reflection once on first use and
+    // reused on every subsequent call instead of doing GetObjectClass +
+    // GetMethodID on every single step() — sendRumbleEvent in particular can
+    // fire every frame while a game drives a continuous rumble effect.
+    static jmethodID refreshAspectRatioMethod = nullptr;
+    static jmethodID sendRumbleEventMethod = nullptr;
+
     try {
         LibretroDroid::getInstance().step();
 
         if (LibretroDroid::getInstance().requiresVideoRefresh()) {
             LibretroDroid::getInstance().clearRequiresVideoRefresh();
-            jclass cls = env->GetObjectClass(glRetroView);
-            jmethodID requestAspectRatioUpdate = env->GetMethodID(cls, "refreshAspectRatio", "()V");
-            env->CallVoidMethod(glRetroView, requestAspectRatioUpdate);
+            if (!refreshAspectRatioMethod) {
+                jclass cls = env->GetObjectClass(glRetroView);
+                refreshAspectRatioMethod = env->GetMethodID(cls, "refreshAspectRatio", "()V");
+                env->DeleteLocalRef(cls);
+            }
+            env->CallVoidMethod(glRetroView, refreshAspectRatioMethod);
         }
 
         if (LibretroDroid::getInstance().isRumbleEnabled()) {
             LibretroDroid::getInstance().handleRumbleUpdates([&](int port, float weak, float strong) {
-                jclass cls = env->GetObjectClass(glRetroView);
-                jmethodID sendRumbleStrengthMethodID = env->GetMethodID(cls, "sendRumbleEvent", "(IFF)V");
-                env->CallVoidMethod(glRetroView, sendRumbleStrengthMethodID, port, weak, strong);
+                if (!sendRumbleEventMethod) {
+                    jclass cls = env->GetObjectClass(glRetroView);
+                    sendRumbleEventMethod = env->GetMethodID(cls, "sendRumbleEvent", "(IFF)V");
+                    env->DeleteLocalRef(cls);
+                }
+                env->CallVoidMethod(glRetroView, sendRumbleEventMethod, port, weak, strong);
             });
         }
     } catch (libretrodroid::LibretroDroidError& exception) {

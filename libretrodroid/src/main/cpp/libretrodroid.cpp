@@ -616,8 +616,18 @@ void LibretroDroid::step() {
     // render frames), instead of silently running fewer frames than real time owes.
     unsigned frames = fpsSync ? fpsSync->advanceFrames() : 1;
 
-    for (size_t i = 0; i < frames * frameSpeed; i++)
-        core->retro_run();
+    // frames * frameSpeed is loop-invariant: neither operand can change once the
+    // loop starts (core->retro_run() cannot reach back into this stack frame), so
+    // it's resolved once instead of being recomputed on every iteration check.
+    // core is guarded the same way every other member below already is (video,
+    // fpsSync, rumble): step() runs under coreLock, but a defensive check here
+    // costs nothing and prevents a null-deref if step() is ever reached between
+    // a completed destroy() and the next resume()/create().
+    if (core) {
+        const size_t totalFrames = static_cast<size_t>(frames) * frameSpeed;
+        for (size_t i = 0; i < totalFrames; i++)
+            core->retro_run();
+    }
 
     if (video && !video->rendersInVideoCallback()) {
         video->renderFrame();

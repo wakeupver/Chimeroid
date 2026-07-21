@@ -106,7 +106,14 @@ void Audio::stop() {
 }
 
 void Audio::write(const int16_t *data, size_t frames) {
-    fifoBuffer->write(data, frames * 2);
+    // fifoBuffer stays null if initializeStream() failed to open a stream (e.g.
+    // no audio device / permission denied): the Audio object itself still
+    // constructs successfully, so this is reached on every audio-producing
+    // retro_run() rather than just once. Without this guard that's a null
+    // deref on every such frame instead of a silently-muted session.
+    if (fifoBuffer) {
+        fifoBuffer->write(data, frames * 2);
+    }
 }
 
 void Audio::setPlaybackSpeed(const double newPlaybackSpeed) {

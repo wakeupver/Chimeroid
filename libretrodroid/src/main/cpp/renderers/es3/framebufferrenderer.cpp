@@ -106,14 +106,18 @@ void FramebufferRenderer::setShaders(ShaderManager::Chain shaders) {
 Renderer::PassData FramebufferRenderer::getPassData(unsigned int layer) {
     PassData result;
 
+    // Bounds are already proven by the guards below, so operator[] (unchecked)
+    // is used instead of .at() (which would redo the same range check plus an
+    // exception-path branch) in this per-pass, per-frame hot path.
     if (layer < framebuffers->size()) {
-        result.framebuffer = framebuffers->at(layer)->framebuffer;
-        result.width = framebuffers->at(layer)->width;
-        result.height = framebuffers->at(layer)->height;
+        const auto& fb = (*framebuffers)[layer];
+        result.framebuffer = fb->framebuffer;
+        result.width = fb->width;
+        result.height = fb->height;
     }
 
     if (layer > 0 && layer < framebuffers->size() + 1) {
-        result.texture = framebuffers->at(layer - 1)->texture;
+        result.texture = (*framebuffers)[layer - 1]->texture;
     }
 
     return result;

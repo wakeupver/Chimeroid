@@ -34,7 +34,13 @@ ImageRendererES2::ImageRendererES2() {
 void ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     glBindTexture(GL_TEXTURE_2D, currentTexture);
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, bytesPerPixel);
+    // Unpack alignment only depends on bytesPerPixel, which only changes in
+    // setPixelFormat(), so it's reissued on that same alignmentDirty flag
+    // instead of unconditionally on every frame.
+    if (alignmentDirty) {
+        glPixelStorei(GL_UNPACK_ALIGNMENT, bytesPerPixel);
+        alignmentDirty = false;
+    }
 
     if (pixelFormat == RETRO_PIXEL_FORMAT_XRGB8888) {
         convertDataFromRGB8888(data, pitch * height);
@@ -94,6 +100,7 @@ uintptr_t ImageRendererES2::getFramebuffer() {
 
 void ImageRendererES2::setPixelFormat(int pixelFormat) {
     this->pixelFormat = pixelFormat;
+    this->alignmentDirty = true;
 
     switch (pixelFormat) {
         case RETRO_PIXEL_FORMAT_XRGB8888:
