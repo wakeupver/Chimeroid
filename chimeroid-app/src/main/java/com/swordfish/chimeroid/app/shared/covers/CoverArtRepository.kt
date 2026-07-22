@@ -46,6 +46,19 @@ class CoverArtRepository(private val context: Context) {
         /** Schemes served straight from disk via [android.content.ContentResolver] — no network I/O. */
         private val LOCAL_URI_SCHEMES = setOf("content", "file")
 
+        /**
+         * Matches the last "(Tag)" immediately before ".png" in a thumbnails.libretro.com URL —
+         * on a Named_Boxarts filename this is almost always the release region.
+         */
+        private val TRAILING_TAG = Regex("""\(([^()]*)\)\.png$""")
+
+        /**
+         * Regions retried, in order, when the ROM's own region tag has no thumbnail — e.g. a
+         * USA ROM whose only libretro-thumbnails entry is tagged (Europe). Bounded to the 4
+         * most common single-word tags; compound tags ("Japan, Asia") aren't attempted.
+         */
+        private val REGION_FALLBACKS = listOf("World", "USA", "Europe", "Japan")
+
         /** True when [coverUrl] is an on-device `content://`/`file://` image rather than a remote HTTP(S) thumbnail. */
         fun isLocalCoverUri(coverUrl: String): Boolean = Uri.parse(coverUrl).scheme in LOCAL_URI_SCHEMES
     }
@@ -133,14 +146,35 @@ class CoverArtRepository(private val context: Context) {
         }
     }
 
+    /**
+     * Downloads [url] and, on failure, retries the same title under each of [REGION_FALLBACKS]
+     * before giving up — libretro-thumbnails catalogues only one region per game, which is
+     * often not the one the local ROM's own filename happens to be tagged with.
+     */
     private fun downloadCover(
+        gameId: Int,
+        url: String,
+        httpClient: OkHttpClient,
+    ): Boolean {
+        if (tryDownload(gameId, url, httpClient)) return true
+
+        val currentRegion = TRAILING_TAG.find(url)?.groups?.get(1) ?: return false
+
+        return REGION_FALLBACKS
+            .asSequence()
+            .filter { it != currentRegion.value }
+            .map { url.replaceRange(currentRegion.range, it) }
+            .any { tryDownload(gameId, it, httpClient) }
+    }
+
+    private fun tryDownload(
         gameId: Int,
         url: String,
         httpClient: OkHttpClient,
     ): Boolean {
         httpClient.newCall(Request.Builder().url(url).build()).execute().use { response ->
             if (!response.isSuccessful) {
-                Timber.w("Cover download [${response.code}] game=$gameId")
+                Timber.w("Cover download [${response.code}] game=$gameId url=$url")
                 return false
             }
             return response.body?.byteStream()?.use { saveCover(gameId, it) } ?: false

@@ -22,6 +22,15 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         private const val IMAGE_TYPE = "Named_Boxarts"
 
         /**
+         * Matches "Title (FirstTag)" — No-Intro/Redump/TOSEC dumps always put the release
+         * region as the first parenthetical group right after the title. Used to strip
+         * trailing language/version/demo tags before guessing a thumbnail filename, since
+         * libretro-thumbnails catalogues releases under that first group in the vast majority
+         * of cases (see [stripSecondaryTags]).
+         */
+        private val FIRST_TAG_ONLY = Regex("""^.+? \([^()]*\)""")
+
+        /**
          * LRU cache for filename → LibretroRom lookups.
          *
          * findByFilename / findByPathAndFilename both call [LibretroDatabase.gameDao().findByFileName].
@@ -175,7 +184,7 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         return GameMetadata(
             name = file.extensionlessName,
             romName = file.name,
-            thumbnail = system?.let { computeCoverUrl(it, file.extensionlessName) },
+            thumbnail = system?.let { computeCoverUrl(it, stripSecondaryTags(file.extensionlessName)) },
             system = systemID.dbname,
             developer = null,
         )
@@ -214,10 +223,17 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         GameMetadata(
             name = file.extensionlessName,
             romName = file.name,
-            thumbnail = computeCoverUrl(system, file.extensionlessName),
+            thumbnail = computeCoverUrl(system, stripSecondaryTags(file.extensionlessName)),
             system = system.id.dbname,
             developer = null,
         )
+
+    /**
+     * Drops every parenthetical tag after the first (see [FIRST_TAG_ONLY]) — e.g.
+     * "Title (USA) (En,Fr,De) (v1.01)" → "Title (USA)". A no-op when [name] has zero or
+     * one tag, so it never changes an already-matching guess.
+     */
+    private fun stripSecondaryTags(name: String): String = FIRST_TAG_ONLY.find(name)?.value ?: name
 
     /** Builds a `thumbnails.libretro.com` Named_Boxarts URL guess for [name], or null if [name] is null. */
     private fun computeCoverUrl(
