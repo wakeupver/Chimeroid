@@ -49,7 +49,7 @@ class ChimeroidInputDeviceGamePad(private val device: InputDevice) : ChimeroidIn
         return device.supportsAllKeys(MINIMAL_KEYS_DEFAULT_ENABLED)
     }
 
-    override fun getSupportedShortcuts(): List<GameShortcutType> = GameShortcutType.values().toList()
+    override fun getSupportedShortcuts(): List<GameShortcutType> = GameShortcutType.entries
 
     override fun isSupported(): Boolean {
         return sequenceOf(

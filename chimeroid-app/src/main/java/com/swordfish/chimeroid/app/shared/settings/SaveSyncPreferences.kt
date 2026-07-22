@@ -98,10 +98,10 @@ class SaveSyncPreferences(private val saveSyncManager: SaveSyncManager) {
             dependency = keySyncEnabled(context)
             isEnabled = saveSyncManager.isConfigured() && !syncInProgress
             entries =
-                CoreID.values()
+                CoreID.entries
                     .map { saveSyncManager.getDisplayNameForCore(context, it) }
                     .toTypedArray()
-            entryValues = CoreID.values().map { it.coreName }.toTypedArray()
+            entryValues = CoreID.entries.map { it.coreName }.toTypedArray()
             isIconSpaceReserved = false
         }
     }

@@ -42,6 +42,25 @@ private val LightColorScheme =
         surfaceTint = md_theme_light_surfaceTint,
         outlineVariant = md_theme_light_outlineVariant,
         scrim = md_theme_light_scrim,
+        surfaceDim = md_theme_light_surfaceDim,
+        surfaceBright = md_theme_light_surfaceBright,
+        surfaceContainerLowest = md_theme_light_surfaceContainerLowest,
+        surfaceContainerLow = md_theme_light_surfaceContainerLow,
+        surfaceContainer = md_theme_light_surfaceContainer,
+        surfaceContainerHigh = md_theme_light_surfaceContainerHigh,
+        surfaceContainerHighest = md_theme_light_surfaceContainerHighest,
+        primaryFixed = md_theme_primaryFixed,
+        primaryFixedDim = md_theme_primaryFixedDim,
+        onPrimaryFixed = md_theme_onPrimaryFixed,
+        onPrimaryFixedVariant = md_theme_onPrimaryFixedVariant,
+        secondaryFixed = md_theme_secondaryFixed,
+        secondaryFixedDim = md_theme_secondaryFixedDim,
+        onSecondaryFixed = md_theme_onSecondaryFixed,
+        onSecondaryFixedVariant = md_theme_onSecondaryFixedVariant,
+        tertiaryFixed = md_theme_tertiaryFixed,
+        tertiaryFixedDim = md_theme_tertiaryFixedDim,
+        onTertiaryFixed = md_theme_onTertiaryFixed,
+        onTertiaryFixedVariant = md_theme_onTertiaryFixedVariant,
     )
 
 private val DarkColorScheme =
@@ -75,6 +94,25 @@ private val DarkColorScheme =
         surfaceTint = md_theme_dark_surfaceTint,
         outlineVariant = md_theme_dark_outlineVariant,
         scrim = md_theme_dark_scrim,
+        surfaceDim = md_theme_dark_surfaceDim,
+        surfaceBright = md_theme_dark_surfaceBright,
+        surfaceContainerLowest = md_theme_dark_surfaceContainerLowest,
+        surfaceContainerLow = md_theme_dark_surfaceContainerLow,
+        surfaceContainer = md_theme_dark_surfaceContainer,
+        surfaceContainerHigh = md_theme_dark_surfaceContainerHigh,
+        surfaceContainerHighest = md_theme_dark_surfaceContainerHighest,
+        primaryFixed = md_theme_primaryFixed,
+        primaryFixedDim = md_theme_primaryFixedDim,
+        onPrimaryFixed = md_theme_onPrimaryFixed,
+        onPrimaryFixedVariant = md_theme_onPrimaryFixedVariant,
+        secondaryFixed = md_theme_secondaryFixed,
+        secondaryFixedDim = md_theme_secondaryFixedDim,
+        onSecondaryFixed = md_theme_onSecondaryFixed,
+        onSecondaryFixedVariant = md_theme_onSecondaryFixedVariant,
+        tertiaryFixed = md_theme_tertiaryFixed,
+        tertiaryFixedDim = md_theme_tertiaryFixedDim,
+        onTertiaryFixed = md_theme_onTertiaryFixed,
+        onTertiaryFixedVariant = md_theme_onTertiaryFixedVariant,
     )
 
 @Composable
@@ -104,7 +142,10 @@ fun AppTheme(
             }
         }
 
-    MaterialTheme(colorScheme = colors) {
-        content()
-    }
+    MaterialTheme(
+        colorScheme = colors,
+        typography = ChimeroidTypography,
+        shapes = ChimeroidShapes,
+        content = content,
+    )
 }

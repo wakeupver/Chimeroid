@@ -38,7 +38,7 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         }
 
     private val sortedSystemIds: List<String> by lazy {
-        SystemID.values()
+        SystemID.entries
             .map { it.dbname }
             .sortedByDescending { it.length }
     }

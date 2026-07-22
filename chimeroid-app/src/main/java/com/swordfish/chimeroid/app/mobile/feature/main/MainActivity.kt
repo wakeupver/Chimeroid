@@ -380,7 +380,7 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                 val message =
                     remember {
                         val systemFolders =
-                            SystemID.values()
+                            SystemID.entries
                                 .joinToString(", ") { "<i>${it.dbname}</i>" }
 
                         getString(R.string.chimeroid_help_content)

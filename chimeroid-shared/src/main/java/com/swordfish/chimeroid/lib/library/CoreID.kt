@@ -133,4 +133,4 @@ enum class CoreID(
     }
 }
 
-fun findByName(query: String): CoreID? = CoreID.values().firstOrNull { it.coreName == query }
+fun findByName(query: String): CoreID? = CoreID.entries.firstOrNull { it.coreName == query }

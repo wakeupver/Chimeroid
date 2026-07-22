@@ -23,7 +23,7 @@ object deps {
         const val fragment        = "1.5.1"
         const val activity        = "1.7.2"
         const val libretrodroid   = "0.13.2"
-        const val composeBom      = "2024.02.02"
+        const val composeBom      = "2025.12.00"
         const val kotlinExtension = "1.4.6"
         const val padkit          = "1.0.0-beta1"
 
@@ -153,7 +153,7 @@ object deps {
         const val retrofit                 = "com.squareup.retrofit2:retrofit:${versions.retrofit}"
         const val flowPreferences          = "com.fredporciuncula:flow-preferences:1.8.0"
         const val timber                   = "com.jakewharton.timber:timber:5.0.1"
-        const val material                 = "com.google.android.material:material:1.6.1"
+        const val material                 = "com.google.android.material:material:1.12.0"
         const val harmony                  = "com.frybits.harmony:harmony:1.1.9"
         const val startup                  = "androidx.startup:startup-runtime:1.1.1"
         const val composeHtmlText          = "de.charlex.compose.material3:material3-html-text:2.0.0-beta01"
