@@ -33,6 +33,7 @@ dependencies {
     implementation(deps.libs.androidx.compose.geometry)
     implementation(deps.libs.androidx.compose.runtime)
     implementation(deps.libs.androidx.compose.material3)
+    implementation(deps.libs.androidx.compose.coreIcons)
 
     implementation(deps.libs.androidx.appcompat.constraintLayout)
     implementation(deps.libs.androidx.appcompat.appcompat)

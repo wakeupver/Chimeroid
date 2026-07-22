@@ -68,6 +68,11 @@ subprojects {
                     disable("InvalidPackage")
                     disable("VectorPath")
                     disable("TrustAllX509TrustManager")
+                    // androidx.lifecycle's bundled NonNullableMutableLiveDataDetector crashes
+                    // (IncompatibleClassChangeError against Lint's Kotlin Analysis API) on
+                    // AGP 8.7.2 -- the detector itself fails to execute, so this isn't
+                    // silencing a real finding.
+                    disable("NullSafeMutableLiveData")
                 }
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_17
