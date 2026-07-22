@@ -376,11 +376,6 @@ class ChimeroidLibrary(
     /**
      * PICO-8's `.p8.png` cart is itself a valid PNG — its cart data lives in the pixels — so it's
      * used directly as cover art instead of a libretro thumbnail (which doesn't exist for PICO-8
-     * anyway, so [GameMetadata.thumbnail] is always null for this system).
-     */
-    /**
-     * PICO-8's `.p8.png` cart is itself a valid PNG — its cart data lives in the pixels — so it's
-     * used directly as cover art instead of a libretro thumbnail (which doesn't exist for PICO-8
      * anyway, so [GameMetadata.thumbnail] is always null for this system). Shared by the new-game
      * conversion path and [backfillSelfCover] (already-indexed games).
      */

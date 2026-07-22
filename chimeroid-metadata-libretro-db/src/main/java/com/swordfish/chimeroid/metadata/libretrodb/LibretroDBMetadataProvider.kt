@@ -18,6 +18,9 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
     companion object {
         private val THUMB_REPLACE = Regex("[&*/:`<>?\\\\|]")
 
+        /** libretro-thumbnails subfolder for front box art (as opposed to Named_Snaps / Named_Titles). */
+        private const val IMAGE_TYPE = "Named_Boxarts"
+
         /**
          * LRU cache for filename → LibretroRom lookups.
          *
@@ -50,16 +53,17 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
 
         val metadata =
             runCatching {
-                // ── DB-based lookups (have thumbnail) ─────────────────────────────────
-                // Must be tried before the extension/system fast-paths which always
-                // return thumbnail = null. Previously findByUniqueExtension ran first
-                // and short-circuited everything, so coverFrontUrl was always null for
-                // unique-extension files (.sfc, .gba, .nes, .gb, …).
+                // ── DB-based lookups (thumbnail from the matched libretro-DB name) ─────
+                // Must be tried before the extension/system fast-paths below. Previously
+                // findByUniqueExtension ran first and short-circuited everything, so
+                // coverFrontUrl was always null for unique-extension files (.sfc, .gba, .nes, .gb, …).
                 findByFilename(db, storageFile)
                     ?: findByPathAndFilename(db, storageFile)
                     ?: findBySerial(storageFile, db)
                     ?: findByCRC(storageFile, db)
-                    // ── Fallbacks: system-id only, no thumbnail ────────────────────────
+                    // ── Fallbacks: no libretro-DB record — thumbnail is now fetched by
+                    // guessing from the ROM's own filename instead of being left blank
+                    // (see buildFallbackMetadata) ───────────────────────────────────────
                     ?: findByUniqueExtension(storageFile)
                     ?: findByKnownSystem(storageFile)
                     ?: findByPathAndSupportedExtension(storageFile)
@@ -125,20 +129,13 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
     private fun findByPathAndSupportedExtension(file: StorageFile): GameMetadata? {
         val system =
             sortedSystemIds
+                .asSequence()
                 .filter { parentContainsSystem(file.path, it) }
                 .map { GameSystem.findById(it) }
                 .filter { it.scanOptions.scanByPathAndSupportedExtensions }
                 .firstOrNull { it.supportedExtensions.contains(file.extension) }
 
-        return system?.let {
-            GameMetadata(
-                name = file.extensionlessName,
-                romName = file.name,
-                thumbnail = null,
-                system = it.id.dbname,
-                developer = null,
-            )
-        }
+        return system?.let { buildFallbackMetadata(file, it) }
     }
 
     private fun parentContainsSystem(
@@ -169,34 +166,30 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
     }
 
     private fun findByKnownSystem(file: StorageFile): GameMetadata? {
-        if (file.systemID == null) return null
+        val systemID = file.systemID ?: return null
+        // Best-effort thumbnail guess by filename. A missing GameSystem entry (shouldn't
+        // happen — every SystemID has one, verified 1:1 in GameSystem.SYSTEMS) just
+        // degrades to no thumbnail instead of ever crashing or dropping the game.
+        val system = GameSystem.findByIdOrNull(systemID.dbname)
 
         return GameMetadata(
             name = file.extensionlessName,
             romName = file.name,
-            thumbnail = null,
-            system = file.systemID!!.dbname,
+            thumbnail = system?.let { computeCoverUrl(it, file.extensionlessName) },
+            system = systemID.dbname,
             developer = null,
         )
     }
 
     private fun findByUniqueExtension(file: StorageFile): GameMetadata? {
         // findByFileName also tries compound extensions like "sfc.zip", "md.zip", "p8.png"
-        val system = GameSystem.findByFileName(file.name)
+        val system = GameSystem.findByFileName(file.name) ?: return null
 
-        if (system?.scanOptions?.scanByUniqueExtension == false) {
+        if (!system.scanOptions.scanByUniqueExtension) {
             return null
         }
 
-        return system?.let {
-            GameMetadata(
-                name = file.extensionlessName,
-                romName = file.name,
-                thumbnail = null,
-                system = it.id.dbname,
-                developer = null,
-            )
-        }
+        return buildFallbackMetadata(file, system)
     }
 
     /**
@@ -206,23 +199,35 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
     private fun extractGameSystemOrNull(rom: LibretroRom): GameSystem? =
         rom.system?.let { GameSystem.findByIdOrNull(it) }
 
+    /**
+     * Builds [GameMetadata] for a system-only match with no libretro-DB record for this ROM
+     * (see [findByPathAndSupportedExtension], [findByUniqueExtension]). [thumbnail] is still
+     * attempted — via [computeCoverUrl] — by guessing the libretro-thumbnails filename from the
+     * ROM's own name: No-Intro/Redump/TOSEC-style dump names frequently already match the
+     * thumbnail server's naming convention even without a DB hit, so cover art is fetched by
+     * filename instead of being left permanently blank for every unrecognised ROM.
+     */
+    private fun buildFallbackMetadata(
+        file: StorageFile,
+        system: GameSystem,
+    ): GameMetadata =
+        GameMetadata(
+            name = file.extensionlessName,
+            romName = file.name,
+            thumbnail = computeCoverUrl(system, file.extensionlessName),
+            system = system.id.dbname,
+            developer = null,
+        )
+
+    /** Builds a `thumbnails.libretro.com` Named_Boxarts URL guess for [name], or null if [name] is null. */
     private fun computeCoverUrl(
         system: GameSystem,
         name: String?,
     ): String? {
-        var systemName = system.libretroFullName
+        name ?: return null
 
-        // Specific mame version don't have any thumbnails in Libretro database
-        if (system.id == SystemID.MAME2003PLUS) {
-            systemName = "MAME"
-        }
-
-        if (name == null) {
-            return null
-        }
-
-        val imageType = "Named_Boxarts"
-
+        // Specific MAME version has no thumbnails under its own name in the Libretro database.
+        val systemName = if (system.id == SystemID.MAME2003PLUS) "MAME" else system.libretroFullName
         val thumbGameName = name.replace(THUMB_REPLACE, "_")
 
         // Uri.encode() percent-encodes spaces and other illegal URL characters while
@@ -230,8 +235,8 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         // Without this, system names like "Nintendo - Super Nintendo Entertainment System"
         // produce invalid URLs that OkHttp rejects, silently breaking all cover downloads.
         val encodedSystem = Uri.encode(systemName)
-        val encodedThumb  = Uri.encode(thumbGameName)
+        val encodedThumb = Uri.encode(thumbGameName)
 
-        return "https://thumbnails.libretro.com/$encodedSystem/$imageType/$encodedThumb.png"
+        return "https://thumbnails.libretro.com/$encodedSystem/$IMAGE_TYPE/$encodedThumb.png"
     }
 }
