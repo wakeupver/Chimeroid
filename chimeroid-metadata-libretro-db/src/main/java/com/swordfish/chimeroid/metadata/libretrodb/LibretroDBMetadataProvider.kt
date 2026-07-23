@@ -56,12 +56,11 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
     }
 
     override suspend fun retrieveMetadata(storageFile: StorageFile): GameMetadata? {
-        val db = ovgdbManager.dbInstance
-
         Timber.d("Looking metadata for file: $storageFile")
 
         val metadata =
             runCatching {
+                val db = ovgdbManager.getDatabase()
                 // ── DB-based lookups (thumbnail from the matched libretro-DB name) ─────
                 // Must be tried before the extension/system fast-paths below. Previously
                 // findByUniqueExtension ran first and short-circuited everything, so
