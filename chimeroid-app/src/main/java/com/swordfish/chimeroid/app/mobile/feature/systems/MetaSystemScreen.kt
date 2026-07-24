@@ -39,13 +39,14 @@ private fun MetaSystemsScreen(
         return
     }
 
-    // Adaptive(160.dp) → clean 2-col layout on phones, 3-col on large screens/tablets
+    // Adaptive(160.dp) → clean 2-col layout on phones, 3-col on large screens/tablets.
+    // Expressive spacing: a touch more breathing room than the previous 14/10dp.
     LazyVerticalGrid(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(14.dp),
+        contentPadding = PaddingValues(16.dp),
         columns = GridCells.Adaptive(160.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(metaSystems.size, key = { metaSystems[it].metaSystem }) { index ->
             val system = metaSystems[index]
