@@ -154,14 +154,6 @@ dependencies {
     implementation(deps.libs.kotlin.serializationJson)
 
     implementation(platform(deps.libs.androidx.compose.composeBom))
-    // NOTE: material3 1.5.0-alpha24 was tried here for MaterialExpressiveTheme /
-    // MotionScheme / MaterialShapes, but its transitive compose-animation /
-    // -foundation / -ui siblings resolve to 1.12.0-beta01, which requires AGP
-    // 9.1.0+ and compileSdk 37 — this project is on AGP 8.7.2 / compileSdk 35, so
-    // :chimeroid-app:checkFreeReleaseAarMetadata hard-fails (26 issues). Reverted
-    // to the BOM-managed stable line; the Expressive look is achieved with stable
-    // APIs instead (see ChimeroidSystemImage/Card/Theme). Revisit once this
-    // project's AGP/compileSdk are bumped.
     implementation(deps.libs.androidx.compose.material3)
     implementation(deps.libs.androidx.compose.constraintLayout)
     debugImplementation(deps.libs.androidx.compose.tooling)
