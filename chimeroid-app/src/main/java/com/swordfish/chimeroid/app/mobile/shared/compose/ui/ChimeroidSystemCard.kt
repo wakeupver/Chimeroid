@@ -1,6 +1,8 @@
 package com.swordfish.chimeroid.app.mobile.shared.compose.ui
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -10,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,7 +30,6 @@ import com.swordfish.chimeroid.app.shared.systems.MetaSystemInfo
 private const val PressedScale = 0.94f
 private const val RestScale = 1f
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ChimeroidSystemCard(
     modifier: Modifier = Modifier,
@@ -50,16 +50,18 @@ fun ChimeroidSystemCard(
         context.getString(R.string.system_grid_details, system.count.toString())
     }
 
-    // Expressive press feedback: MaterialTheme.motionScheme's spatial spec — the real
-    // M3 Expressive spring token (MotionScheme.expressive(), wired up app-wide in
-    // AppTheme) — instead of a hand-tuned spring(), so every bouncy interaction in the
-    // app shares one physics tuning. Modifier.scale is a draw-only transform (no
-    // relayout), so animating it is essentially free outside of the press itself.
+    // Expressive press feedback via a stable API: a light spring-back scale
+    // replaces a flat tap with the bouncier, more physical feel M3 Expressive
+    // motion favors. (MaterialTheme.motionScheme.defaultSpatialSpec() would be the
+    // "real" M3 Expressive token, but it needs material3 1.5.0-alpha — see the
+    // build.gradle.kts comment for why that pin was reverted.) Modifier.scale is a
+    // draw-only transform (no relayout), so animating it is essentially free
+    // outside of the press itself.
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed) PressedScale else RestScale,
-        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
         label = "systemCardScale",
     )
 

@@ -2,9 +2,7 @@ package com.swordfish.chimeroid.app.mobile.shared.compose.ui
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialExpressiveTheme
-import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -117,11 +115,6 @@ private val DarkColorScheme =
         onTertiaryFixedVariant = md_theme_onTertiaryFixedVariant,
     )
 
-// MaterialExpressiveTheme / MotionScheme are still gated behind
-// ExperimentalMaterial3ExpressiveApi upstream (material3 1.5.0-alpha); AppTheme wraps
-// the entire app, so this opt-in is the single place that unlocks MaterialTheme.motionScheme
-// and MaterialShapes for every descendant screen instead of scattering @OptIn everywhere.
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AppTheme(
     themeMode: ThemeMode = rememberThemeModePreference(),
@@ -149,15 +142,10 @@ fun AppTheme(
             }
         }
 
-    // Same color/type/shape tokens as before — MaterialTheme.colorScheme/.typography/.shapes
-    // reads are unaffected everywhere else in the app — plus an expressive MotionScheme so
-    // MaterialTheme.motionScheme.*Spec() tokens (spring-based, not the old flat tween/easing
-    // curves) become available to every screen instead of each one hand-rolling its own spec.
-    MaterialExpressiveTheme(
+    MaterialTheme(
         colorScheme = colors,
         typography = ChimeroidTypography,
         shapes = ChimeroidShapes,
-        motionScheme = MotionScheme.expressive(),
         content = content,
     )
 }
