@@ -18,7 +18,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.4.0"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
     id("org.jetbrains.kotlin.android") version deps.versions.kotlin apply false
-    id("com.android.application") version "8.9.1" apply false
+    id("com.android.application") version "9.1.1" apply false
     id("org.jetbrains.kotlin.plugin.compose") version deps.versions.kotlin apply false
 }
 

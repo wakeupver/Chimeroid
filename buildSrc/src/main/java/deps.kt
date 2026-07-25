@@ -1,8 +1,8 @@
 /* ktlint-disable no-multi-spaces max-line-length */
 object deps {
     object android {
-        const val targetSdkVersion  = 35
-        const val compileSdkVersion = 35
+        const val targetSdkVersion  = 37
+        const val compileSdkVersion = 37
         const val minSdkVersion     = 23
         const val buildToolsVersion = "34.0.0"
     }
@@ -171,7 +171,7 @@ object deps {
     }
 
     object plugins {
-        const val android = "com.android.tools.build:gradle:8.9.1"
+        const val android = "com.android.tools.build:gradle:9.1.1"
         const val navigationSafeArgs = "androidx.navigation:navigation-safe-args-gradle-plugin:${versions.navigation}"
         const val kotlinGradlePlugin = "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
     }
