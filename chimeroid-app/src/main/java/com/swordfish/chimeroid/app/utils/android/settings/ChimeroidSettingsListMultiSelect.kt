@@ -1,6 +1,7 @@
 package com.swordfish.chimeroid.app.utils.android.settings
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,11 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,22 +19,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import com.alorma.compose.settings.storage.base.SettingValueState
+import top.yukonga.miuix.kmp.basic.Checkbox
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.window.WindowDialog
 
 @Composable
 fun ChimeroidSettingsListMultiSelect(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     state: SettingValueState<Set<String>>,
-    title: @Composable () -> Unit,
+    title: String,
     entryValues: List<String>,
     entries: List<String>,
-    icon: @Composable (() -> Unit)? = null,
+    icon: (@Composable () -> Unit)? = null,
     confirmButton: String,
-    subtitle: @Composable (() -> Unit)? = null,
+    subtitle: String? = null,
     onItemsSelected: ((List<String>) -> Unit)? = null,
-    action: @Composable (() -> Unit)? = null,
+    action: (@Composable RowScope.() -> Unit)? = null,
 ) {
     if (entryValues.size != entries.size) {
         throw IllegalArgumentException("entries and entryValues need to have the same size")
@@ -56,8 +58,6 @@ fun ChimeroidSettingsListMultiSelect(
         onClick = { showDialog = true },
     )
 
-    if (!showDialog) return
-
     val onAdd: (Int) -> Unit = { selectedIndex ->
         val mutable = state.value.toMutableSet()
         mutable.add(entryValues[selectedIndex])
@@ -69,14 +69,19 @@ fun ChimeroidSettingsListMultiSelect(
         state.value = mutable
     }
 
-    AlertDialog(
+    WindowDialog(
+        show = showDialog,
         title = title,
-        text = {
+        onDismissRequest = { showDialog = false },
+    ) {
+        Column(
+            modifier = modifier,
+        ) {
             Column(
                 modifier = Modifier.verticalScroll(scrollState),
             ) {
                 if (subtitle != null) {
-                    subtitle()
+                    Text(text = subtitle)
                     Spacer(modifier = Modifier.size(8.dp))
                 }
 
@@ -102,27 +107,24 @@ fun ChimeroidSettingsListMultiSelect(
                     ) {
                         Text(
                             text = entries[index],
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MiuixTheme.textStyles.body1,
                             modifier = Modifier.weight(1f),
                         )
                         Checkbox(
-                            checked = isSelected,
-                            onCheckedChange = null,
+                            state = if (isSelected) ToggleableState.On else ToggleableState.Off,
+                            onClick = null,
                         )
                     }
                 }
             }
-        },
-        onDismissRequest = { showDialog = false },
-        confirmButton = {
             TextButton(
+                text = confirmButton,
+                modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     showDialog = false
                     onItemsSelected?.invoke(entryValues.filter { state.value.contains(it) })
                 },
-            ) {
-                Text(text = confirmButton)
-            }
-        },
-    )
+            )
+        }
+    }
 }

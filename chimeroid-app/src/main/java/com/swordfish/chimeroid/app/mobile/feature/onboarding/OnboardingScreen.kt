@@ -60,14 +60,6 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.SmartDisplay
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -100,6 +92,13 @@ import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.shared.settings.StorageBaseDirPicker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.swordfish.chimeroid.app.mobile.shared.compose.ui.mutedButtonColors
 
 private val ReadyColor = Color(0xFF1B8A5A)
 
@@ -252,9 +251,9 @@ fun OnboardingScreen(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                        MiuixTheme.colorScheme.primary.copy(alpha = 0.18f),
+                        MiuixTheme.colorScheme.background,
+                        MiuixTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                     ),
                 ),
             ),
@@ -266,7 +265,7 @@ fun OnboardingScreen(
                 .size(180.dp)
                 .graphicsLayer { translationX = orb1X; translationY = orb1Y }
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                .background(MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)),
         )
         Box(
             modifier = Modifier
@@ -275,7 +274,7 @@ fun OnboardingScreen(
                 .size(140.dp)
                 .graphicsLayer { translationX = orb2X; translationY = orb2Y }
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.10f)),
+                .background(MiuixTheme.colorScheme.secondary.copy(alpha = 0.10f)),
         )
 
         // Main content
@@ -322,8 +321,7 @@ fun OnboardingScreen(
         ) {
             Surface(
                 shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                tonalElevation = 12.dp,
+                color = MiuixTheme.colorScheme.surface.copy(alpha = 0.96f),
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 22.dp, vertical = 18.dp),
@@ -333,7 +331,7 @@ fun OnboardingScreen(
                     CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.5.dp)
                     Text(
                         text = stringResource(R.string.onboarding_finishing),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MiuixTheme.textStyles.title3,
                     )
                 }
             }
@@ -473,8 +471,8 @@ private fun LandscapeContent(
                         }
                         Text(
                             text = stringResource(subtitleRes),
-                            style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 28.sp, letterSpacing = 0.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MiuixTheme.textStyles.body1.copy(lineHeight = 28.sp, letterSpacing = 0.sp),
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp).statusBarsPadding().padding(top = 32.dp),
                         )
@@ -550,24 +548,24 @@ private fun OnboardingHero(
             modifier = Modifier
                 .size(112.dp)
                 .clip(RoundedCornerShape(32.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                .background(MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(content.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(56.dp))
+            Icon(content.icon, contentDescription = null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(56.dp))
         }
         Spacer(Modifier.height(36.dp))
         Text(
             text = stringResource(content.titleRes),
-            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
-            color = MaterialTheme.colorScheme.onBackground,
+            style = MiuixTheme.textStyles.title1.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
+            color = MiuixTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
         if (showSubtitle) {
             Spacer(Modifier.height(16.dp))
             Text(
                 text = stringResource(content.subtitleRes),
-                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MiuixTheme.textStyles.body1.copy(lineHeight = 24.sp),
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
@@ -583,16 +581,16 @@ private fun OnboardingHeroSetup(
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier.widthIn(max = 480.dp)) {
         Text(
             text = stringResource(R.string.onboarding_title),
-            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
-            color = MaterialTheme.colorScheme.onBackground,
+            style = MiuixTheme.textStyles.title1.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
+            color = MiuixTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
         if (showSubtitle) {
             Spacer(Modifier.height(12.dp))
             Text(
                 text = stringResource(R.string.onboarding_subtitle),
-                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MiuixTheme.textStyles.body1.copy(lineHeight = 24.sp),
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
@@ -617,8 +615,8 @@ private fun OnboardingPageIndicator(currentPage: Int, totalPages: Int, modifier:
                     .width(width.dp)
                     .clip(CircleShape)
                     .background(
-                        if (isSelected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f),
+                        if (isSelected) MiuixTheme.colorScheme.primary
+                        else MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.25f),
                     ),
             )
         }
@@ -639,6 +637,12 @@ private fun OnboardingNavigation(
     onGetStarted: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Muted (surfaceContainerHigh-toned) button colors give "Back" secondary
+    // visual weight versus the primary-toned "Next"/"Get started" — the
+    // Miuix-idiomatic substitute for the old bordered OutlinedButton, shared
+    // via mutedButtonColors() with every other screen that needs the same.
+    val backButtonColors = mutedButtonColors()
+
     Row(
         modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -646,18 +650,18 @@ private fun OnboardingNavigation(
     ) {
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (currentPage > 0) {
-                OutlinedButton(
+                Button(
                     onClick = onPrevious,
                     modifier = Modifier.height(44.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
-                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    cornerRadius = 12.dp,
+                    colors = backButtonColors,
+                    insideMargin = PaddingValues(horizontal = 16.dp),
                 ) {
                     Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(
                         stringResource(R.string.onboarding_back),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium, letterSpacing = 0.sp),
+                        style = MiuixTheme.textStyles.body2.copy(fontWeight = FontWeight.Medium, letterSpacing = 0.sp),
                     )
                 }
             }
@@ -668,13 +672,12 @@ private fun OnboardingNavigation(
                 Button(
                     onClick = onNext,
                     modifier = Modifier.height(44.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    cornerRadius = 12.dp,
+                    insideMargin = PaddingValues(horizontal = 16.dp),
                 ) {
                     Text(
                         stringResource(R.string.onboarding_next),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium, letterSpacing = 0.sp),
+                        style = MiuixTheme.textStyles.body2.copy(fontWeight = FontWeight.Medium, letterSpacing = 0.sp),
                     )
                     Spacer(Modifier.width(6.dp))
                     Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -684,12 +687,12 @@ private fun OnboardingNavigation(
                     onClick = onGetStarted,
                     enabled = canContinue,
                     modifier = Modifier.height(44.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    cornerRadius = 12.dp,
+                    insideMargin = PaddingValues(horizontal = 20.dp),
                 ) {
                     Text(
                         stringResource(R.string.onboarding_get_started),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.sp),
+                        style = MiuixTheme.textStyles.body2.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.sp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -782,24 +785,23 @@ private fun OnboardingSetupContent(
         // Summary card
         Surface(
             shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-            tonalElevation = 4.dp,
+            color = MiuixTheme.colorScheme.surface.copy(alpha = 0.92f),
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MiuixTheme.colorScheme.primary)
                     Spacer(Modifier.width(10.dp))
                     Text(
                         stringResource(R.string.onboarding_hint_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MiuixTheme.textStyles.title3,
+                        color = MiuixTheme.colorScheme.onSurface,
                     )
                 }
                 Spacer(Modifier.height(10.dp))
                 Text(
                     stringResource(R.string.onboarding_hint_body, requiredCount),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MiuixTheme.textStyles.body1,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             }
         }
@@ -820,9 +822,9 @@ private fun SetupCard(
 ) {
     val statusColor = when (status) {
         SetupItemStatus.READY -> ReadyColor
-        SetupItemStatus.REQUIRED -> MaterialTheme.colorScheme.tertiary
-        SetupItemStatus.OPTIONAL -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-        SetupItemStatus.INVALID -> MaterialTheme.colorScheme.error
+        SetupItemStatus.REQUIRED -> MiuixTheme.colorScheme.onTertiaryContainer
+        SetupItemStatus.OPTIONAL -> MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.7f)
+        SetupItemStatus.INVALID -> MiuixTheme.colorScheme.error
     }
     val statusText = stringResource(
         when (status) {
@@ -835,10 +837,9 @@ private fun SetupCard(
     Surface(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
-        tonalElevation = 2.dp,
+        color = MiuixTheme.colorScheme.surface.copy(alpha = 0.88f),
         onClick = onClick,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        border = BorderStroke(1.dp, MiuixTheme.colorScheme.outline.copy(alpha = 0.4f)),
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -846,15 +847,15 @@ private fun SetupCard(
                     modifier = Modifier
                         .size(52.dp)
                         .clip(RoundedCornerShape(18.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+                        .background(MiuixTheme.colorScheme.primary.copy(alpha = 0.08f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
+                    Icon(icon, contentDescription = null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    Text(title, style = MiuixTheme.textStyles.title3.copy(fontWeight = FontWeight.Bold), color = MiuixTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(2.dp))
-                    Text(description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(description, style = MiuixTheme.textStyles.body1, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -867,7 +868,7 @@ private fun SetupCard(
                     Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(statusColor))
                     Text(
                         statusText,
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        style = MiuixTheme.textStyles.body2.copy(fontWeight = FontWeight.SemiBold),
                         color = statusColor,
                     )
                 }

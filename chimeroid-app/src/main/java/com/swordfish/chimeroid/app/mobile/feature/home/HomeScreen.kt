@@ -5,13 +5,13 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -34,14 +34,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VideogameAsset
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -73,6 +65,13 @@ import com.swordfish.chimeroid.app.utils.android.ComposableLifecycle
 import com.swordfish.chimeroid.app.utils.games.GameUtils
 import com.swordfish.chimeroid.common.displayDetailsSettingsScreen
 import com.swordfish.chimeroid.lib.library.db.entity.Game
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public entry-point
@@ -227,16 +226,16 @@ private fun HomeScreen(
                     BentoActionCard(
                         icon = Icons.Default.VideogameAsset,
                         title = "Game\nSystems",
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        containerColor = MiuixTheme.colorScheme.tertiaryContainer,
+                        contentColor = MiuixTheme.colorScheme.onTertiaryContainer,
                         modifier = Modifier.fillMaxWidth().weight(1f),
                         onClick = onOpenSystems,
                     )
                     BentoActionCard(
                         icon = Icons.Default.Favorite,
                         title = "My\nFavorites",
-                        containerColor = MaterialTheme.colorScheme.inverseSurface,
-                        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                        containerColor = MiuixTheme.colorScheme.primary,
+                        contentColor = MiuixTheme.colorScheme.onPrimary,
                         modifier = Modifier.fillMaxWidth().weight(1f),
                         onClick = onOpenFavorites,
                     )
@@ -254,7 +253,7 @@ private fun HomeScreen(
                         key(game.id) {
                             HomeGameListItem(
                                 game = game,
-                                accentColor = MaterialTheme.colorScheme.primaryContainer,
+                                accentColor = MiuixTheme.colorScheme.primaryContainer,
                                 onClick = { onGameClicked(game) },
                                 onLongClick = { onGameLongClick(game) },
                             )
@@ -273,7 +272,7 @@ private fun HomeScreen(
                         key(game.id) {
                             HomeGameListItem(
                                 game = game,
-                                accentColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                accentColor = MiuixTheme.colorScheme.tertiaryContainer,
                                 onClick = { onGameClicked(game) },
                                 onLongClick = { onGameLongClick(game) },
                             )
@@ -292,7 +291,7 @@ private fun HomeScreen(
                         key(game.id) {
                             HomeGameListItem(
                                 game = game,
-                                accentColor = MaterialTheme.colorScheme.secondaryContainer,
+                                accentColor = MiuixTheme.colorScheme.secondaryContainer,
                                 onClick = { onGameClicked(game) },
                                 onLongClick = { onGameLongClick(game) },
                             )
@@ -344,7 +343,7 @@ private fun HomeCollapsingHeader(
 
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.background,
+        color = MiuixTheme.colorScheme.background,
         shadowElevation = lerp(0.dp, ChimeroidTopBarDefaults.ShadowElevation, fraction),
     ) {
         Column {
@@ -361,7 +360,7 @@ private fun HomeCollapsingHeader(
                     title = {
                         Text(
                             text = appName,
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MiuixTheme.textStyles.title1,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -388,13 +387,13 @@ private fun HomeCollapsingHeader(
                 ) {
                     Text(
                         text = stringResource(R.string.home_greeting),
-                        style = MaterialTheme.typography.displaySmall,
+                        style = MiuixTheme.textStyles.title1,
                         fontWeight = FontWeight.Black,
                     )
                     Text(
                         text = stringResource(R.string.home_greeting_subtitle),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     )
                 }
             }
@@ -413,14 +412,13 @@ private fun BentoContinuePlayingCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
-    val primaryContainer = MaterialTheme.colorScheme.primaryContainer
-    val onPrimaryContainer = MaterialTheme.colorScheme.onPrimaryContainer
+    val primaryContainer = MiuixTheme.colorScheme.primaryContainer
+    val onPrimaryContainer = MiuixTheme.colorScheme.onPrimaryContainer
 
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = primaryContainer),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        cornerRadius = 24.dp,
+        colors = CardDefaults.defaultColors(color = primaryContainer, contentColor = onPrimaryContainer),
     ) {
         Box(
             modifier = Modifier
@@ -471,15 +469,15 @@ private fun BentoContinuePlayingCard(
             ) {
                 Text(
                     text = if (game != null) "Continue\nPlaying" else "Start\nPlaying",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MiuixTheme.textStyles.title3,
                     fontWeight = FontWeight.Bold,
                     color = onPrimaryContainer,
-                    lineHeight = MaterialTheme.typography.titleMedium.fontSize * 1.15,
+                    lineHeight = MiuixTheme.textStyles.title3.fontSize * 1.15,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = game?.title ?: "No recent games",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MiuixTheme.textStyles.body2,
                     color = onPrimaryContainer.copy(alpha = 0.68f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -503,9 +501,8 @@ private fun BentoActionCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        cornerRadius = 22.dp,
+        colors = CardDefaults.defaultColors(color = containerColor, contentColor = contentColor),
         onClick = onClick,
     ) {
         Column(
@@ -526,10 +523,10 @@ private fun BentoActionCard(
             }
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelLarge,
+                style = MiuixTheme.textStyles.body2,
                 fontWeight = FontWeight.Bold,
                 color = contentColor,
-                lineHeight = MaterialTheme.typography.labelLarge.fontSize * 1.25,
+                lineHeight = MiuixTheme.textStyles.body2.fontSize * 1.25,
             )
         }
     }
@@ -546,14 +543,14 @@ private fun HomeSectionHeader(title: String) {
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
+            style = MiuixTheme.textStyles.title3,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f),
         )
         Text(
             text = stringResource(R.string.show_all),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MiuixTheme.textStyles.footnote1,
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )
     }
 }
@@ -571,14 +568,15 @@ private fun HomeGameListItem(
 ) {
     val context = LocalContext.current
     val subtitle = remember(game.id) { GameUtils.getGameSubtitle(context, game) }
+    val pillShape = remember { RoundedCornerShape(16.dp) }
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
+            .clip(pillShape)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        shape = pillShape,
+        color = MiuixTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
     ) {
         Row(
             modifier = Modifier.padding(10.dp),
@@ -602,7 +600,7 @@ private fun HomeGameListItem(
             ) {
                 Text(
                     text = game.title,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MiuixTheme.textStyles.body1,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -610,8 +608,8 @@ private fun HomeGameListItem(
                 if (subtitle.isNotEmpty()) {
                     Text(
                         text = subtitle,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MiuixTheme.textStyles.footnote1,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -620,7 +618,7 @@ private fun HomeGameListItem(
             Icon(
                 imageVector = Icons.Default.MoreVert,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 modifier = Modifier
                     .size(18.dp)
                     .combinedClickable(onClick = onLongClick),
@@ -639,8 +637,10 @@ private fun HomeNotificationBanner(
     enabled: Boolean = true,
     onAction: () -> Unit,
 ) {
-    OutlinedCard(
+    Surface(
         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MiuixTheme.colorScheme.dividerLine),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -650,23 +650,22 @@ private fun HomeNotificationBanner(
             Icon(
                 imageVector = Icons.Outlined.Info,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MiuixTheme.colorScheme.primary,
                 modifier = Modifier.size(18.dp),
             )
             Text(
                 text = message,
-                style = MaterialTheme.typography.bodySmall,
+                style = MiuixTheme.textStyles.body2,
                 modifier = Modifier.weight(1f),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            FilledTonalButton(
+            TextButton(
+                text = stringResource(id = actionId),
                 onClick = onAction,
                 enabled = enabled,
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-            ) {
-                Text(stringResource(id = actionId), style = MaterialTheme.typography.labelMedium)
-            }
+                textStyle = MiuixTheme.textStyles.footnote1,
+            )
         }
     }
 }

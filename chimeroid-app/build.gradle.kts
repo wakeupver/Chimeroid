@@ -154,20 +154,19 @@ dependencies {
     implementation(deps.libs.kotlin.serializationJson)
 
     implementation(platform(deps.libs.androidx.compose.composeBom))
-    implementation(deps.libs.androidx.compose.material3)
     implementation(deps.libs.androidx.compose.constraintLayout)
     debugImplementation(deps.libs.androidx.compose.tooling)
     implementation(deps.libs.androidx.compose.toolingPreview)
     implementation(deps.libs.androidx.compose.extendedIcons)
     implementation(deps.libs.androidx.compose.accompanist.systemUiController)
-    implementation(deps.libs.androidx.compose.accompanist.navigationMaterial)
     implementation(deps.libs.androidx.compose.accompanist.drawablePainter)
     implementation(deps.libs.androidx.paging.compose)
     implementation(deps.libs.androidx.lifecycle.viewModelCompose)
-    implementation(deps.libs.composeHtmlText)
 
-    implementation(deps.libs.composeSettings.uiTiles)
-    implementation(deps.libs.composeSettings.uiTilesExtended)
+    implementation(deps.libs.miuix.ui)
+    implementation(deps.libs.miuix.preference)
+    implementation(deps.libs.miuix.icons)
+
     implementation(deps.libs.composeSettings.diskStorage)
     implementation(deps.libs.composeSettings.memoryStorage)
 

@@ -12,24 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.OpenWith
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,6 +33,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.swordfish.chimeroid.app.shared.game.macro.MacroButton
 import com.swordfish.touchinput.controller.R
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.FloatingActionButton
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 // ────────────────────────────────────────────────────────────────────────────
 // Screen — list / add / delete. Dragging a button to a new position happens
@@ -68,7 +67,11 @@ fun GameMenuMacrosScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (macroButtons.isNotEmpty()) {
-                    SmallFloatingActionButton(onClick = onPositionOnScreen) {
+                    FloatingActionButton(
+                        onClick = onPositionOnScreen,
+                        minWidth = 40.dp,
+                        minHeight = 40.dp,
+                    ) {
                         Icon(
                             imageVector = Icons.Default.OpenWith,
                             contentDescription = stringResource(R.string.macro_position_button),
@@ -105,8 +108,8 @@ fun GameMenuMacrosScreen(
                 if (atLimit) {
                     Text(
                         text = stringResource(R.string.macro_at_limit, MacroButton.MAX_BUTTONS),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     )
                 }
                 Spacer(Modifier.height(140.dp)) // clears the stacked FAB group when scrolled to the end
@@ -136,8 +139,8 @@ private fun EmptyMacrosPlaceholder() {
     ) {
         Text(
             text = stringResource(R.string.macro_empty_hint),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MiuixTheme.textStyles.body1,
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )
     }
 }
@@ -159,14 +162,14 @@ private fun MacroButtonListItem(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Surface(
-            shape = MaterialTheme.shapes.small,
-            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = RoundedCornerShape(8.dp),
+            color = MiuixTheme.colorScheme.primaryContainer,
             modifier = Modifier.size(32.dp),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     text = btn.label,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MiuixTheme.textStyles.footnote1,
                     maxLines = 1,
                 )
             }
@@ -174,7 +177,7 @@ private fun MacroButtonListItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = btn.keyCodes.joinToString(" + ") { MacroButton.keyName(it) },
-                style = MaterialTheme.typography.bodySmall,
+                style = MiuixTheme.textStyles.body2,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -184,7 +187,7 @@ private fun MacroButtonListItem(
                 imageVector = Icons.Default.Delete,
                 contentDescription = stringResource(R.string.macro_delete),
                 modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.error,
+                tint = MiuixTheme.colorScheme.error,
             )
         }
     }
@@ -220,15 +223,14 @@ private fun AddMacroDialog(
             ) {
                 Text(
                     text = stringResource(R.string.macro_dialog_title),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MiuixTheme.textStyles.title3,
                 )
 
                 // Label input
-                OutlinedTextField(
+                TextField(
                     value = label,
                     onValueChange = { if (it.length <= 6) label = it },
-                    label = { Text(stringResource(R.string.macro_label_hint)) },
-                    placeholder = { Text(autoLabel.ifBlank { "e.g. A+B" }) },
+                    label = stringResource(R.string.macro_label_hint),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -236,7 +238,7 @@ private fun AddMacroDialog(
                 // Key selection
                 Text(
                     text = stringResource(R.string.macro_keys_label),
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MiuixTheme.textStyles.body2,
                 )
                 MacroKeyGrid(
                     selectedKeys = selectedKeys,
@@ -255,9 +257,7 @@ private fun AddMacroDialog(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.macro_cancel))
-                    }
+                    TextButton(text = stringResource(R.string.macro_cancel), onClick = onDismiss)
                     Spacer(Modifier.width(8.dp))
                     Button(
                         onClick = {
@@ -303,16 +303,39 @@ private fun MacroKeyGrid(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 row.forEach { (keyCode, keyName) ->
-                    FilterChip(
+                    MacroKeyChip(
                         selected = keyCode in selectedKeys,
+                        label = keyName,
                         onClick = { onToggle(keyCode) },
-                        label = {
-                            Text(keyName, style = MaterialTheme.typography.labelSmall)
-                        },
                         modifier = Modifier.weight(1f),
                     )
                 }
             }
+        }
+    }
+}
+
+// Miuix has no FilterChip primitive — a small selectable Surface recreates the
+// same "toggle pill" behavior using components already confirmed available.
+@Composable
+private fun MacroKeyChip(
+    selected: Boolean,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(32.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = if (selected) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.surfaceContainer,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                style = MiuixTheme.textStyles.footnote1,
+                color = if (selected) MiuixTheme.colorScheme.onPrimaryContainer else MiuixTheme.colorScheme.onSurface,
+            )
         }
     }
 }

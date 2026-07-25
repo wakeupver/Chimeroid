@@ -4,8 +4,6 @@ import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.focusable
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -17,6 +15,7 @@ import com.swordfish.chimeroid.app.shared.input.InputDeviceManager
 import com.swordfish.chimeroid.app.shared.input.ShortcutBindingUpdater
 import com.swordfish.chimeroid.lib.android.RetrogradeActivity
 import timber.log.Timber
+import top.yukonga.miuix.kmp.window.WindowDialog
 import javax.inject.Inject
 
 class GamePadShortcutBindingActivity : RetrogradeActivity() {
@@ -34,18 +33,18 @@ class GamePadShortcutBindingActivity : RetrogradeActivity() {
             AppTheme {
                 val focusRequester = remember { FocusRequester() }
 
-                AlertDialog(
+                WindowDialog(
+                    show = true,
                     modifier =
                         Modifier
                             .focusRequester(focusRequester)
                             .focusable()
                             .onKeyEvent { handleKeyEvent(it.nativeKeyEvent) }
                             .onGloballyPositioned { focusRequester.requestFocus() },
-                    title = { Text(text = shortcutBindingUpdater.getTitle(applicationContext)) },
-                    text = { Text(text = shortcutBindingUpdater.getMessage(applicationContext)) },
+                    title = shortcutBindingUpdater.getTitle(applicationContext),
+                    summary = shortcutBindingUpdater.getMessage(applicationContext),
                     onDismissRequest = { finish() },
-                    confirmButton = {},
-                )
+                ) {}
             }
         }
     }

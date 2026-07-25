@@ -5,7 +5,6 @@ import android.content.Intent
 import android.view.InputDevice
 import android.view.KeyEvent
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
@@ -52,13 +51,13 @@ private fun DeviceBindingCategory(
     val context = LocalContext.current
     val customizableKeys = device.getChimeroidInputDevice().getCustomizableKeys()
 
-    ChimeroidCardSettingsGroup(title = { Text(text = device.name) }) {
+    ChimeroidCardSettingsGroup(title = device.name) {
         customizableKeys.forEach { retroKey ->
             val inputKey = bindings.keys[retroKey] ?: InputKey(KeyEvent.KEYCODE_UNKNOWN)
 
             ChimeroidSettingsMenuLink(
-                title = { Text(text = retroKey.displayName(LocalContext.current)) },
-                subtitle = { Text(text = inputKey.displayName()) },
+                title = retroKey.displayName(LocalContext.current),
+                subtitle = inputKey.displayName(),
                 onClick = {
                     val intent =
                         Intent(context, GamePadBindingActivity::class.java).apply {
@@ -83,8 +82,8 @@ private fun DeviceShortcutBinding(
     shortcut: GameShortcut,
 ) {
     ChimeroidSettingsMenuLink(
-        title = { Text(text = shortcut.type.displayName()) },
-        subtitle = { Text(text = shortcut.name) },
+        title = shortcut.type.displayName(),
+        subtitle = shortcut.name,
         onClick = {
             val intent =
                 Intent(context, GamePadShortcutBindingActivity::class.java).apply {
@@ -98,11 +97,11 @@ private fun DeviceShortcutBinding(
 
 @Composable
 private fun EnabledDeviceCategory(state: InputDevicesSettingsViewModel.State) {
-    ChimeroidCardSettingsGroup(title = { Text(text = stringResource(R.string.settings_gamepad_category_enabled)) }) {
+    ChimeroidCardSettingsGroup(title = stringResource(R.string.settings_gamepad_category_enabled)) {
         state.devices.forEach { device ->
             ChimeroidSettingsSwitch(
                 state = booleanPreferenceState(key = device.key, default = device.enabledByDefault),
-                title = { Text(text = device.name) },
+                title = device.name,
             )
         }
     }
@@ -110,9 +109,9 @@ private fun EnabledDeviceCategory(state: InputDevicesSettingsViewModel.State) {
 
 @Composable
 private fun GeneralOptionsCategory(viewModel: InputDevicesSettingsViewModel) {
-    ChimeroidCardSettingsGroup(title = { Text(text = stringResource(R.string.settings_gamepad_category_general)) }) {
+    ChimeroidCardSettingsGroup(title = stringResource(R.string.settings_gamepad_category_general)) {
         ChimeroidSettingsMenuLink(
-            title = { Text(text = stringResource(R.string.settings_gamepad_title_reset_bindings)) },
+            title = stringResource(R.string.settings_gamepad_title_reset_bindings),
             onClick = { viewModel.resetAllBindings() },
         )
     }

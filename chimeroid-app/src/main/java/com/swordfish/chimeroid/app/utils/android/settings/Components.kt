@@ -1,28 +1,27 @@
 package com.swordfish.chimeroid.app.utils.android.settings
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ListItemColors
-import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.alorma.compose.settings.storage.base.SettingValueState
-import com.alorma.compose.settings.ui.SettingsMenuLink
-import com.alorma.compose.settings.ui.SettingsSlider
-import com.alorma.compose.settings.ui.SettingsSwitch
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.preference.SliderPreference
+import top.yukonga.miuix.kmp.preference.SwitchPreference
+import top.yukonga.miuix.kmp.theme.LocalContentColor
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.roundToInt
 
 @Composable
@@ -46,22 +45,23 @@ fun ChimeroidSettingsPage(
 fun ChimeroidSettingsSwitch(
     enabled: Boolean = true,
     state: SettingValueState<Boolean>,
-    icon: @Composable (() -> Unit)? = null,
-    title: @Composable () -> Unit,
-    subtitle: @Composable (() -> Unit)? = null,
+    icon: (@Composable () -> Unit)? = null,
+    title: String,
+    subtitle: String? = null,
+    action: (@Composable RowScope.() -> Unit)? = null,
     onCheckedChange: (Boolean) -> Unit = {},
 ) {
-    SettingsSwitch(
-        enabled = enabled,
-        state = state.value,
-        icon = icon,
-        title = title,
-        subtitle = subtitle,
+    SwitchPreference(
+        checked = state.value,
         onCheckedChange = {
             state.value = it
             onCheckedChange(it)
         },
-        colors = chimeroidSettingsColor(enabled),
+        title = title,
+        summary = subtitle,
+        startAction = icon,
+        endActions = action ?: {},
+        enabled = enabled,
     )
 }
 
@@ -69,32 +69,37 @@ fun ChimeroidSettingsSwitch(
 fun ChimeroidSettingsMenuLink(
     enabled: Boolean = true,
     icon: (@Composable () -> Unit)? = null,
-    title: @Composable () -> Unit,
-    subtitle: (@Composable () -> Unit)? = null,
-    action: (@Composable () -> Unit)? = null,
+    title: String,
+    titleColor: Color? = null,
+    subtitle: String? = null,
+    action: (@Composable RowScope.() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    SettingsMenuLink(
-        enabled = enabled,
-        icon = icon,
-        title = title,
-        subtitle = subtitle,
-        action = action,
-        onClick = onClick,
-        colors = chimeroidSettingsColor(enabled),
-    )
+    val content = @Composable {
+        ArrowPreference(
+            title = title,
+            summary = subtitle,
+            startAction = icon,
+            endActions = action ?: {},
+            onClick = onClick,
+            enabled = enabled,
+        )
+    }
+    if (titleColor != null) {
+        CompositionLocalProvider(LocalContentColor provides titleColor, content = content)
+    } else {
+        content()
+    }
 }
 
 @Composable
 fun ChimeroidSettingsGroup(
     modifier: Modifier = Modifier,
-    title: @Composable (() -> Unit)? = null,
+    title: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Surface {
-        Column(
-            modifier = modifier.fillMaxWidth(),
-        ) {
+    Surface(modifier = modifier.fillMaxWidth()) {
+        Column {
             if (title != null) {
                 SettingsGroupTitleSmall(title)
             }
@@ -106,22 +111,20 @@ fun ChimeroidSettingsGroup(
 @Composable
 fun ChimeroidCardSettingsGroup(
     modifier: Modifier = Modifier,
-    title: @Composable (() -> Unit)? = null,
+    title: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Surface {
-        Column(
-            modifier =
-                modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp),
-        ) {
-            OutlinedCard {
-                if (title != null) {
-                    SettingsGroupTitleSmall(title)
-                }
-                content()
+    Surface(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp),
+    ) {
+        Card {
+            if (title != null) {
+                SettingsGroupTitleSmall(title)
             }
+            content()
         }
     }
 }
@@ -133,59 +136,30 @@ fun ChimeroidSettingsSlider(
     steps: Int,
     enabled: Boolean,
     valueRange: ClosedFloatingPointRange<Float>,
-    title: @Composable () -> Unit,
-    subtitle: @Composable () -> Unit = { },
+    title: String,
+    subtitle: String? = null,
 ) {
-    val defaultColors = ListItemDefaults.colors()
-    val disabledColors =
-        ListItemDefaults.colors(
-            headlineColor = defaultColors.disabledHeadlineColor,
-            leadingIconColor = defaultColors.disabledLeadingIconColor,
-            trailingIconColor = defaultColors.disabledTrailingIconColor,
-            supportingColor = defaultColors.supportingTextColor.copy(alpha = 0.3f),
-        )
-
-    SettingsSlider(
+    SliderPreference(
         modifier = modifier,
-        steps = steps,
         value = state.value.toFloat(),
         onValueChange = { state.value = it.roundToInt() },
+        steps = steps,
         valueRange = valueRange,
         title = title,
-        subtitle = subtitle,
+        summary = subtitle,
         enabled = enabled,
-        colors = if (enabled) defaultColors else disabledColors,
     )
 }
 
 @Composable
-private fun SettingsGroupTitleSmall(title: @Composable () -> Unit) {
-    Box(
+private fun SettingsGroupTitleSmall(title: String) {
+    Text(
+        text = title,
+        style = MiuixTheme.textStyles.body2,
+        color = MiuixTheme.colorScheme.primary,
         modifier =
             Modifier
                 .fillMaxWidth()
-                .wrapContentHeight()
                 .padding(16.dp),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        val primary = MaterialTheme.colorScheme.primary
-        val titleStyle = MaterialTheme.typography.labelLarge.copy(color = primary)
-        ProvideTextStyle(value = titleStyle) { title() }
-    }
-}
-
-@Composable
-private fun chimeroidSettingsColor(enabled: Boolean): ListItemColors {
-    val defaultColors = ListItemDefaults.colors()
-
-    if (enabled) {
-        return defaultColors
-    }
-
-    return ListItemDefaults.colors(
-        headlineColor = defaultColors.disabledHeadlineColor,
-        leadingIconColor = defaultColors.disabledLeadingIconColor,
-        trailingIconColor = defaultColors.disabledTrailingIconColor,
-        supportingColor = defaultColors.supportingTextColor.copy(alpha = 0.3f),
     )
 }

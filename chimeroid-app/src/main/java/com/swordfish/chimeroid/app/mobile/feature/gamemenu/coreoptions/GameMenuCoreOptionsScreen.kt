@@ -12,10 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,6 +34,10 @@ import com.swordfish.chimeroid.app.utils.android.settings.ChimeroidSettingsSwitc
 import com.swordfish.chimeroid.app.utils.android.settings.booleanPreferenceState
 import com.swordfish.chimeroid.app.utils.android.settings.indexPreferenceState
 import com.swordfish.chimeroid.lib.core.CoreVariablesManager
+import top.yukonga.miuix.kmp.basic.HorizontalDivider
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun GameMenuCoreOptionsScreen(
@@ -74,11 +74,11 @@ private fun CoreOptionItem(
     if (entriesData.values.toSet() == CoreOptionsPreferenceHelper.BOOLEAN_SET) {
         ChimeroidSettingsSwitch(
             state = booleanPreferenceState(prefKey, coreOption.getCurrentValue() == "enabled"),
-            title = { Text(text = coreOption.getDisplayName(context)) },
+            title = coreOption.getDisplayName(context),
         )
     } else {
         ChimeroidSettingsList(
-            title = { Text(text = coreOption.getDisplayName(context)) },
+            title = coreOption.getDisplayName(context),
             items = entriesData.labels,
             state = indexPreferenceState(
                 prefKey,
@@ -129,14 +129,14 @@ private fun AutoDetectedCoreOptions(
         ) {
             Text(
                 text = stringResource(R.string.core_settings_auto_detected),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
+                style = MiuixTheme.textStyles.title4,
+                color = MiuixTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f),
             )
             Icon(
                 imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MiuixTheme.colorScheme.primary,
             )
         }
 
@@ -165,14 +165,12 @@ private fun ControllersOptions(
     if (visibleControllers.isEmpty()) return
 
     ChimeroidSettingsGroup(
-        title = { Text(text = stringResource(R.string.core_settings_category_controllers)) },
+        title = stringResource(R.string.core_settings_category_controllers),
     ) {
         visibleControllers.forEach { (port, controllerConfigs) ->
             val names = controllerConfigs!!.map { it.name }
             ChimeroidSettingsList(
-                title = {
-                    Text(text = context.getString(R.string.core_settings_controller, (port + 1).toString()))
-                },
+                title = context.getString(R.string.core_settings_controller, (port + 1).toString()),
                 items = controllerConfigs.map { stringResource(id = it.displayName) },
                 state = indexPreferenceState(
                     ControllerConfigsManager.getSharedPreferencesId(
