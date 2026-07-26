@@ -1,8 +1,8 @@
 plugins {
     id("com.android.library")
-    id("kotlin-android")
-    id("kotlin-kapt")
-    id("kotlinx-serialization")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.kapt")
+    id("org.jetbrains.kotlin.plugin.serialization")
     id("kotlin-parcelize")
     id("org.jetbrains.kotlin.plugin.compose")
 }
