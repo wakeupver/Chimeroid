@@ -106,6 +106,10 @@ kotlin {
     }
 }
 
+kapt {
+    correctErrorTypes = true
+}
+
 dependencies {
     implementation(project(":chimeroid-util"))
     implementation(project(":chimeroid-shared"))
