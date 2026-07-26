@@ -11,7 +11,7 @@ import gg.padkit.controls.ControlButton
 import gg.padkit.ids.Id
 import gg.padkit.layouts.radial.secondarydials.LayoutRadialSecondaryDialsScope
 
-context(_: PadKitScope, _: LayoutRadialSecondaryDialsScope)
+context(padKitScope: PadKitScope, layoutScope: LayoutRadialSecondaryDialsScope)
 @Composable
 fun ChimeroidControlButton(
     modifier: Modifier = Modifier,
@@ -19,11 +19,15 @@ fun ChimeroidControlButton(
     label: String? = null,
     icon: Int? = null,
 ) {
-    val theme = LocalChimeroidPadTheme.current
-    ControlButton(
-        modifier = modifier.padding(theme.padding),
-        id = id,
-        foreground = { ChimeroidButtonForeground(pressed = it, icon = icon, label = label) },
-        background = { ChimeroidControlBackground() },
-    )
+    with(padKitScope) {
+        with(layoutScope) {
+            val theme = LocalChimeroidPadTheme.current
+            ControlButton(
+                modifier = modifier.padding(theme.padding),
+                id = id,
+                foreground = { ChimeroidButtonForeground(pressed = it, icon = icon, label = label) },
+                background = { ChimeroidControlBackground() },
+            )
+        }
+    }
 }
