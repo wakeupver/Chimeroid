@@ -18,7 +18,7 @@ object deps {
         const val lifecycle       = "2.6.1"
         const val googleApiClient = "1.32.1"
         const val paging          = "3.2.1"
-        const val room            = "2.6.1"
+        const val room             = "2.8.4"
         const val serialization   = "1.2.2"
         const val fragment        = "1.5.1"
         const val activity        = "1.7.2"
