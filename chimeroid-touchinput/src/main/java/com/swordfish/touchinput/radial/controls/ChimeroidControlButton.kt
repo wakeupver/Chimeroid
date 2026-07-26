@@ -1,5 +1,3 @@
-@file:Suppress("CONTEXT_RECEIVERS_DEPRECATED")
-
 package com.swordfish.touchinput.radial.controls
 
 import androidx.compose.foundation.layout.padding
@@ -13,7 +11,7 @@ import gg.padkit.controls.ControlButton
 import gg.padkit.ids.Id
 import gg.padkit.layouts.radial.secondarydials.LayoutRadialSecondaryDialsScope
 
-context(PadKitScope, LayoutRadialSecondaryDialsScope)
+context(_: PadKitScope, _: LayoutRadialSecondaryDialsScope)
 @Composable
 fun ChimeroidControlButton(
     modifier: Modifier = Modifier,
