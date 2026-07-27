@@ -14,7 +14,7 @@ object deps {
         const val okHttp          = "4.9.1"
         const val retrofit        = "2.9.0"
         const val work            = "2.9.0"
-        const val navigation      = "2.5.2"
+        const val navigation      = "2.9.7"
         const val lifecycle       = "2.6.1"
         const val googleApiClient = "1.32.1"
         const val paging          = "3.2.1"
