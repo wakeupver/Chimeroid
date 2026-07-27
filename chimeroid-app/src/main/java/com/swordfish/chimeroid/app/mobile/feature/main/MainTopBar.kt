@@ -14,16 +14,26 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -37,13 +47,6 @@ import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidTopBarActio
 import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidTopBarChrome
 import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidTopBarDefaults
 import com.swordfish.chimeroid.app.shared.savesync.SaveSyncWork
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public entry-point — wrapped in a Surface so it carries the same
@@ -60,7 +63,7 @@ fun MainTopBar(
     // Surface provides background color + drop-shadow — matching HomeCollapsingHeader
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MiuixTheme.colorScheme.background,
+        color = MaterialTheme.colorScheme.background,
         shadowElevation = ChimeroidTopBarDefaults.ShadowElevation,
     ) {
         Column(
@@ -135,7 +138,7 @@ fun ChimeroidTopAppBar(
                 } else {
                     Text(
                         text = stringResource(targetRoute.titleId),
-                        style = MiuixTheme.textStyles.title1,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -159,10 +162,7 @@ fun ChimeroidTopAppBar(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Inline search field (Search route only) — Miuix's TextField already renders
-// its own rounded, filled box (cornerRadius + colors), so unlike the M3
-// version this no longer needs an external Surface+shape wrapper just to fake
-// a pill background around an underline-style field.
+// Inline search field (Search route only)
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun ChimeroidSearchView(
@@ -176,19 +176,31 @@ private fun ChimeroidSearchView(
         focusRequester.requestFocus()
     }
 
-    TextField(
-        value = mainUIState.searchQuery,
-        onValueChange = { onUpdateQueryString(it) },
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 8.dp, end = 8.dp)
-            .focusRequester(focusRequester),
-        cornerRadius = 28.dp,
-        textStyle = MiuixTheme.textStyles.body1,
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-        singleLine = true,
-        keyboardActions = KeyboardActions(
-            onDone = { focusManager.clearFocus(true) },
-        ),
-    )
+            .padding(top = 8.dp, bottom = 8.dp, end = 8.dp),
+        shape = RoundedCornerShape(100),
+        tonalElevation = 16.dp,
+    ) {
+        TextField(
+            value = mainUIState.searchQuery,
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
+            textStyle = MaterialTheme.typography.bodyMedium,
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            onValueChange = { onUpdateQueryString(it) },
+            singleLine = true,
+            keyboardActions = KeyboardActions(
+                onDone = { focusManager.clearFocus(true) },
+            ),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+            ),
+        )
+    }
 }

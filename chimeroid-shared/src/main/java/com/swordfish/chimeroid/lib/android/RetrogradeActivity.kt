@@ -20,21 +20,22 @@
 package com.swordfish.chimeroid.lib.android
 
 import android.os.Bundle
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
-import dagger.android.HasAndroidInjector
+import dagger.android.support.HasSupportFragmentInjector
 import javax.inject.Inject
 
-abstract class RetrogradeActivity : FragmentActivity(), HasAndroidInjector {
+abstract class RetrogradeActivity : FragmentActivity(), HasSupportFragmentInjector {
     @Inject
-    lateinit var androidInjector: DispatchingAndroidInjector<Any>
+    lateinit var supportFragmentInjector: DispatchingAndroidInjector<Fragment>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
         super.onCreate(savedInstanceState)
     }
 
-    override fun androidInjector(): AndroidInjector<Any> = androidInjector
+    override fun supportFragmentInjector(): AndroidInjector<Fragment>? = supportFragmentInjector
 }

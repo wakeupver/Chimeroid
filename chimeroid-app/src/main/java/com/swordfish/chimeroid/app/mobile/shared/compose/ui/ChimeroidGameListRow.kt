@@ -9,15 +9,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.lib.library.db.entity.Game
-import top.yukonga.miuix.kmp.basic.HorizontalDivider
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -36,7 +36,7 @@ fun ChimeroidGameListRow(
                 onClick = onClick,
                 onLongClick = onLongClick,
             ),
-        color = MiuixTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surface,
     ) {
         Row(
             modifier = Modifier
@@ -73,7 +73,7 @@ fun ChimeroidGameListRow(
         HorizontalDivider(
             modifier = Modifier.padding(start = 78.dp),
             thickness = 0.5.dp,
-            color = MiuixTheme.colorScheme.dividerLine.copy(alpha = 0.5f),
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         )
     }
 }

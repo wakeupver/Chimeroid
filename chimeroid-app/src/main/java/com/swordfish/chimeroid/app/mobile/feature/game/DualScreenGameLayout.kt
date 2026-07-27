@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -30,8 +32,6 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.app.shared.game.BaseGameScreenViewModel
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -168,7 +168,7 @@ private fun DualScreenDivider(
         modifier = Modifier
             .fillMaxWidth()
             .height(DIVIDER_H)
-            .background(MiuixTheme.colorScheme.surfaceVariant.copy(alpha = 0.50f))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.50f))
             .pointerInput(totalAvailablePx) {
                 detectVerticalDragGestures { _, dragAmountPx ->
                     onDrag(dragAmountPx / totalAvailablePx)
@@ -180,7 +180,7 @@ private fun DualScreenDivider(
         Surface(
             modifier = Modifier.size(width = 48.dp, height = 5.dp),
             shape = RoundedCornerShape(50),
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.45f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
         ) {}
     }
 }

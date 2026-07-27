@@ -1,8 +1,8 @@
 plugins {
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.kapt")
-    id("org.jetbrains.kotlin.plugin.serialization")
+    id("kotlin-android")
+    id("kotlin-kapt")
+    id("kotlinx-serialization")
     id("kotlin-parcelize")
     id("org.jetbrains.kotlin.plugin.compose")
 }
@@ -22,7 +22,7 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
-        freeCompilerArgs.add("-Xcontext-parameters")
+        freeCompilerArgs.add("-Xcontext-receivers")
     }
 }
 
@@ -32,7 +32,7 @@ dependencies {
     implementation(platform(deps.libs.androidx.compose.composeBom))
     implementation(deps.libs.androidx.compose.geometry)
     implementation(deps.libs.androidx.compose.runtime)
-    implementation(deps.libs.miuix.ui)
+    implementation(deps.libs.androidx.compose.material3)
     implementation(deps.libs.androidx.compose.coreIcons)
 
     implementation(deps.libs.androidx.appcompat.constraintLayout)

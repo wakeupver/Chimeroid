@@ -6,22 +6,19 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // AGP and the Kotlin Gradle Plugin are declared exclusively via the plugins{} block
-        // below (apply false + per-module id()). Also adding them here duplicates plugin
-        // resolution through two separate classloader paths, which is what causes
-        // "Cannot add extension with name 'kotlin', as there is an extension already
-        // registered with that name" when chimeroid-app applies kotlin-android.
+        classpath(deps.plugins.android)
         classpath(deps.plugins.navigationSafeArgs)
+        classpath(deps.plugins.kotlinGradlePlugin)
     }
 }
 
 plugins {
-    id("base")
+    id("org.jetbrains.kotlin.jvm") version deps.versions.kotlin
     id("com.github.ben-manes.versions") version "0.51.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.4.0"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
     id("org.jetbrains.kotlin.android") version deps.versions.kotlin apply false
-    id("org.jetbrains.kotlin.plugin.serialization") version deps.versions.kotlin apply false
-    id("com.android.application") version "9.1.1" apply false
+    id("com.android.application") version "8.7.2" apply false
     id("org.jetbrains.kotlin.plugin.compose") version deps.versions.kotlin apply false
 }
 

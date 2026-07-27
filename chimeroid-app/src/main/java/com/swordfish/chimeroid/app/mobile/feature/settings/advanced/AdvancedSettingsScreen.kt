@@ -1,9 +1,9 @@
 package com.swordfish.chimeroid.app.mobile.feature.settings.advanced
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
@@ -31,8 +31,6 @@ import com.swordfish.chimeroid.app.utils.android.settings.booleanPreferenceState
 import com.swordfish.chimeroid.app.utils.android.settings.indexPreferenceState
 import com.swordfish.chimeroid.app.utils.android.settings.intPreferenceState
 import com.swordfish.chimeroid.lib.storage.DirectoriesManager
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.window.WindowDialog
 
 @Composable
 fun AdvancedSettingsScreen(
@@ -59,19 +57,19 @@ fun AdvancedSettingsScreen(
 @Composable
 private fun InputSettings() {
     ChimeroidCardSettingsGroup(
-        title = stringResource(R.string.settings_category_input),
+        title = { Text(text = stringResource(R.string.settings_category_input)) },
     ) {
         val rumbleEnabled = booleanPreferenceState(R.string.pref_key_enable_rumble, false)
         ChimeroidSettingsSwitch(
             state = rumbleEnabled,
-            title = stringResource(R.string.settings_title_enable_rumble),
-            subtitle = stringResource(R.string.settings_description_enable_rumble),
+            title = { Text(text = stringResource(R.string.settings_title_enable_rumble)) },
+            subtitle = { Text(text = stringResource(R.string.settings_description_enable_rumble)) },
         )
         ChimeroidSettingsSwitch(
             enabled = rumbleEnabled.value,
             state = booleanPreferenceState(R.string.pref_key_enable_device_rumble, false),
-            title = stringResource(R.string.settings_title_enable_device_rumble),
-            subtitle = stringResource(R.string.settings_description_enable_device_rumble),
+            title = { Text(text = stringResource(R.string.settings_title_enable_device_rumble)) },
+            subtitle = { Text(text = stringResource(R.string.settings_description_enable_device_rumble)) },
         )
         ChimeroidSettingsSlider(
             state = intPreferenceState(
@@ -81,7 +79,7 @@ private fun InputSettings() {
             steps = 10,
             valueRange = 0f..10f,
             enabled = true,
-            title = stringResource(R.string.settings_title_tilt_sensitivity),
+            title = { Text(text = stringResource(R.string.settings_title_tilt_sensitivity)) },
         )
     }
 }
@@ -99,15 +97,15 @@ private fun GeneralSettings(
     val factoryResetDialogState = remember { mutableStateOf(false) }
 
     ChimeroidCardSettingsGroup(
-        title = stringResource(R.string.settings_category_general),
+        title = { Text(text = stringResource(R.string.settings_category_general)) },
     ) {
         ChimeroidSettingsSwitch(
             state = booleanPreferenceState(R.string.pref_key_low_latency_audio, false),
-            title = stringResource(R.string.settings_title_low_latency_audio),
-            subtitle = stringResource(R.string.settings_description_low_latency_audio),
+            title = { Text(text = stringResource(R.string.settings_title_low_latency_audio)) },
+            subtitle = { Text(text = stringResource(R.string.settings_description_low_latency_audio)) },
         )
         ChimeroidSettingsList(
-            title = stringResource(R.string.settings_title_maximum_cache_usage),
+            title = { Text(text = stringResource(R.string.settings_title_maximum_cache_usage)) },
             items = uiState.cache.displayNames,
             state = indexPreferenceState(
                 R.string.pref_key_max_cache_size,
@@ -117,12 +115,12 @@ private fun GeneralSettings(
         )
         ChimeroidSettingsSwitch(
             state = booleanPreferenceState(R.string.pref_key_allow_direct_game_load, true),
-            title = stringResource(R.string.settings_title_direct_game_load),
-            subtitle = stringResource(R.string.settings_description_direct_game_load),
+            title = { Text(text = stringResource(R.string.settings_title_direct_game_load)) },
+            subtitle = { Text(text = stringResource(R.string.settings_description_direct_game_load)) },
         )
         ChimeroidSettingsMenuLink(
-            title = stringResource(R.string.settings_title_reset_settings),
-            subtitle = stringResource(R.string.settings_description_reset_settings),
+            title = { Text(text = stringResource(R.string.settings_title_reset_settings)) },
+            subtitle = { Text(text = stringResource(R.string.settings_description_reset_settings)) },
             onClick = { factoryResetDialogState.value = true },
         )
     }
@@ -155,11 +153,11 @@ private fun StorageSettings(directoriesManager: DirectoriesManager) {
     }
 
     ChimeroidCardSettingsGroup(
-        title = stringResource(R.string.settings_category_storage_paths),
+        title = { Text(text = stringResource(R.string.settings_category_storage_paths)) },
     ) {
         ChimeroidSettingsMenuLink(
-            title = stringResource(R.string.settings_title_storage_location),
-            subtitle = displayPath.value,
+            title = { Text(text = stringResource(R.string.settings_title_storage_location)) },
+            subtitle = { Text(text = displayPath.value) },
             onClick = { StorageBaseDirPicker.launch(context) },
         )
     }
@@ -176,24 +174,18 @@ private fun FactoryResetDialog(
     navController: NavController,
 ) {
     val onDismiss = { state.value = false }
-    WindowDialog(
-        show = state.value,
-        title = stringResource(R.string.reset_settings_warning_message_title),
-        summary = stringResource(R.string.reset_settings_warning_message_description),
+    AlertDialog(
+        title = { Text(stringResource(R.string.reset_settings_warning_message_title)) },
+        text = { Text(stringResource(R.string.reset_settings_warning_message_description)) },
         onDismissRequest = onDismiss,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-        ) {
-            TextButton(text = stringResource(R.string.cancel), onClick = onDismiss)
-            TextButton(
-                text = stringResource(R.string.ok),
-                onClick = {
-                    viewModel.resetAllSettings()
-                    navController.popBackStack(MainRoute.SETTINGS.route, false)
-                },
-            )
-        }
-    }
+        confirmButton = {
+            TextButton(onClick = {
+                viewModel.resetAllSettings()
+                navController.popBackStack(MainRoute.SETTINGS.route, false)
+            }) { Text(stringResource(R.string.ok)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }

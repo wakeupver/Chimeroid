@@ -8,6 +8,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -20,7 +21,6 @@ import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidEmptyView
 import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidGameListRow
 import com.swordfish.chimeroid.lib.library.db.entity.Game
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 
 @Composable
 fun SearchScreen(

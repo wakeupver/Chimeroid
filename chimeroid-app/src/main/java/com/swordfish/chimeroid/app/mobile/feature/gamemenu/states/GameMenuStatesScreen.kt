@@ -12,8 +12,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
@@ -25,12 +30,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.R
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun GameMenuStatesScreen(
@@ -71,10 +70,9 @@ private fun SaveStateCard(
     entry: GameMenuStatesViewModel.StateEntry,
     onClick: () -> Unit,
 ) {
-    Card(
-        // Card has no `enabled` param — a null onClick is Miuix's own way to make
-        // a card non-interactive, paired with the same alpha dimming as before.
-        onClick = if (entry.enabled) onClick else null,
+    OutlinedCard(
+        onClick = onClick,
+        enabled = entry.enabled,
         modifier = Modifier
             .fillMaxWidth()
             .alpha(if (entry.enabled) 1f else 0.45f),
@@ -88,7 +86,7 @@ private fun SaveStateCard(
             Box(
                 modifier = Modifier
                     .size(72.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .clip(MaterialTheme.shapes.small),
                 contentAlignment = Alignment.Center,
             ) {
                 if (entry.preview != null) {
@@ -101,13 +99,13 @@ private fun SaveStateCard(
                 } else {
                     Surface(
                         modifier = Modifier.fillMaxSize(),
-                        color = MiuixTheme.colorScheme.surfaceVariant,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_menu_image),
                                 contentDescription = null,
-                                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.4f),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                                 modifier = Modifier.size(28.dp),
                             )
                         }
@@ -119,13 +117,13 @@ private fun SaveStateCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = entry.title,
-                    style = MiuixTheme.textStyles.title4,
+                    style = MaterialTheme.typography.titleSmall,
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = entry.description,
-                    style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

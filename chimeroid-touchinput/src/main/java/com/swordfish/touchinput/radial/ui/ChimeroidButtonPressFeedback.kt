@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,8 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.swordfish.touchinput.radial.LocalChimeroidPadTheme
 import kotlinx.coroutines.delay
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 
 @Composable
 fun ChimeroidButtonPressFeedback(
@@ -84,11 +83,9 @@ fun ChimeroidButtonPressFeedback(
                         Modifier
                             .fillMaxSize(0.625f)
                             .align(Alignment.Center),
-                    progress = animatedProgress,
-                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                        foregroundColor = LocalChimeroidPadTheme.current.icons(false),
-                        backgroundColor = Color.Transparent,
-                    ),
+                    progress = { animatedProgress },
+                    color = LocalChimeroidPadTheme.current.icons(false),
+                    trackColor = Color.Transparent,
                 )
             }
         }

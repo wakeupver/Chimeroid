@@ -2,6 +2,7 @@ package com.swordfish.chimeroid.app.mobile.feature.settings.savesync
 
 import android.content.Intent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
@@ -37,23 +38,31 @@ fun SaveSyncSettingsScreen(
     ChimeroidSettingsPage(modifier = modifier.fillMaxSize()) {
         ChimeroidCardSettingsGroup {
             ChimeroidSettingsMenuLink(
-                title =
-                    stringResource(
-                        id = R.string.settings_save_sync_configure,
-                        saveSyncState.provider,
-                    ),
-                subtitle = saveSyncState.configInfo,
+                title = {
+                    Text(
+                        text =
+                            stringResource(
+                                id = R.string.settings_save_sync_configure,
+                                saveSyncState.provider,
+                            ),
+                    )
+                },
+                subtitle = { Text(text = saveSyncState.configInfo) },
                 enabled = !isSyncInProgress,
                 onClick = { context.startActivity(Intent(context, saveSyncState.settingsActivity)) },
             )
             ChimeroidSettingsSwitch(
                 state = booleanPreferenceState(R.string.pref_key_save_sync_enable, default = false),
-                title = stringResource(id = R.string.settings_save_sync_include_saves),
-                subtitle =
-                    stringResource(
-                        id = R.string.settings_save_sync_include_saves_description,
-                        saveSyncState.savesSpace,
-                    ),
+                title = { Text(text = stringResource(id = R.string.settings_save_sync_include_saves)) },
+                subtitle = {
+                    Text(
+                        text =
+                            stringResource(
+                                id = R.string.settings_save_sync_include_saves_description,
+                                saveSyncState.savesSpace,
+                            ),
+                    )
+                },
                 enabled = saveSyncState.isConfigured && !isSyncInProgress,
             )
             ChimeroidSettingsListMultiSelect(
@@ -62,8 +71,8 @@ fun SaveSyncSettingsScreen(
                         stringResource(R.string.pref_key_save_sync_cores),
                         emptySet(),
                     ),
-                title = stringResource(id = R.string.settings_save_sync_include_states),
-                subtitle = stringResource(id = R.string.settings_save_sync_include_states_description),
+                title = { Text(text = stringResource(id = R.string.settings_save_sync_include_states)) },
+                subtitle = { Text(text = stringResource(id = R.string.settings_save_sync_include_states_description)) },
                 entryValues = saveSyncState.coreNames,
                 entries = saveSyncState.coreVisibleNames,
                 enabled = saveSyncState.isConfigured && !isSyncInProgress,
@@ -71,17 +80,21 @@ fun SaveSyncSettingsScreen(
             )
             ChimeroidSettingsSwitch(
                 state = booleanPreferenceState(R.string.pref_key_save_sync_auto, default = false),
-                title = stringResource(id = R.string.settings_save_sync_enable_auto),
-                subtitle = stringResource(id = R.string.settings_save_sync_enable_auto_description),
+                title = { Text(text = stringResource(id = R.string.settings_save_sync_enable_auto)) },
+                subtitle = { Text(text = stringResource(id = R.string.settings_save_sync_enable_auto_description)) },
                 enabled = saveSyncState.isConfigured && !isSyncInProgress,
             )
             ChimeroidSettingsMenuLink(
-                title = stringResource(id = R.string.settings_save_sync_refresh),
-                subtitle =
-                    stringResource(
-                        id = R.string.settings_save_sync_refresh_description,
-                        saveSyncState.lastSyncInfo,
-                    ),
+                title = { Text(text = stringResource(id = R.string.settings_save_sync_refresh)) },
+                subtitle = {
+                    Text(
+                        text =
+                            stringResource(
+                                id = R.string.settings_save_sync_refresh_description,
+                                saveSyncState.lastSyncInfo,
+                            ),
+                    )
+                },
                 enabled = saveSyncState.isConfigured && !isSyncInProgress,
                 onClick = { SaveSyncWork.enqueueManualWork(context) },
             )

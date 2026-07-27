@@ -16,6 +16,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,12 +25,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -58,11 +68,6 @@ import com.swordfish.chimeroid.lib.library.db.entity.Game
 import com.swordfish.chimeroid.lib.saves.StatesManager
 import com.swordfish.chimeroid.lib.saves.StatesPreviewManager
 import com.swordfish.touchinput.radial.sensors.TiltConfiguration
-import top.yukonga.miuix.kmp.basic.HorizontalDivider
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.TopAppBar
 import java.security.InvalidParameterException
 import javax.inject.Inject
 
@@ -158,6 +163,7 @@ class GameMenuActivity : RetrogradeComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun GameMenuScreen(gameMenuRequest: GameMenuRequest) {
         AppTheme {
@@ -170,20 +176,29 @@ class GameMenuActivity : RetrogradeComponentActivity() {
                     ?.let { GameMenuRoute.findByRoute(it) }
                     ?: GameMenuRoute.HOME
 
-            // Miuix's TopAppBar title is a plain String (no composable slot), so the two-line
-            // "Game Menu" label + game title used for HOME collapses to just the game title —
-            // still the important information, and it's the one rendered with title emphasis.
-            val topBarTitle =
-                if (currentRoute == GameMenuRoute.HOME) {
-                    gameMenuRequest.game.title
-                } else {
-                    stringResource(currentRoute.titleId)
-                }
-
             SideMenu {
                 TopAppBar(
-                    title = topBarTitle,
-                    defaultWindowInsetsPadding = false,
+                    title = {
+                        when (currentRoute) {
+                            GameMenuRoute.HOME ->
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.game_menu_title),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        text = gameMenuRequest.game.title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            else ->
+                                Text(stringResource(currentRoute.titleId))
+                        }
+                    },
+                    windowInsets = WindowInsets(0.dp),
                     navigationIcon = {
                         AnimatedContent(targetState = currentRoute.canGoBack(), label = "Back") { canGoBack ->
                             if (canGoBack) {
@@ -314,6 +329,7 @@ class GameMenuActivity : RetrogradeComponentActivity() {
                     .fillMaxHeight()
                     .width(panelWidth)
                     .clip(RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp)),
+                tonalElevation = 3.dp,
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     content()

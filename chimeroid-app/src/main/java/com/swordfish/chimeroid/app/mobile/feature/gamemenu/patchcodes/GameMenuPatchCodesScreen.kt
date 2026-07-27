@@ -20,6 +20,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileOpen
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -39,21 +54,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.lib.library.db.entity.PatchCode
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.Checkbox
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.FloatingActionButton
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SnackbarHost
-import top.yukonga.miuix.kmp.basic.SnackbarHostState
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.window.WindowDialog
 
 @Composable
 fun GameMenuPatchCodesScreen(viewModel: GameMenuPatchCodesViewModel) {
@@ -91,7 +91,7 @@ fun GameMenuPatchCodesScreen(viewModel: GameMenuPatchCodesViewModel) {
         floatingActionButton = {
             Column(horizontalAlignment = Alignment.End) {
                 // Import .cht file FAB (small, above main FAB)
-                FloatingActionButton(
+                SmallFloatingActionButton(
                     onClick = {
                         filePicker.launch(
                             // Accept .cht and any text-based file since some file managers
@@ -99,9 +99,7 @@ fun GameMenuPatchCodesScreen(viewModel: GameMenuPatchCodesViewModel) {
                             arrayOf("*/*"),
                         )
                     },
-                    containerColor = MiuixTheme.colorScheme.secondaryContainer,
-                    minWidth = 40.dp,
-                    minHeight = 40.dp,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 ) {
                     Icon(
                         imageVector = Icons.Default.FileOpen,
@@ -164,11 +162,11 @@ private fun PatchCodeItem(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = if (patchCode.enabled)
-                MiuixTheme.colorScheme.primaryContainer
+        colors = CardDefaults.cardColors(
+            containerColor = if (patchCode.enabled)
+                MaterialTheme.colorScheme.primaryContainer
             else
-                MiuixTheme.colorScheme.surfaceVariant,
+                MaterialTheme.colorScheme.surfaceVariant,
         ),
     ) {
         Row(
@@ -177,21 +175,18 @@ private fun PatchCodeItem(
                 .padding(start = 8.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Checkbox(
-                state = if (patchCode.enabled) ToggleableState.On else ToggleableState.Off,
-                onClick = onToggle,
-            )
+            Checkbox(checked = patchCode.enabled, onCheckedChange = { onToggle() })
             Spacer(modifier = Modifier.width(4.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = patchCode.description,
-                    style = MiuixTheme.textStyles.body1,
+                    style = MaterialTheme.typography.bodyMedium,
                     maxLines = 2,
                 )
                 Text(
                     text = patchCode.code,
-                    style = MiuixTheme.textStyles.body2.copy(fontFamily = FontFamily.Monospace),
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 3,
                 )
             }
@@ -199,7 +194,7 @@ private fun PatchCodeItem(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(R.string.patch_codes_delete),
-                    tint = MiuixTheme.colorScheme.error,
+                    tint = MaterialTheme.colorScheme.error,
                 )
             }
         }
@@ -215,19 +210,19 @@ private fun EmptyCodesPlaceholder() {
     ) {
         Text(
             text = stringResource(R.string.patch_codes_empty_title),
-            style = MiuixTheme.textStyles.title3,
+            style = MaterialTheme.typography.titleMedium,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = stringResource(R.string.patch_codes_empty_subtitle),
-            style = MiuixTheme.textStyles.body1,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.patch_codes_import_hint),
-            style = MiuixTheme.textStyles.body2,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -241,64 +236,60 @@ private fun AddPatchCodeDialog(
     var code by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
 
-    WindowDialog(
-        show = true,
-        title = stringResource(R.string.patch_codes_add_dialog_title),
+    AlertDialog(
         onDismissRequest = onDismiss,
-    ) {
-        Column {
-            TextField(
-                value = description,
-                onValueChange = { description = it; showError = false },
-                label = stringResource(R.string.patch_codes_field_description),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    imeAction = ImeAction.Next,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            TextField(
-                value = code,
-                onValueChange = { code = it.uppercase(); showError = false },
-                label = stringResource(R.string.patch_codes_field_code),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Ascii,
-                    capitalization = KeyboardCapitalization.Characters,
-                    imeAction = ImeAction.Done,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Text(
-                text = stringResource(R.string.patch_codes_field_code_hint),
-                style = MiuixTheme.textStyles.footnote1,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            if (showError) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.patch_codes_error_empty_fields),
-                    color = MiuixTheme.colorScheme.error,
-                    style = MiuixTheme.textStyles.body2,
+        title = { Text(text = stringResource(R.string.patch_codes_add_dialog_title)) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it; showError = false },
+                    label = { Text(text = stringResource(R.string.patch_codes_field_description)) },
+                    singleLine = true,
+                    isError = showError && description.isBlank(),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        imeAction = ImeAction.Next,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
                 )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                TextButton(text = stringResource(android.R.string.cancel), onClick = onDismiss)
-                Spacer(modifier = Modifier.width(8.dp))
-                TextButton(
-                    text = stringResource(R.string.patch_codes_add_confirm),
-                    onClick = {
-                        if (description.isBlank() || code.isBlank()) showError = true
-                        else onConfirm(description, code)
-                    },
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = code,
+                    onValueChange = { code = it.uppercase(); showError = false },
+                    label = { Text(text = stringResource(R.string.patch_codes_field_code)) },
+                    placeholder = { Text(text = "DEAD BEEF+CAFE 1234") },
+                    isError = showError && code.isBlank(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Ascii,
+                        capitalization = KeyboardCapitalization.Characters,
+                        imeAction = ImeAction.Done,
+                    ),
+                    supportingText = { Text(text = stringResource(R.string.patch_codes_field_code_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
+                if (showError) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.patch_codes_error_empty_fields),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
-        }
-    }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (description.isBlank() || code.isBlank()) showError = true
+                else onConfirm(description, code)
+            }) {
+                Text(text = stringResource(R.string.patch_codes_add_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(android.R.string.cancel))
+            }
+        },
+    )
 }

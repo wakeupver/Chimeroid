@@ -1,32 +1,31 @@
 /* ktlint-disable no-multi-spaces max-line-length */
 object deps {
     object android {
-        const val targetSdkVersion  = 37
-        const val compileSdkVersion = 37
+        const val targetSdkVersion  = 35
+        const val compileSdkVersion = 35
         const val minSdkVersion     = 23
         const val buildToolsVersion = "34.0.0"
     }
 
     object versions {
-        const val dagger          = "2.59.2"
+        const val dagger          = "2.19"
         const val gms             = "17.0.0"
-        const val kotlin          = "2.4.10"
+        const val kotlin          = "2.0.21"
         const val okHttp          = "4.9.1"
         const val retrofit        = "2.9.0"
         const val work            = "2.9.0"
-        const val navigation      = "2.9.7"
+        const val navigation      = "2.5.2"
         const val lifecycle       = "2.6.1"
         const val googleApiClient = "1.32.1"
         const val paging          = "3.2.1"
-        const val room             = "2.8.4"
-        const val serialization   = "1.11.0"
+        const val room            = "2.6.1"
+        const val serialization   = "1.2.2"
         const val fragment        = "1.5.1"
         const val activity        = "1.7.2"
         const val libretrodroid   = "0.13.2"
         const val composeBom      = "2025.12.00"
         const val kotlinExtension = "1.4.6"
         const val padkit          = "1.0.0-beta1"
-        const val miuix           = "0.9.3"
 
         // Make sure this is compatible with current bom versions:
         // https://developer.android.com/jetpack/compose/bom/bom-mapping
@@ -85,6 +84,7 @@ object deps {
             }
             object compose {
                 const val composeBom = "androidx.compose:compose-bom:${versions.composeBom}"
+                const val material3 = "androidx.compose.material3:material3"
                 const val coreIcons = "androidx.compose.material:material-icons-core"
                 const val extendedIcons = "androidx.compose.material:material-icons-extended"
                 const val tooling = "androidx.compose.ui:ui-tooling"
@@ -97,6 +97,7 @@ object deps {
 
                 object accompanist {
                     const val systemUiController = "com.google.accompanist:accompanist-systemuicontroller:${versions.accompanist}"
+                    const val navigationMaterial = "com.google.accompanist:accompanist-navigation-material:${versions.accompanist}"
                     const val drawablePainter = "com.google.accompanist:accompanist-drawablepainter:${versions.accompanist}"
                 }
             }
@@ -141,18 +142,10 @@ object deps {
         }
 
         object composeSettings {
-            // Pure state-holder + SharedPreferences-backed storage only (no Compose UI / Material
-            // dependency) — this is why these two survive the material3 -> miuix migration while
-            // ui-tiles/ui-tiles-extended (Material3-rendered SettingsMenuLink/Switch/Slider) do not;
-            // those are replaced by miuix.preference below.
+            const val uiTiles = "com.github.alorma.compose-settings:ui-tiles:2.1.0"
+            const val uiTilesExtended = "com.github.alorma.compose-settings:ui-tiles-extended:2.1.0"
             const val diskStorage = "com.github.alorma:compose-settings-storage-disk:2.0.0"
             const val memoryStorage = "com.github.alorma:compose-settings-storage-memory:2.0.0"
-        }
-
-        object miuix {
-            const val ui = "top.yukonga.miuix.kmp:miuix-ui:${versions.miuix}"
-            const val preference = "top.yukonga.miuix.kmp:miuix-preference:${versions.miuix}"
-            const val icons = "top.yukonga.miuix.kmp:miuix-icons:${versions.miuix}"
         }
 
         const val kotlinxCoroutinesAndroid = "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
@@ -164,6 +157,7 @@ object deps {
         const val material                 = "com.google.android.material:material:1.12.0"
         const val harmony                  = "com.frybits.harmony:harmony:1.1.9"
         const val startup                  = "androidx.startup:startup-runtime:1.1.1"
+        const val composeHtmlText          = "de.charlex.compose.material3:material3-html-text:2.0.0-beta01"
         const val collectionsImmutable     = "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8"
         const val padkit                   = "io.github.swordfish90:padkit:${versions.padkit}"
         const val libretrodroid            = "com.github.Swordfish90:LibretroDroid:${versions.libretrodroid}"
@@ -171,6 +165,8 @@ object deps {
     }
 
     object plugins {
+        const val android = "com.android.tools.build:gradle:8.7.2"
         const val navigationSafeArgs = "androidx.navigation:navigation-safe-args-gradle-plugin:${versions.navigation}"
+        const val kotlinGradlePlugin = "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
     }
 }

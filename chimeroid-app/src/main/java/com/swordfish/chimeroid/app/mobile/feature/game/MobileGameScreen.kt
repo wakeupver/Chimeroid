@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material.icons.filled.Check
@@ -32,6 +31,18 @@ import androidx.compose.material.icons.filled.Height
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.OpenWith
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -57,16 +68,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.HorizontalDivider
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Slider
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import com.swordfish.chimeroid.app.mobile.shared.compose.ui.mutedButtonColors
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.swordfish.chimeroid.app.shared.game.BaseGameScreenViewModel
@@ -294,9 +295,10 @@ private fun MacroDragModeBanner(onDone: () -> Unit) {
         contentAlignment = Alignment.TopCenter,
     ) {
         Surface(
+            tonalElevation = 8.dp,
             shadowElevation = 4.dp,
-            shape = RoundedCornerShape(8.dp),
-            color = MiuixTheme.colorScheme.secondaryContainer,
+            shape = MaterialTheme.shapes.small,
+            color = MaterialTheme.colorScheme.secondaryContainer,
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -310,11 +312,12 @@ private fun MacroDragModeBanner(onDone: () -> Unit) {
                 )
                 Text(
                     text = stringResource(R.string.macro_position_button),
-                    style = MiuixTheme.textStyles.body2,
+                    style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.weight(1f),
                 )
                 Button(
                     onClick = onDone,
+                    contentPadding = ButtonDefaults.TextButtonContentPadding,
                 ) {
                     Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
@@ -412,25 +415,25 @@ private fun MenuEditTouchControls(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(MiuixTheme.colorScheme.primaryContainer),
+                            .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Default.Tune,
                             contentDescription = null,
-                            tint = MiuixTheme.colorScheme.onPrimaryContainer,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(20.dp),
                         )
                     }
                     Column {
                         Text(
                             text = stringResource(R.string.touch_customize_title),
-                            style = MiuixTheme.textStyles.title4,
+                            style = MaterialTheme.typography.titleSmall,
                         )
                         Text(
                             text = stringResource(R.string.touch_customize_subtitle),
-                            style = MiuixTheme.textStyles.body2,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -453,8 +456,8 @@ private fun MenuEditTouchControls(
                 ) {
                     Text(
                         text = stringResource(R.string.touch_customize_layout_section).uppercase(),
-                        style = MiuixTheme.textStyles.footnote1,
-                        color = MiuixTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 2.dp),
                     )
                     val sliderRows = buildList {
@@ -529,10 +532,10 @@ private fun MenuEditTouchControls(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Button(onClick = { viewModel.resetTouchControls() }, colors = mutedButtonColors()) {
+                    OutlinedButton(onClick = { viewModel.resetTouchControls() }) {
                         Text(text = stringResource(R.string.touch_customize_button_reset))
                     }
-                    Button(onClick = { viewModel.showEditControls(false) }) {
+                    FilledTonalButton(onClick = { viewModel.showEditControls(false) }) {
                         Text(text = stringResource(R.string.touch_customize_button_done))
                     }
                 }
@@ -565,19 +568,19 @@ private fun MenuEditTouchControlRow(
                 modifier = Modifier
                     .rotate(iconRotation)
                     .size(18.dp),
-                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = label,
-                style = MiuixTheme.textStyles.body2,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
             if (value != null) {
                 Text(
                     text = "${(value * 100).roundToInt()}%",
-                    style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }

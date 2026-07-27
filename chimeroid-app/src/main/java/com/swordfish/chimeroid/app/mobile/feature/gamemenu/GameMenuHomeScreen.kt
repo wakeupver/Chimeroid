@@ -14,6 +14,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -28,11 +33,6 @@ import com.swordfish.chimeroid.app.shared.GameMenuContract
 import com.swordfish.chimeroid.app.utils.android.settings.ChimeroidSettingsList
 import com.swordfish.chimeroid.app.utils.android.settings.ChimeroidSettingsMenuLink
 import com.swordfish.chimeroid.app.utils.android.settings.ChimeroidSettingsSwitch
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.HorizontalDivider
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.reflect.KFunction1
 
 @Composable
@@ -51,7 +51,7 @@ fun GameMenuHomeScreen(
         if (gameMenuRequest.coreConfig.statesSupported) {
             MenuSection(stringResource(R.string.game_menu_section_states)) {
                 ChimeroidSettingsMenuLink(
-                    title = stringResource(id = R.string.game_menu_save),
+                    title = { Text(text = stringResource(id = R.string.game_menu_save)) },
                     icon = {
                         Icon(
                             painterResource(R.drawable.ic_menu_save),
@@ -62,7 +62,7 @@ fun GameMenuHomeScreen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 ChimeroidSettingsMenuLink(
-                    title = stringResource(id = R.string.game_menu_load),
+                    title = { Text(text = stringResource(id = R.string.game_menu_load)) },
                     icon = {
                         Icon(
                             painterResource(R.drawable.ic_menu_load),
@@ -77,7 +77,7 @@ fun GameMenuHomeScreen(
         // ── PLAYBACK ─────────────────────────────────────────────────────────
         MenuSection(stringResource(R.string.game_menu_section_playback)) {
             ChimeroidSettingsSwitch(
-                title = stringResource(id = R.string.game_menu_mute_audio),
+                title = { Text(text = stringResource(id = R.string.game_menu_mute_audio)) },
                 icon = {
                     Icon(
                         painterResource(R.drawable.ic_menu_mute),
@@ -93,7 +93,7 @@ fun GameMenuHomeScreen(
             if (gameMenuRequest.fastForwardSupported) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 ChimeroidSettingsSwitch(
-                    title = stringResource(id = R.string.game_menu_fast_forward),
+                    title = { Text(text = stringResource(id = R.string.game_menu_fast_forward)) },
                     icon = {
                         Icon(
                             painterResource(R.drawable.ic_menu_fast_forward),
@@ -110,7 +110,7 @@ fun GameMenuHomeScreen(
             if (gameMenuRequest.numDisks > 1) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 ChimeroidSettingsList(
-                    title = stringResource(id = R.string.game_menu_change_disk_button),
+                    title = { Text(text = stringResource(id = R.string.game_menu_change_disk_button)) },
                     items = (1..gameMenuRequest.numDisks).map { stringResource(R.string.game_menu_change_disk_disk, it) },
                     useSelectedValueAsSubtitle = false,
                     icon = {
@@ -134,7 +134,7 @@ fun GameMenuHomeScreen(
 
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 ChimeroidSettingsList(
-                    title = stringResource(id = R.string.game_menu_tilt_sensor),
+                    title = { Text(text = stringResource(id = R.string.game_menu_tilt_sensor)) },
                     items = tiltEntries.map { stringResource(it.descriptionId) },
                     useSelectedValueAsSubtitle = false,
                     icon = {
@@ -157,7 +157,7 @@ fun GameMenuHomeScreen(
         MenuSection(stringResource(R.string.game_menu_section_options)) {
             // Edit Controls — kembali ke dalam card OPTIONS
             ChimeroidSettingsMenuLink(
-                title = stringResource(id = R.string.game_menu_edit_touch_controls),
+                title = { Text(text = stringResource(id = R.string.game_menu_edit_touch_controls)) },
                 icon = {
                     Icon(
                         painterResource(R.drawable.ic_menu_controls),
@@ -171,7 +171,7 @@ fun GameMenuHomeScreen(
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             ChimeroidSettingsMenuLink(
-                title = stringResource(id = R.string.game_menu_macros),
+                title = { Text(text = stringResource(id = R.string.game_menu_macros)) },
                 icon = {
                     Icon(imageVector = Icons.Default.TouchApp, contentDescription = null)
                 },
@@ -181,7 +181,7 @@ fun GameMenuHomeScreen(
             if (gameMenuRequest.advancedCoreOptions.isNotEmpty() || gameMenuRequest.coreOptions.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 ChimeroidSettingsMenuLink(
-                    title = stringResource(id = R.string.game_menu_settings),
+                    title = { Text(text = stringResource(id = R.string.game_menu_settings)) },
                     icon = {
                         Icon(
                             painterResource(R.drawable.ic_menu_settings),
@@ -194,7 +194,7 @@ fun GameMenuHomeScreen(
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             ChimeroidSettingsMenuLink(
-                title = stringResource(id = R.string.game_menu_patch_codes),
+                title = { Text(text = stringResource(id = R.string.game_menu_patch_codes)) },
                 icon = {
                     Icon(imageVector = Icons.Default.Code, contentDescription = null)
                 },
@@ -205,12 +205,12 @@ fun GameMenuHomeScreen(
         // ── ACTIONS (destructive) ─────────────────────────────────────────────
         MenuSection(stringResource(R.string.game_menu_section_actions)) {
             ChimeroidSettingsMenuLink(
-                title = stringResource(id = R.string.game_menu_restart),
+                title = { Text(text = stringResource(id = R.string.game_menu_restart)) },
                 icon = {
                     Icon(
                         painterResource(R.drawable.ic_menu_restart),
                         contentDescription = null,
-                        tint = MiuixTheme.colorScheme.onTertiaryContainer,
+                        tint = MaterialTheme.colorScheme.tertiary,
                     )
                 },
                 onClick = {
@@ -219,13 +219,17 @@ fun GameMenuHomeScreen(
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             ChimeroidSettingsMenuLink(
-                title = stringResource(id = R.string.game_menu_quit),
-                titleColor = MiuixTheme.colorScheme.error,
+                title = {
+                    Text(
+                        text = stringResource(id = R.string.game_menu_quit),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                },
                 icon = {
                     Icon(
                         painterResource(R.drawable.ic_menu_quit),
                         contentDescription = null,
-                        tint = MiuixTheme.colorScheme.error,
+                        tint = MaterialTheme.colorScheme.error,
                     )
                 },
                 onClick = {
@@ -248,11 +252,11 @@ private fun MenuSection(
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = title.uppercase(),
-            style = MiuixTheme.textStyles.footnote1,
-            color = MiuixTheme.colorScheme.primary,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
         )
-        Card(modifier = Modifier.fillMaxWidth()) {
+        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
             content()
         }
     }

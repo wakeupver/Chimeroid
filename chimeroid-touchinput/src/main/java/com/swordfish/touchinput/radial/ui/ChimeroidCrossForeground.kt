@@ -7,6 +7,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
@@ -14,7 +15,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.swordfish.touchinput.radial.LocalChimeroidPadTheme
 import gg.padkit.ui.DefaultCrossForeground
-import top.yukonga.miuix.kmp.basic.Icon
 
 @Composable
 fun ChimeroidCrossForeground(

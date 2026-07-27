@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.VideogameAsset
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,9 +19,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.R
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun ChimeroidEmptyView(
@@ -37,14 +37,14 @@ fun ChimeroidEmptyView(
                 imageVector = Icons.Outlined.VideogameAsset,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
-                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.35f),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = text,
-                style = MiuixTheme.textStyles.body1,
+                style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.55f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
             )
         }
     }

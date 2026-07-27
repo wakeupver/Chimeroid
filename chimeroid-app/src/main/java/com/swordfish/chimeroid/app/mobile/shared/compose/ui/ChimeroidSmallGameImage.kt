@@ -3,10 +3,12 @@ package com.swordfish.chimeroid.app.mobile.shared.compose.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.lib.library.db.entity.Game
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun ChimeroidSmallGameImage(
@@ -17,7 +19,7 @@ fun ChimeroidSmallGameImage(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1.0f)
-            .background(MiuixTheme.colorScheme.surfaceContainer),
+            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)),
         game = game,
     )
 }

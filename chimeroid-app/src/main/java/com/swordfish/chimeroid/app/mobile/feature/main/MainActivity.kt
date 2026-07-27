@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -16,8 +19,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.fromHtml
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -70,11 +71,9 @@ import com.swordfish.chimeroid.lib.preferences.SharedPreferencesHelper
 import com.swordfish.chimeroid.lib.savesync.SaveSyncManager
 import com.swordfish.chimeroid.lib.storage.DirectoriesManager
 import dagger.Provides
+import de.charlex.compose.material3.HtmlText
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.window.WindowDialog
 import javax.inject.Inject
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -138,6 +137,7 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun MainScreen(navController: NavHostController) {
         val navBackStackEntry = navController.currentBackStackEntryAsState()
@@ -147,7 +147,7 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                 ?.let { MainRoute.findByRoute(it) }
                 ?: MainRoute.HOME
 
-        val infoDialogDisplayed =
+            val infoDialogDisplayed =
                 remember {
                     mutableStateOf(false)
                 }
@@ -387,12 +387,11 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                             .replace("\$SYSTEMS", systemFolders)
                     }
 
-                WindowDialog(
-                    show = infoDialogDisplayed.value,
+                AlertDialog(
+                    text = { HtmlText(text = message) },
                     onDismissRequest = { infoDialogDisplayed.value = false },
-                ) {
-                    Text(text = AnnotatedString.fromHtml(message))
-                }
+                    confirmButton = { },
+                )
             }
     }
 

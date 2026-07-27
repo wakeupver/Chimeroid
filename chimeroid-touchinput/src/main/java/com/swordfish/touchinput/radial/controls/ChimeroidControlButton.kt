@@ -1,3 +1,5 @@
+@file:Suppress("CONTEXT_RECEIVERS_DEPRECATED")
+
 package com.swordfish.touchinput.radial.controls
 
 import androidx.compose.foundation.layout.padding
@@ -11,7 +13,7 @@ import gg.padkit.controls.ControlButton
 import gg.padkit.ids.Id
 import gg.padkit.layouts.radial.secondarydials.LayoutRadialSecondaryDialsScope
 
-context(padKitScope: PadKitScope, layoutScope: LayoutRadialSecondaryDialsScope)
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
 fun ChimeroidControlButton(
     modifier: Modifier = Modifier,
@@ -19,15 +21,11 @@ fun ChimeroidControlButton(
     label: String? = null,
     icon: Int? = null,
 ) {
-    with(padKitScope) {
-        with(layoutScope) {
-            val theme = LocalChimeroidPadTheme.current
-            ControlButton(
-                modifier = modifier.padding(theme.padding),
-                id = id,
-                foreground = { ChimeroidButtonForeground(pressed = it, icon = icon, label = label) },
-                background = { ChimeroidControlBackground() },
-            )
-        }
-    }
+    val theme = LocalChimeroidPadTheme.current
+    ControlButton(
+        modifier = modifier.padding(theme.padding),
+        id = id,
+        foreground = { ChimeroidButtonForeground(pressed = it, icon = icon, label = label) },
+        background = { ChimeroidControlBackground() },
+    )
 }

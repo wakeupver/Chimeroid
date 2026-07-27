@@ -2,6 +2,8 @@ package com.swordfish.chimeroid.app.mobile.shared.compose.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -11,8 +13,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.app.utils.games.GameUtils
 import com.swordfish.chimeroid.lib.library.db.entity.Game
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun ChimeroidGameTexts(
@@ -35,7 +35,7 @@ fun ChimeroidTexts(
     ) {
         Text(
             text = title,
-            style = MiuixTheme.textStyles.title4,
+            style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -43,8 +43,8 @@ fun ChimeroidTexts(
         if (subtitle.isNotEmpty()) {
             Text(
                 text = subtitle,
-                style = MiuixTheme.textStyles.footnote1,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

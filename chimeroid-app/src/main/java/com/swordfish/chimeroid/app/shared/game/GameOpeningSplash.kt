@@ -12,6 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,10 +31,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.R
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val ICON_ANIM_MS = 420
 private const val TITLE_ANIM_MS = 380
@@ -106,7 +106,7 @@ fun GameOpeningSplash(
             Icon(
                 painter = painterResource(R.drawable.ic_chimeroid_tiny),
                 contentDescription = null,
-                tint = MiuixTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier =
                     Modifier
                         .size(ICON_SIZE)
@@ -120,10 +120,10 @@ fun GameOpeningSplash(
 
             Text(
                 text = gameTitle,
-                style = MiuixTheme.textStyles.title2,
+                style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                color = MiuixTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier =
@@ -141,13 +141,14 @@ fun GameOpeningSplash(
                         .size(SPINNER_SIZE)
                         .graphicsLayer { alpha = titleProgress },
                 strokeWidth = SPINNER_STROKE,
+                color = MaterialTheme.colorScheme.primary,
             )
 
             AnimatedVisibility(visible = !loadingMessage.isNullOrBlank()) {
                 Text(
                     text = loadingMessage.orEmpty(),
-                    style = MiuixTheme.textStyles.body1,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
             }
