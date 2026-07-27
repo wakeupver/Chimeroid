@@ -108,6 +108,9 @@ kotlin {
 
 kapt {
     correctErrorTypes = true
+    arguments {
+        arg("dagger.strictSuperficialValidation", "DISABLED")
+    }
 }
 
 dependencies {
