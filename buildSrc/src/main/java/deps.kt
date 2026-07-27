@@ -8,7 +8,7 @@ object deps {
     }
 
     object versions {
-        const val dagger          = "2.19"
+        const val dagger          = "2.59.2"
         const val gms             = "17.0.0"
         const val kotlin          = "2.4.10"
         const val okHttp          = "4.9.1"
