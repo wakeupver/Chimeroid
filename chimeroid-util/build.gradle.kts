@@ -12,9 +12,6 @@ android {
         compose = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = deps.versions.kotlinExtension
-    }
 }
 
 kotlin {

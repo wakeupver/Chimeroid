@@ -92,10 +92,6 @@ android {
         buildConfig = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = deps.versions.kotlinExtension
-    }
-
     namespace = "com.swordfish.chimeroid"
 }
 
@@ -128,7 +124,6 @@ dependencies {
     implementation(deps.libs.arch.work.runtime)
     implementation(deps.libs.arch.work.runtimeKtx)
     implementation(deps.libs.androidx.lifecycle.commonJava8)
-    implementation(deps.libs.androidx.lifecycle.reactiveStreams)
     implementation(deps.libs.androidx.lifecycle.runtimeCompose)
 
     kapt(deps.libs.androidx.lifecycle.processor)
@@ -159,8 +154,6 @@ dependencies {
     debugImplementation(deps.libs.androidx.compose.tooling)
     implementation(deps.libs.androidx.compose.toolingPreview)
     implementation(deps.libs.androidx.compose.extendedIcons)
-    implementation(deps.libs.androidx.compose.accompanist.systemUiController)
-    implementation(deps.libs.androidx.compose.accompanist.navigationMaterial)
     implementation(deps.libs.androidx.compose.accompanist.drawablePainter)
     implementation(deps.libs.androidx.paging.compose)
     implementation(deps.libs.androidx.lifecycle.viewModelCompose)

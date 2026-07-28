@@ -25,7 +25,6 @@ dependencies {
     implementation(deps.libs.androidx.preferences.preferencesKtx)
     implementation(deps.libs.androidx.ktx.collection)
     implementation(deps.libs.androidx.ktx.core)
-    implementation(deps.libs.androidx.ktx.coreKtx)
     implementation(deps.libs.androidx.fragment.fragment)
     implementation(deps.libs.androidx.fragment.ktx)
     implementation(deps.libs.androidx.activity.activity)
