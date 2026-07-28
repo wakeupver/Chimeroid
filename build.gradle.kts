@@ -93,7 +93,6 @@ subprojects {
                 buildToolsVersion = deps.android.buildToolsVersion
                 defaultConfig {
                     minSdk = deps.android.minSdkVersion
-                    targetSdk = deps.android.targetSdkVersion
                 }
                 lint {
                     abortOnError = true
