@@ -1,4 +1,7 @@
-import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.LibraryExtension
+import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.LibraryPlugin
 
 buildscript {
     repositories {
@@ -47,13 +50,26 @@ allprojects {
     }
 }
 
+// https://issuetracker.google.com/issues/63150366
+val disabledLintChecks = setOf(
+    "UnusedResources",
+    "InvalidPackage",
+    "VectorPath",
+    "TrustAllX509TrustManager",
+    // androidx.lifecycle's bundled NonNullableMutableLiveDataDetector has previously
+    // crashed (IncompatibleClassChangeError against Lint's Kotlin Analysis API) rather
+    // than reporting a real finding; kept disabled.
+    "NullSafeMutableLiveData",
+)
+
 subprojects {
     afterEvaluate {
         if (hasProperty("android")) {
-            // CommonExtension is the shared DSL surface across application, library, and test modules
             apply(plugin = "org.jlleitschuh.gradle.ktlint")
+        }
 
-            extensions.configure(CommonExtension::class.java) {
+        plugins.withType<AppPlugin> {
+            extensions.configure<ApplicationExtension> {
                 compileSdk = deps.android.compileSdkVersion
                 buildToolsVersion = deps.android.buildToolsVersion
                 defaultConfig {
@@ -62,17 +78,26 @@ subprojects {
                 }
                 lint {
                     abortOnError = true
-                    // https://issuetracker.google.com/issues/63150366
-                    disable += setOf(
-                        "UnusedResources",
-                        "InvalidPackage",
-                        "VectorPath",
-                        "TrustAllX509TrustManager",
-                        // androidx.lifecycle's bundled NonNullableMutableLiveDataDetector has
-                        // previously crashed (IncompatibleClassChangeError against Lint's Kotlin
-                        // Analysis API) rather than reporting a real finding; kept disabled.
-                        "NullSafeMutableLiveData",
-                    )
+                    disable += disabledLintChecks
+                }
+                compileOptions {
+                    sourceCompatibility = JavaVersion.VERSION_17
+                    targetCompatibility = JavaVersion.VERSION_17
+                }
+            }
+        }
+
+        plugins.withType<LibraryPlugin> {
+            extensions.configure<LibraryExtension> {
+                compileSdk = deps.android.compileSdkVersion
+                buildToolsVersion = deps.android.buildToolsVersion
+                defaultConfig {
+                    minSdk = deps.android.minSdkVersion
+                    targetSdk = deps.android.targetSdkVersion
+                }
+                lint {
+                    abortOnError = true
+                    disable += disabledLintChecks
                 }
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_17
