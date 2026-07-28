@@ -20,8 +20,8 @@ plugins {
     id("com.github.ben-manes.versions") version "0.56.0"
     id("org.jetbrains.kotlin.plugin.serialization") version deps.versions.kotlin
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
-    id("org.jetbrains.kotlin.android") version deps.versions.kotlin apply false
     id("com.android.application") version deps.versions.agp apply false
+    id("com.android.legacy-kapt") version deps.versions.agp apply false
     id("org.jetbrains.kotlin.plugin.compose") version deps.versions.kotlin apply false
 }
 

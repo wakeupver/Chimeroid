@@ -2,8 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
-    id("kotlin-kapt")
+    id("com.android.legacy-kapt")
     id("androidx.navigation.safeargs.kotlin")
     id("kotlinx-serialization")
 
