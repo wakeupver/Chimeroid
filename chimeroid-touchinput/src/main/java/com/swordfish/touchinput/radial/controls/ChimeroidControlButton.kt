@@ -13,7 +13,7 @@ import gg.padkit.controls.ControlButton
 import gg.padkit.ids.Id
 import gg.padkit.layouts.radial.secondarydials.LayoutRadialSecondaryDialsScope
 
-context(PadKitScope, LayoutRadialSecondaryDialsScope)
+context(_: PadKitScope, _: LayoutRadialSecondaryDialsScope)
 @Composable
 fun ChimeroidControlButton(
     modifier: Modifier = Modifier,
