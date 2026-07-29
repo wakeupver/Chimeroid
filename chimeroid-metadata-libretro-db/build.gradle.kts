@@ -17,7 +17,7 @@ dependencies {
 }
 
 android {
-    resourcePrefix("libretrodb_")
+    resourcePrefix = "libretrodb_"
     namespace = "com.swordfish.chimeroid.metadata.libretrodb"
 }
 
