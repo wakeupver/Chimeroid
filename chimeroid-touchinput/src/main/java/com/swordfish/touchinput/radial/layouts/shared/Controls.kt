@@ -8,9 +8,11 @@ import com.swordfish.touchinput.controller.R
 import com.swordfish.touchinput.radial.controls.ChimeroidControlAnalog
 import com.swordfish.touchinput.radial.controls.ChimeroidControlButton
 import com.swordfish.touchinput.radial.settings.TouchControllerSettingsManager
+import gg.padkit.PadKitScope
 import gg.padkit.ids.Id
 import gg.padkit.layouts.radial.secondarydials.LayoutRadialSecondaryDialsScope
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryButtonSelect(position: Int = 0) {
     ChimeroidControlButton(
@@ -20,6 +22,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonSelect(position: Int = 0) {
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryButtonL1() {
     ChimeroidControlButton(
@@ -29,6 +32,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonL1() {
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryButtonL2() {
     ChimeroidControlButton(
@@ -38,6 +42,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonL2() {
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryButtonR1() {
     ChimeroidControlButton(
@@ -47,6 +52,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonR1() {
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryButtonR2() {
     ChimeroidControlButton(
@@ -56,6 +62,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonR2() {
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryButtonL() {
     ChimeroidControlButton(
@@ -65,6 +72,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonL() {
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryButtonR() {
     ChimeroidControlButton(
@@ -74,6 +82,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonR() {
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryButtonStart(position: Int = 0) {
     ChimeroidControlButton(
@@ -83,6 +92,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonStart(position: Int = 0) {
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryButtonMenu(settings: TouchControllerSettingsManager.Settings) {
     ChimeroidControlButton(
@@ -92,6 +102,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonMenu(settings: TouchControlle
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryButtonMenuPlaceholder(settings: TouchControllerSettingsManager.Settings) {
     Box(
@@ -102,6 +113,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonMenuPlaceholder(settings: Tou
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryAnalogLeft() {
     ChimeroidControlAnalog(
@@ -114,6 +126,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryAnalogLeft() {
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryAnalogRight() {
     ChimeroidControlAnalog(
@@ -126,6 +139,7 @@ fun LayoutRadialSecondaryDialsScope.SecondaryAnalogRight() {
     )
 }
 
+context(_: PadKitScope)
 @Composable
 fun LayoutRadialSecondaryDialsScope.SecondaryButtonCoin() {
     ChimeroidControlButton(
