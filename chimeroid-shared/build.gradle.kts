@@ -36,7 +36,6 @@ dependencies {
     implementation(deps.libs.androidx.room.paging)
     implementation(deps.libs.androidx.documentfile)
     implementation(deps.libs.dagger.android.core)
-    implementation(deps.libs.dagger.android.support)
     implementation(deps.libs.okHttp3)
     implementation(deps.libs.okio)
     implementation(deps.libs.retrofit)
