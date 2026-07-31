@@ -61,7 +61,7 @@ class LocalStorageProvider(
     }
 
     private fun getExternalFolder(): File? {
-        val prefString = context.getString(R.string.pref_key_extenral_folder)
+        val prefString = context.getString(R.string.pref_key_legacy_external_folder)
         val preferenceManager = SharedPreferencesHelper.getLegacySharedPreferences(context)
         return preferenceManager.getString(prefString, null)?.let { File(it) }
     }

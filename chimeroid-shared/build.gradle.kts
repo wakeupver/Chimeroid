@@ -2,7 +2,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.library")
-    id("com.android.legacy-kapt")
+    id("kotlin-android")
+    id("kotlin-kapt")
     id("kotlinx-serialization")
 }
 
@@ -24,6 +25,7 @@ dependencies {
     implementation(deps.libs.androidx.preferences.preferencesKtx)
     implementation(deps.libs.androidx.ktx.collection)
     implementation(deps.libs.androidx.ktx.core)
+    implementation(deps.libs.androidx.ktx.coreKtx)
     implementation(deps.libs.androidx.fragment.fragment)
     implementation(deps.libs.androidx.fragment.ktx)
     implementation(deps.libs.androidx.activity.activity)
@@ -36,6 +38,7 @@ dependencies {
     implementation(deps.libs.androidx.room.paging)
     implementation(deps.libs.androidx.documentfile)
     implementation(deps.libs.dagger.android.core)
+    implementation(deps.libs.dagger.android.support)
     implementation(deps.libs.okHttp3)
     implementation(deps.libs.okio)
     implementation(deps.libs.retrofit)

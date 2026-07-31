@@ -75,24 +75,3 @@
 
 ## LibretroDroid
 -keep class com.swordfish.libretrodroid.** { *; }
-
-## Dagger Worker injection (custom dagger-android extension for WorkManager;
-## not part of Dagger's officially supported injection targets, so Dagger's
-## own bundled consumer rules don't cover it the way they do for
-## @ContributesAndroidInjector Activities/Services/Fragments)
--keep class com.swordfish.chimeroid.lib.injection.** { *; }
--keep @dagger.MapKey class * { *; }
--keep interface dagger.android.AndroidInjector { *; }
--keep interface dagger.android.AndroidInjector$Factory { *; }
--keep class * implements dagger.android.AndroidInjector { *; }
--keep class * implements dagger.android.AndroidInjector$Factory { *; }
--keep class com.swordfish.chimeroid.app.shared.library.CoreUpdateWork { *; }
--keep class com.swordfish.chimeroid.app.shared.library.CoreUpdateWork$* { *; }
--keep class com.swordfish.chimeroid.app.shared.library.LibraryIndexWork { *; }
--keep class com.swordfish.chimeroid.app.shared.library.LibraryIndexWork$* { *; }
--keep class com.swordfish.chimeroid.app.shared.savesync.SaveSyncWork { *; }
--keep class com.swordfish.chimeroid.app.shared.savesync.SaveSyncWork$* { *; }
--keep class com.swordfish.chimeroid.app.shared.storage.cache.CacheCleanerWork { *; }
--keep class com.swordfish.chimeroid.app.shared.storage.cache.CacheCleanerWork$* { *; }
--keep class com.swordfish.chimeroid.app.shared.covers.CoverArtSyncWorker { *; }
--keep class com.swordfish.chimeroid.app.shared.covers.CoverArtSyncWorker$* { *; }

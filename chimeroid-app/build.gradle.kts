@@ -2,7 +2,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
-    id("com.android.legacy-kapt")
+    id("kotlin-android")
+    id("kotlin-kapt")
     id("androidx.navigation.safeargs.kotlin")
     id("kotlinx-serialization")
 
@@ -72,7 +73,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs["release"]
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
             resValue("string", "chimeroid_name", "Chimeroid")
         }
         getByName("debug") {
@@ -89,7 +90,10 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
-        resValues = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = deps.versions.kotlinExtension
     }
 
     namespace = "com.swordfish.chimeroid"
@@ -124,6 +128,7 @@ dependencies {
     implementation(deps.libs.arch.work.runtime)
     implementation(deps.libs.arch.work.runtimeKtx)
     implementation(deps.libs.androidx.lifecycle.commonJava8)
+    implementation(deps.libs.androidx.lifecycle.reactiveStreams)
     implementation(deps.libs.androidx.lifecycle.runtimeCompose)
 
     kapt(deps.libs.androidx.lifecycle.processor)
@@ -154,6 +159,8 @@ dependencies {
     debugImplementation(deps.libs.androidx.compose.tooling)
     implementation(deps.libs.androidx.compose.toolingPreview)
     implementation(deps.libs.androidx.compose.extendedIcons)
+    implementation(deps.libs.androidx.compose.accompanist.systemUiController)
+    implementation(deps.libs.androidx.compose.accompanist.navigationMaterial)
     implementation(deps.libs.androidx.compose.accompanist.drawablePainter)
     implementation(deps.libs.androidx.paging.compose)
     implementation(deps.libs.androidx.lifecycle.viewModelCompose)

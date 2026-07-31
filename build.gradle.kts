@@ -1,7 +1,4 @@
-import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.LibraryExtension
-import com.android.build.gradle.AppPlugin
-import com.android.build.gradle.LibraryPlugin
+import com.android.build.gradle.BaseExtension
 
 buildscript {
     repositories {
@@ -17,11 +14,11 @@ buildscript {
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version deps.versions.kotlin
-    id("com.github.ben-manes.versions") version "0.56.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version deps.versions.kotlin
-    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
-    id("com.android.application") version deps.versions.agp apply false
-    id("com.android.legacy-kapt") version deps.versions.agp apply false
+    id("com.github.ben-manes.versions") version "0.51.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.4.0"
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
+    id("org.jetbrains.kotlin.android") version deps.versions.kotlin apply false
+    id("com.android.application") version "8.7.2" apply false
     id("org.jetbrains.kotlin.plugin.compose") version deps.versions.kotlin apply false
 }
 
@@ -50,53 +47,32 @@ allprojects {
     }
 }
 
-// https://issuetracker.google.com/issues/63150366
-val disabledLintChecks = setOf(
-    "UnusedResources",
-    "InvalidPackage",
-    "VectorPath",
-    "TrustAllX509TrustManager",
-    // androidx.lifecycle's bundled NonNullableMutableLiveDataDetector has previously
-    // crashed (IncompatibleClassChangeError against Lint's Kotlin Analysis API) rather
-    // than reporting a real finding; kept disabled.
-    "NullSafeMutableLiveData",
-)
-
 subprojects {
     afterEvaluate {
         if (hasProperty("android")) {
+            // BaseExtension is common parent for application, library and test modules
             apply(plugin = "org.jlleitschuh.gradle.ktlint")
-        }
 
-        plugins.withType<AppPlugin> {
-            extensions.configure<ApplicationExtension> {
-                compileSdk = deps.android.compileSdkVersion
-                buildToolsVersion = deps.android.buildToolsVersion
+            extensions.configure(BaseExtension::class.java) {
+                compileSdkVersion(deps.android.compileSdkVersion)
+                buildToolsVersion(deps.android.buildToolsVersion)
                 defaultConfig {
                     minSdk = deps.android.minSdkVersion
                     targetSdk = deps.android.targetSdkVersion
+                    multiDexEnabled = true
                 }
-                lint {
-                    abortOnError = true
-                    disable += disabledLintChecks
-                }
-                compileOptions {
-                    sourceCompatibility = JavaVersion.VERSION_17
-                    targetCompatibility = JavaVersion.VERSION_17
-                }
-            }
-        }
-
-        plugins.withType<LibraryPlugin> {
-            extensions.configure<LibraryExtension> {
-                compileSdk = deps.android.compileSdkVersion
-                buildToolsVersion = deps.android.buildToolsVersion
-                defaultConfig {
-                    minSdk = deps.android.minSdkVersion
-                }
-                lint {
-                    abortOnError = true
-                    disable += disabledLintChecks
+                lintOptions {
+                    isAbortOnError = true
+                    // https://issuetracker.google.com/issues/63150366
+                    disable("UnusedResources")
+                    disable("InvalidPackage")
+                    disable("VectorPath")
+                    disable("TrustAllX509TrustManager")
+                    // androidx.lifecycle's bundled NonNullableMutableLiveDataDetector crashes
+                    // (IncompatibleClassChangeError against Lint's Kotlin Analysis API) on
+                    // AGP 8.7.2 -- the detector itself fails to execute, so this isn't
+                    // silencing a real finding.
+                    disable("NullSafeMutableLiveData")
                 }
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_17

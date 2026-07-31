@@ -1,6 +1,7 @@
 plugins {
     id("com.android.library")
-    id("com.android.legacy-kapt")
+    id("kotlin-android")
+    id("kotlin-kapt")
 }
 
 dependencies {
@@ -17,7 +18,7 @@ dependencies {
 }
 
 android {
-    resourcePrefix = "libretrodb_"
+    resourcePrefix("libretrodb_")
     namespace = "com.swordfish.chimeroid.metadata.libretrodb"
 }
 

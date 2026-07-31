@@ -1,3 +1,5 @@
+@file:Suppress("CONTEXT_RECEIVERS_DEPRECATED")
+
 package com.swordfish.touchinput.radial.layouts.shared
 
 import android.view.KeyEvent
@@ -8,11 +10,13 @@ import com.swordfish.touchinput.controller.R
 import com.swordfish.touchinput.radial.controls.ChimeroidControlAnalog
 import com.swordfish.touchinput.radial.controls.ChimeroidControlButton
 import com.swordfish.touchinput.radial.settings.TouchControllerSettingsManager
+import gg.padkit.PadKitScope
 import gg.padkit.ids.Id
 import gg.padkit.layouts.radial.secondarydials.LayoutRadialSecondaryDialsScope
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryButtonSelect(position: Int = 0) {
+fun SecondaryButtonSelect(position: Int = 0) {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(120f - 30f * position),
         id = Id.Key(KeyEvent.KEYCODE_BUTTON_SELECT),
@@ -20,8 +24,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonSelect(position: Int = 0) {
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryButtonL1() {
+fun SecondaryButtonL1() {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(90f),
         id = Id.Key(KeyEvent.KEYCODE_BUTTON_L1),
@@ -29,8 +34,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonL1() {
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryButtonL2() {
+fun SecondaryButtonL2() {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(120f),
         id = Id.Key(KeyEvent.KEYCODE_BUTTON_L2),
@@ -38,8 +44,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonL2() {
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryButtonR1() {
+fun SecondaryButtonR1() {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(90f),
         id = Id.Key(KeyEvent.KEYCODE_BUTTON_R1),
@@ -47,8 +54,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonR1() {
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryButtonR2() {
+fun SecondaryButtonR2() {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(60f),
         id = Id.Key(KeyEvent.KEYCODE_BUTTON_R2),
@@ -56,8 +64,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonR2() {
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryButtonL() {
+fun SecondaryButtonL() {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(120f),
         id = Id.Key(KeyEvent.KEYCODE_BUTTON_L1),
@@ -65,8 +74,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonL() {
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryButtonR() {
+fun SecondaryButtonR() {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(60f),
         id = Id.Key(KeyEvent.KEYCODE_BUTTON_R1),
@@ -74,8 +84,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonR() {
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryButtonStart(position: Int = 0) {
+fun SecondaryButtonStart(position: Int = 0) {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(60f + 30f * position),
         id = Id.Key(KeyEvent.KEYCODE_BUTTON_START),
@@ -83,8 +94,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonStart(position: Int = 0) {
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryButtonMenu(settings: TouchControllerSettingsManager.Settings) {
+fun SecondaryButtonMenu(settings: TouchControllerSettingsManager.Settings) {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(-60f + 2f * settings.rotation * TouchControllerSettingsManager.MAX_ROTATION),
         id = Id.Key(KeyEvent.KEYCODE_BUTTON_MODE),
@@ -92,8 +104,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonMenu(settings: TouchControlle
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryButtonMenuPlaceholder(settings: TouchControllerSettingsManager.Settings) {
+fun SecondaryButtonMenuPlaceholder(settings: TouchControllerSettingsManager.Settings) {
     Box(
         modifier =
             Modifier.radialPosition(
@@ -102,8 +115,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryButtonMenuPlaceholder(settings: Tou
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryAnalogLeft() {
+fun SecondaryAnalogLeft() {
     ChimeroidControlAnalog(
         modifier =
             Modifier
@@ -114,8 +128,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryAnalogLeft() {
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryAnalogRight() {
+fun SecondaryAnalogRight() {
     ChimeroidControlAnalog(
         modifier =
             Modifier
@@ -126,8 +141,9 @@ fun LayoutRadialSecondaryDialsScope.SecondaryAnalogRight() {
     )
 }
 
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
-fun LayoutRadialSecondaryDialsScope.SecondaryButtonCoin() {
+fun SecondaryButtonCoin() {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(120f),
         id = Id.Key(KeyEvent.KEYCODE_BUTTON_SELECT),

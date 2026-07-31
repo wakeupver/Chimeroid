@@ -1,13 +1,14 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 
 android {
     namespace = "com.swordfish.libretrodroid"
-    compileSdkVersion 37
-    buildToolsVersion "37.0.0"
+    compileSdkVersion 35
+    buildToolsVersion "34.0.0"
 
     defaultConfig {
         minSdkVersion 23
-        targetSdkVersion 37
+        targetSdkVersion 35
         versionCode 1
         versionName "1.0"
 
@@ -67,8 +68,8 @@ kotlin {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.0"
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.11.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.21"
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

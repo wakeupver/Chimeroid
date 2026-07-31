@@ -7,14 +7,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.swordfish.touchinput.radial.LocalChimeroidPadTheme
-import com.swordfish.touchinput.radial.layouts.LocalPadKitScope
 import com.swordfish.touchinput.radial.ui.ChimeroidButtonForeground
 import com.swordfish.touchinput.radial.ui.ChimeroidControlBackground
+import gg.padkit.PadKitScope
 import gg.padkit.controls.ControlAnalog
 import gg.padkit.ids.Id
 
 @Composable
-fun ChimeroidControlAnalog(
+fun PadKitScope.ChimeroidControlAnalog(
     modifier: Modifier = Modifier,
     analogPressId: Id.Key? = null,
     id: Id.ContinuousDirection,
@@ -24,18 +24,16 @@ fun ChimeroidControlAnalog(
         modifier = modifier.padding(theme.padding),
         contentAlignment = Alignment.Center,
     ) {
-        with(LocalPadKitScope.current) {
-            ControlAnalog(
-                id = id,
-                analogPressId = analogPressId,
-                background = {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) { ChimeroidControlBackground(Modifier.fillMaxSize(0.8f)) }
-                },
-                foreground = { ChimeroidButtonForeground(pressed = it) },
-            )
-        }
+        ControlAnalog(
+            id = id,
+            analogPressId = analogPressId,
+            background = {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) { ChimeroidControlBackground(Modifier.fillMaxSize(0.8f)) }
+            },
+            foreground = { ChimeroidButtonForeground(pressed = it) },
+        )
     }
 }

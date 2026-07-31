@@ -1,6 +1,7 @@
 plugins {
     id("com.android.library")
-    id("com.android.legacy-kapt")
+    id("kotlin-android")
+    id("kotlin-kapt")
     id("kotlinx-serialization")
     id("kotlin-parcelize")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -13,11 +14,15 @@ android {
         compose = true
     }
 
+    composeOptions {
+        kotlinCompilerExtensionVersion = deps.versions.kotlinExtension
+    }
 }
 
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        freeCompilerArgs.add("-Xcontext-receivers")
     }
 }
 
