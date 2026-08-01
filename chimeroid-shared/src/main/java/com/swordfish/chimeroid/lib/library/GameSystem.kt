@@ -1150,6 +1150,134 @@ data class GameSystem(
                         secondaryUVxMax = 0.9f,  secondaryUVyMax = 1f,
                     ),
                 ),
+                GameSystem(
+                    SystemID.DREAMCAST,
+                    "Sega - Dreamcast",
+                    R.string.game_system_title_dreamcast,
+                    R.string.game_system_abbr_dreamcast,
+                    listOf(
+                        SystemCoreConfig(
+                            CoreID.FLYCAST,
+                            controllerConfigs =
+                                hashMapOf(
+                                    0 to arrayListOf(ControllerConfigs.DREAMCAST),
+                                ),
+                            exposedSettings =
+                                listOf(
+                                    ExposedSetting.Registered(
+                                        "flycast_region",
+                                        R.string.setting_flycast_region,
+                                        listOf(
+                                            ExposedSetting.Value(
+                                                "Default",
+                                                R.string.value_flycast_region_default,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "Japan",
+                                                R.string.value_flycast_region_japan,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "USA",
+                                                R.string.value_flycast_region_usa,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "Europe",
+                                                R.string.value_flycast_region_europe,
+                                            ),
+                                        ),
+                                    ),
+                                    ExposedSetting.Registered(
+                                        "flycast_language",
+                                        R.string.setting_flycast_language,
+                                        listOf(
+                                            ExposedSetting.Value(
+                                                "Default",
+                                                R.string.value_flycast_language_default,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "Japanese",
+                                                R.string.value_flycast_language_japanese,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "English",
+                                                R.string.value_flycast_language_english,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "German",
+                                                R.string.value_flycast_language_german,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "French",
+                                                R.string.value_flycast_language_french,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "Spanish",
+                                                R.string.value_flycast_language_spanish,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "Italian",
+                                                R.string.value_flycast_language_italian,
+                                            ),
+                                        ),
+                                    ),
+                                    ExposedSetting.Registered(
+                                        "flycast_internal_resolution",
+                                        R.string.setting_flycast_internal_resolution,
+                                    ),
+                                ),
+                            exposedAdvancedSettings =
+                                listOf(
+                                    ExposedSetting.Registered(
+                                        "flycast_hle_bios",
+                                        R.string.setting_flycast_hle_bios,
+                                    ),
+                                    ExposedSetting.Registered(
+                                        "flycast_threaded_rendering",
+                                        R.string.setting_flycast_threaded_rendering,
+                                    ),
+                                    ExposedSetting.Registered(
+                                        "flycast_widescreen_hack",
+                                        R.string.setting_flycast_widescreen_hack,
+                                    ),
+                                    ExposedSetting.Registered(
+                                        "flycast_alpha_sorting",
+                                        R.string.setting_flycast_alpha_sorting,
+                                        listOf(
+                                            ExposedSetting.Value(
+                                                "Per-Strip (fast, least accurate)",
+                                                R.string.value_flycast_alpha_sorting_perstrip,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "Per-Triangle (normal)",
+                                                R.string.value_flycast_alpha_sorting_pertriangle,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "Per-Pixel (accurate, but slowest)",
+                                                R.string.value_flycast_alpha_sorting_perpixel,
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            // dc_boot.bin / dc_flash.bin are optional (flycast has partial HLE
+                            // BIOS support) — same rationale as PSX above, so left off
+                            // requiredBIOSFiles. Still registered in BiosManager.SUPPORTED_BIOS
+                            // so the existing BIOS auto-import/detection screen picks them up.
+                            rumbleSupported = true,
+                            supportsLibretroVFS = true,
+                            // Cores/chimeroid_core_flycast only ships an arm64-v8a .so.
+                            supportedOnlyArchitectures = setOf("arm64-v8a"),
+                        ),
+                    ),
+                    uniqueExtensions = listOf(),
+                    supportedExtensions = listOf("cdi", "gdi", "chd", "cue", "m3u"),
+                    scanOptions =
+                        ScanOptions(
+                            scanByFilename = false,
+                            scanByUniqueExtension = false,
+                            scanByPathAndSupportedExtensions = true,
+                        ),
+                    hasMultiDiskSupport = true,
+                ),
             )
 
         private val byIdCache by lazy { SYSTEMS.associateBy { it.id.dbname } }

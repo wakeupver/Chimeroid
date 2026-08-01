@@ -64,6 +64,13 @@
     <string name="setting_citra_resolution_factor">Resolution scaling</string>
     <string name="setting_citra_use_acc_mul">Accurate shaders multiplication</string>
     <string name="setting_citra_use_acc_geo_shaders">Accurate geometry shaders</string>
+    <string name="setting_flycast_region">Region</string>
+    <string name="setting_flycast_language">Language</string>
+    <string name="setting_flycast_internal_resolution">Resolution</string>
+    <string name="setting_flycast_hle_bios">HLE BIOS</string>
+    <string name="setting_flycast_threaded_rendering">Threaded rendering</string>
+    <string name="setting_flycast_widescreen_hack">Widescreen hack</string>
+    <string name="setting_flycast_alpha_sorting">Alpha sorting</string>
 
     <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Disabled</string>
@@ -136,5 +143,22 @@
     <string name="value_handy_rot_none">0</string>
     <string name="value_handy_rot_90">90</string>
     <string name="value_handy_rot_270">270</string>
+
+    <string name="value_flycast_region_default">Default</string>
+    <string name="value_flycast_region_japan">Japan</string>
+    <string name="value_flycast_region_usa">USA</string>
+    <string name="value_flycast_region_europe">Europe</string>
+
+    <string name="value_flycast_language_default">Default</string>
+    <string name="value_flycast_language_japanese">Japanese</string>
+    <string name="value_flycast_language_english">English</string>
+    <string name="value_flycast_language_german">German</string>
+    <string name="value_flycast_language_french">French</string>
+    <string name="value_flycast_language_spanish">Spanish</string>
+    <string name="value_flycast_language_italian">Italian</string>
+
+    <string name="value_flycast_alpha_sorting_perstrip">Per-strip (fast, least accurate)</string>
+    <string name="value_flycast_alpha_sorting_pertriangle">Per-triangle (normal)</string>
+    <string name="value_flycast_alpha_sorting_perpixel">Per-pixel (accurate, but slowest)</string>
 
 </resources>

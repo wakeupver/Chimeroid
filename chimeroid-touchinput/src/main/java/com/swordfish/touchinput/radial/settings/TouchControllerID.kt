@@ -77,6 +77,7 @@ enum class TouchControllerID {
     WS_LANDSCAPE,
     WS_PORTRAIT,
     NINTENDO_3DS,
+    DREAMCAST,
     ;
 
     class Config(
@@ -235,6 +236,15 @@ enum class TouchControllerID {
                     Config(
                         { modifier, settings -> Nintendo3DSLeft(modifier, settings) },
                         { modifier, settings -> Nintendo3DSRight(modifier, settings) },
+                    )
+
+                // Dreamcast's RetroPad mapping (D-pad, analog stick, ABXY diamond, L/R, Start;
+                // see https://docs.libretro.com/library/flycast/#joypad-and-analog-device-type-table)
+                // is button-for-button identical to PSP's, so the layout is reused as-is.
+                DREAMCAST ->
+                    Config(
+                        { modifier, settings -> PSPLeft(modifier, settings) },
+                        { modifier, settings -> PSPRight(modifier, settings) },
                     )
             }
         }
