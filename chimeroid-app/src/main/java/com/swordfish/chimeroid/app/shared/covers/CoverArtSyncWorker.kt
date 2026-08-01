@@ -54,8 +54,8 @@ class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
         val validIds = games.map { it.id }.toSet()
         repository.pruneCovers(validIds)
 
-        // Download/persist missing covers (remote HTTP(S) thumbnails, or on-device cart images
-        // such as PICO-8's .p8.png — see CoverArtRepository.persistCover for the shared logic).
+        // Download/persist missing covers (remote HTTP(S) thumbnails — see
+        // CoverArtRepository.persistCover for the shared logic).
         var downloaded = 0
         var failed = 0
         games.forEach { game ->

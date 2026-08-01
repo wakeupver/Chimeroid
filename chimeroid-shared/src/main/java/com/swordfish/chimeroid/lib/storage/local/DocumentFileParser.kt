@@ -111,8 +111,8 @@ object DocumentFileParser {
     ): StorageFile {
         val ext = baseStorageFile.extension.lowercase()
 
-        // ── Fast-path A: unique-extension files (gba, nes, sfc, gb, gbc, nds, n64, p8.png…) ─
-        // These are unambiguously identified by their extension alone (simple or compound).
+        // ── Fast-path A: unique-extension files (gba, nes, sfc, gb, gbc, nds, n64…) ─────────
+        // These are unambiguously identified by their extension alone.
         // Skip ALL file I/O — the metadata provider will match via findByUniqueExtension.
         val uniqueExtensionSystem = GameSystem.findByFileName(baseStorageFile.name)
         if (uniqueExtensionSystem != null) {

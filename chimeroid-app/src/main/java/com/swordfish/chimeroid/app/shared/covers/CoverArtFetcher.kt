@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
  * Priority:
  *  1. Serve from a previously-saved JPEG in [CoverArtRepository.getCoverFile].
  *  2. Resolve [Game.coverFrontUrl] via [CoverArtRepository.persistCover] — a remote HTTP(S)
- *     thumbnail or an on-device cart image (e.g. PICO-8's `.p8.png`) — then serve it.
+ *     thumbnail — then serve it.
  *  3. Return null → Coil falls back to the drawable set via `fallback`/`error`.
  */
 class CoverArtFetcher(
@@ -55,9 +55,7 @@ class CoverArtFetcher(
 
             if (!saved || !localFile.exists()) return@withContext null
 
-            val dataSource =
-                if (CoverArtRepository.isLocalCoverUri(coverUrl)) DataSource.DISK else DataSource.NETWORK
-            toSourceResult(localFile, dataSource)
+            toSourceResult(localFile, DataSource.NETWORK)
         }
     }
 

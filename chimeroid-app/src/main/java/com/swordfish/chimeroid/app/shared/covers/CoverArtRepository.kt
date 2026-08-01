@@ -3,7 +3,6 @@ package com.swordfish.chimeroid.app.shared.covers
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import com.swordfish.chimeroid.common.bitmap.downscaledToFit
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -43,9 +42,6 @@ class CoverArtRepository(private val context: Context) {
         /** Bump when a change to [CoverArtRepository.saveCover] invalidates previously cached JPEGs. */
         private const val CURRENT_ASPECT_FIX_VERSION = 1
 
-        /** Schemes served straight from disk via [android.content.ContentResolver] — no network I/O. */
-        private val LOCAL_URI_SCHEMES = setOf("content", "file")
-
         /**
          * Matches the last "(Tag)" immediately before ".png" in a thumbnails.libretro.com URL —
          * on a Named_Boxarts filename this is almost always the release region.
@@ -58,9 +54,6 @@ class CoverArtRepository(private val context: Context) {
          * most common single-word tags; compound tags ("Japan, Asia") aren't attempted.
          */
         private val REGION_FALLBACKS = listOf("World", "USA", "Europe", "Japan")
-
-        /** True when [coverUrl] is an on-device `content://`/`file://` image rather than a remote HTTP(S) thumbnail. */
-        fun isLocalCoverUri(coverUrl: String): Boolean = Uri.parse(coverUrl).scheme in LOCAL_URI_SCHEMES
     }
 
     val coversDir: File
@@ -127,10 +120,8 @@ class CoverArtRepository(private val context: Context) {
     }
 
     /**
-     * Persists whichever cover source [coverUrl] refers to as this game's cached JPEG — a
-     * remote HTTP(S) thumbnail, or an on-device `content://`/`file://` image such as a PICO-8
-     * `.p8.png` cart (a real PNG in its own right). Single entry point shared by
-     * [CoverArtFetcher] (on-demand) and [CoverArtSyncWorker] (background sync).
+     * Downloads [coverUrl] and persists it as this game's cached JPEG. Single entry point
+     * shared by [CoverArtFetcher] (on-demand) and [CoverArtSyncWorker] (background sync).
      *
      * @throws Exception on I/O failure — callers decide how to log/report it.
      */
@@ -138,13 +129,7 @@ class CoverArtRepository(private val context: Context) {
         gameId: Int,
         coverUrl: String,
         httpClient: OkHttpClient,
-    ): Boolean {
-        return if (isLocalCoverUri(coverUrl)) {
-            context.contentResolver.openInputStream(Uri.parse(coverUrl))?.use { saveCover(gameId, it) } ?: false
-        } else {
-            downloadCover(gameId, coverUrl, httpClient)
-        }
-    }
+    ): Boolean = downloadCover(gameId, coverUrl, httpClient)
 
     /**
      * Downloads [url] and, on failure, retries the same title under each of [REGION_FALLBACKS]

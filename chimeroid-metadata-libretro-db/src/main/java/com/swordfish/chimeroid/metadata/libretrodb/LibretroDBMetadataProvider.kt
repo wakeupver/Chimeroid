@@ -190,7 +190,6 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
     }
 
     private fun findByUniqueExtension(file: StorageFile): GameMetadata? {
-        // findByFileName also tries compound extensions like "sfc.zip", "md.zip", "p8.png"
         val system = GameSystem.findByFileName(file.name) ?: return null
 
         if (!system.scanOptions.scanByUniqueExtension) {

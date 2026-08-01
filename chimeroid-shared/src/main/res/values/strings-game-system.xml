@@ -44,7 +44,6 @@
     <string name="game_system_abbr_wsc">WSC</string>
     <string name="game_system_abbr_dos">DOS</string>
     <string name="game_system_abbr_3ds">3DS</string>
-    <string name="game_system_abbr_pico8">PICO-8</string>
 
     <string name="game_system_title_nes">Nintendo</string>
     <string name="game_system_title_atari2600">Atari 2600</string>
@@ -71,7 +70,6 @@
     <string name="game_system_title_wsc">WonderSwan Color</string>
     <string name="game_system_title_dos">DOS (Beta)</string>
     <string name="game_system_title_3ds">Nintendo 3DS (Beta)</string>
-    <string name="game_system_title_pico8">PICO-8 (Beta)</string>
 
     <string name="game_system_title_arcade">Arcade</string>
 </resources>

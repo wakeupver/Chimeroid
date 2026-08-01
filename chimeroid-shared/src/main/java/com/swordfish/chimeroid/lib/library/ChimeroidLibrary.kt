@@ -127,27 +127,10 @@ class ChimeroidLibrary(
         game: Game?,
     ): ScanEntry {
         return if (game != null) {
-            ScanEntry.GameFile(storageFile, backfillSelfCover(game, storageFile.primaryFile))
+            ScanEntry.GameFile(storageFile, game)
         } else {
             ScanEntry.File(storageFile)
         }
-    }
-
-    /**
-     * Already-indexed games never re-run [convertGameMetadataToGame] — [updateGames] below only
-     * touches `lastIndexedAt` — so a `coverFrontUrl` computed before self-cover support existed
-     * (e.g. a PICO-8 `.p8.png` scanned when it still resolved to null) would otherwise stay stale
-     * forever. Patches it in memory on every re-scan, before the DB write: one hashmap lookup +
-     * one string compare per already-known game, no I/O, no-op once the value is already correct.
-     */
-    private fun backfillSelfCover(
-        game: Game,
-        primaryFile: BaseStorageFile,
-    ): Game {
-        val gameSystem = GameSystem.findByIdOrNull(game.systemId) ?: return game
-        if (!isSelfCoverSystem(gameSystem, primaryFile)) return game
-        val expectedCover = primaryFile.uri.toString()
-        return if (game.coverFrontUrl == expectedCover) game else game.copy(coverFrontUrl = expectedCover)
     }
 
     private fun handleExistingEntries(
@@ -368,28 +351,9 @@ class ChimeroidLibrary(
             title = gameMetadata.name ?: primaryFile.name,
             systemId = gameSystem.id.dbname,
             developer = gameMetadata.developer,
-            coverFrontUrl = resolveCoverFrontUrl(gameSystem, primaryFile, gameMetadata),
+            coverFrontUrl = gameMetadata.thumbnail,
             lastIndexedAt = lastIndexedAt,
         )
-    }
-
-    /**
-     * PICO-8's `.p8.png` cart is itself a valid PNG — its cart data lives in the pixels — so it's
-     * used directly as cover art instead of a libretro thumbnail (which doesn't exist for PICO-8
-     * anyway, so [GameMetadata.thumbnail] is always null for this system). Shared by the new-game
-     * conversion path and [backfillSelfCover] (already-indexed games).
-     */
-    private fun isSelfCoverSystem(
-        gameSystem: GameSystem,
-        primaryFile: BaseStorageFile,
-    ): Boolean = gameSystem.id == SystemID.PICO8 && GameSystem.isPico8CartImage(primaryFile.name)
-
-    private fun resolveCoverFrontUrl(
-        gameSystem: GameSystem,
-        primaryFile: BaseStorageFile,
-        gameMetadata: GameMetadata,
-    ): String? {
-        return if (isSelfCoverSystem(gameSystem, primaryFile)) primaryFile.uri.toString() else gameMetadata.thumbnail
     }
 
     private fun removeDeletedDataFiles(startedAtMs: Long) {

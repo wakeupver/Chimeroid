@@ -65,7 +65,6 @@ object ShaderChooser {
             SystemID.WS -> ShaderConfig.LCD
             SystemID.WSC -> ShaderConfig.LCD
             SystemID.NINTENDO_3DS -> ShaderConfig.LCD
-            SystemID.PICO8 -> ShaderConfig.Sharp
         }
     }
 
@@ -289,7 +288,6 @@ object ShaderChooser {
             SystemID.WS -> upscale16BitsMobile
             SystemID.WSC -> upscale16BitsMobile
             SystemID.NINTENDO_3DS -> modern
-            SystemID.PICO8 -> upscale8Bits
         }
     }
 }

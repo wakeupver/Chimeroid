@@ -1150,22 +1150,6 @@ data class GameSystem(
                         secondaryUVxMax = 0.9f,  secondaryUVyMax = 1f,
                     ),
                 ),
-                GameSystem(
-                    SystemID.PICO8,
-                    "PICO-8",
-                    R.string.game_system_title_pico8,
-                    R.string.game_system_abbr_pico8,
-                    listOf(
-                        SystemCoreConfig(
-                            CoreID.FAKE08,
-                            controllerConfigs =
-                                hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.PICO8),
-                                ),
-                        ),
-                    ),
-                    uniqueExtensions = listOf("p8", PICO8_CART_IMAGE_EXTENSION),
-                ),
             )
 
         private val byIdCache by lazy { SYSTEMS.associateBy { it.id.dbname } }
@@ -1197,34 +1181,9 @@ data class GameSystem(
         fun findByUniqueFileExtension(fileExtension: String): GameSystem? =
             byExtensionCache[fileExtension.lowercase(Locale.US)]
 
-        /**
-         * Resolves [name] to a [GameSystem], trying a compound extension (e.g. "p8.png",
-         * "sfc.zip") before the simple single-segment extension. Needed for systems whose
-         * canonical file format is a dotted double extension — currently only PICO-8's
-         * .p8.png cart-image format. Falls back to the simple extension for every other
-         * system, so behavior for all single-segment extensions is unchanged.
-         */
+        /** Resolves [name] to a [GameSystem] by its file extension. */
         fun findByFileName(name: String): GameSystem? =
-            compoundExtensionOrNull(name)?.let(::findByUniqueFileExtension)
-                ?: findByUniqueFileExtension(FileUtils.extractExtension(name))
-
-        /** Returns "ext1.ext2" from "name.ext1.ext2", or null when [name] has fewer than two dots. */
-        private fun compoundExtensionOrNull(name: String): String? {
-            val lastDot = name.lastIndexOf('.')
-            if (lastDot <= 0) return null
-            val secondDot = name.lastIndexOf('.', lastDot - 1)
-            return if (secondDot >= 0) name.substring(secondDot + 1) else null
-        }
-
-        /** PICO-8's cart-image cartridge extension — a real PNG with cart data embedded in its pixels. */
-        private const val PICO8_CART_IMAGE_EXTENSION = "p8.png"
-
-        /**
-         * True when [name] is PICO-8's `.p8.png` cart-image format. That file is itself a valid,
-         * directly decodable PNG (fake-08 reads the cart data back out of the pixels), so it can
-         * be used as the game's cover art directly — no thumbnail lookup or network fetch needed.
-         */
-        fun isPico8CartImage(name: String): Boolean = compoundExtensionOrNull(name) == PICO8_CART_IMAGE_EXTENSION
+            findByUniqueFileExtension(FileUtils.extractExtension(name))
 
         data class ScanOptions(
             val scanByFilename: Boolean = true,
