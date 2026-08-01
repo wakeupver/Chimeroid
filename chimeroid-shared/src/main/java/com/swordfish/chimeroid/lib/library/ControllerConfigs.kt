@@ -204,7 +204,6 @@ object ControllerConfigs {
             R.string.controller_default,
             TouchControllerID.DREAMCAST,
             allowTouchRotation = true,
-            libretroDescriptor = "RetroPad",
             tiltConfigurations =
                 listOf(
                     TILT_CONFIGURATION_DISABLED,
