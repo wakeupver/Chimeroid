@@ -204,6 +204,16 @@ object ControllerConfigs {
             R.string.controller_default,
             TouchControllerID.DREAMCAST,
             allowTouchRotation = true,
+            // flycast's real controller_info (shell/libretro/libretro.cpp) has no
+            // "RetroPad" entry; port 0's actual descriptor is {"Controller",
+            // RETRO_DEVICE_JOYPAD}. Matching it is what makes findControllerId()
+            // resolve and setControllerType() actually fire -- without it,
+            // retro_set_controller_port_device() is never called at all (nothing
+            // else in libretrodroid calls it), so flycast never assigns
+            // MDT_SegaController to the port and neither the controller nor its
+            // VMU expansion slot get attached to the maple bus.
+            libretroId = 1, // RETRO_DEVICE_JOYPAD
+            libretroDescriptor = "Controller",
             tiltConfigurations =
                 listOf(
                     TILT_CONFIGURATION_DISABLED,
