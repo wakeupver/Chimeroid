@@ -343,7 +343,6 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             LOGD("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
             return false;
 
-            // TODO... RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO can also change frame-rate
         case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO: {
             // CRITICAL: this is called from WITHIN retro_run(). PPSSPP (and other HW cores)
             // will call get_current_framebuffer() immediately after this returns.  We MUST
@@ -356,7 +355,20 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             gameGeometryUpdated    = true;
             avInfoFullUpdate       = true;
 
-            LOGD("SET_SYSTEM_AV_INFO: new geometry %dx%d", gameGeometryWidth, gameGeometryHeight);
+            // A core reporting a new timing.fps here (e.g. flycast's "Detect Frame Rate
+            // Changes" locking onto a game running its logic at 30fps instead of 60) used
+            // to be silently dropped: FPSSync is built once from the original fps in
+            // afterGameLoad() and nothing ever told it to rebuild, so retro_run() kept being
+            // paced at the stale rate while the core itself now expects to be driven at
+            // half that -- the frontend ended up calling it twice as often as the core's own
+            // new timing implies, i.e. double speed. step() rebuilds FPSSync once it sees
+            // this flag (same thread/lock as the geometry flags below, so no new locking
+            // needed: both are written here inside retro_run(), read afterwards in the same
+            // step() call).
+            avInfoFps        = avInfo->timing.fps;
+            avInfoFpsUpdated = true;
+
+            LOGD("SET_SYSTEM_AV_INFO: new geometry %dx%d, fps %f", gameGeometryWidth, gameGeometryHeight, avInfoFps);
 
             if (avInfoChangedCallback) {
                 avInfoChangedCallback(gameGeometryWidth, gameGeometryHeight);
@@ -556,4 +568,16 @@ bool Environment::isAVInfoFullUpdate() const {
 
 void Environment::clearAVInfoFullUpdate() {
     avInfoFullUpdate = false;
+}
+
+double Environment::getAVInfoFps() const {
+    return avInfoFps;
+}
+
+bool Environment::isAVInfoFpsUpdated() const {
+    return avInfoFpsUpdated;
+}
+
+void Environment::clearAVInfoFpsUpdated() {
+    avInfoFpsUpdated = false;
 }
