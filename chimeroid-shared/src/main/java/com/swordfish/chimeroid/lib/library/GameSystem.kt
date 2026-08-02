@@ -1264,6 +1264,33 @@ data class GameSystem(
                                             ),
                                         ),
                                     ),
+                                    ExposedSetting.Registered(
+                                        "reicast_detect_vsync_swap_interval",
+                                        R.string.setting_flycast_detect_framerate_changes,
+                                        listOf(
+                                            ExposedSetting.Value(
+                                                "disabled",
+                                                R.string.value_flycast_detect_framerate_changes_disabled,
+                                            ),
+                                            ExposedSetting.Value(
+                                                "enabled",
+                                                R.string.value_flycast_detect_framerate_changes_enabled,
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            // Off by default upstream, but that default is exactly what causes
+                            // double-speed playback: without it, flycast never tells the
+                            // frontend when a game's internal update rate is locked below 60fps
+                            // (e.g. a 30fps title), so audio/video pacing stays keyed to the
+                            // initial 60fps av_info instead of the game's real rate. Overriding
+                            // to enabled fixes the common case (locked-rate games); a handful of
+                            // titles with intentionally unstable/variable frame rates (flycast's
+                            // own docs name Ecco the Dolphin, Unreal Tournament) may want it back
+                            // off, which the exposed setting above still allows per game.
+                            defaultSettings =
+                                listOf(
+                                    CoreVariable("reicast_detect_vsync_swap_interval", "enabled"),
                                 ),
                             // dc_boot.bin / dc_flash.bin are optional (flycast has partial HLE
                             // BIOS support) — same rationale as PSX above, so left off

@@ -71,6 +71,7 @@
     <string name="setting_flycast_threaded_rendering">Threaded rendering</string>
     <string name="setting_flycast_widescreen_hack">Widescreen hack</string>
     <string name="setting_flycast_alpha_sorting">Alpha sorting</string>
+    <string name="setting_flycast_detect_framerate_changes">Detect frame rate changes</string>
 
     <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Disabled</string>
@@ -160,5 +161,8 @@
     <string name="value_flycast_alpha_sorting_perstrip">Per-strip (fast, least accurate)</string>
     <string name="value_flycast_alpha_sorting_pertriangle">Per-triangle (normal)</string>
     <string name="value_flycast_alpha_sorting_perpixel">Per-pixel (accurate, but slowest)</string>
+
+    <string name="value_flycast_detect_framerate_changes_disabled">Disabled</string>
+    <string name="value_flycast_detect_framerate_changes_enabled">Enabled</string>
 
 </resources>
