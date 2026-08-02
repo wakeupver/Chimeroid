@@ -22,6 +22,7 @@
 #include <string>
 #include <cstring>
 #include <cmath>
+#include <algorithm>
 #include <EGL/egl.h>
 #include <unordered_map>
 
@@ -349,8 +350,20 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             // resize the FBO and call hw_context_reset right here, before we return, so the
             // next get_current_framebuffer() sees the correctly-sized FBO.
             struct retro_system_av_info *avInfo = static_cast<struct retro_system_av_info *>(data);
-            gameGeometryHeight     = avInfo->geometry.base_height;
-            gameGeometryWidth      = avInfo->geometry.base_width;
+            // FIX: some HW-rendered cores (flycast, like PPSSPP -- see onSurfaceCreated's
+            // fboWidth/fboHeight below) report a small nominal base_width/base_height
+            // regardless of the actual render resolution (flycast hardcodes 640x480 here
+            // specifically "to avoid a gigantic window size at startup"), and instead put
+            // the true required buffer size in max_width/max_height. Resizing the FBO to
+            // base_width/height alone meant that raising the internal-resolution core
+            // option mid-session shrank the FBO back down to that nominal size while the
+            // core kept rendering at the real (larger) resolution into it -- only the
+            // corner of the frame that fit landed in the FBO, and displaying that at full
+            // screen size is exactly the "zoomed in and cropped" symptom. max_width/height
+            // default to 0 for cores that never set them, so std::max just falls back to
+            // base_width/height unchanged for every other core.
+            gameGeometryHeight     = std::max(avInfo->geometry.base_height, avInfo->geometry.max_height);
+            gameGeometryWidth      = std::max(avInfo->geometry.base_width, avInfo->geometry.max_width);
             gameGeometryAspectRatio = avInfo->geometry.aspect_ratio;
             gameGeometryUpdated    = true;
             avInfoFullUpdate       = true;
@@ -385,6 +398,10 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             gameGeometryHeight     = geometry->base_height;
             gameGeometryWidth      = geometry->base_width;
             gameGeometryAspectRatio = geometry->aspect_ratio;
+            // Note: unlike SET_SYSTEM_AV_INFO above, libretro.h documents max_width/
+            // max_height as "ignored and cannot be changed" via this call, so they're
+            // not read here -- a spec-compliant core has no reason to keep them valid
+            // in a SET_GEOMETRY-only payload.
             gameGeometryUpdated    = true;
             // avInfoFullUpdate intentionally NOT set here
             LOGD("SET_GEOMETRY: new geometry %dx%d", gameGeometryWidth, gameGeometryHeight);
