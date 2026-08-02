@@ -12,6 +12,8 @@ import com.swordfish.touchinput.radial.layouts.Atari7800Left
 import com.swordfish.touchinput.radial.layouts.Atari7800Right
 import com.swordfish.touchinput.radial.layouts.DOSLeft
 import com.swordfish.touchinput.radial.layouts.DOSRight
+import com.swordfish.touchinput.radial.layouts.DreamcastLeft
+import com.swordfish.touchinput.radial.layouts.DreamcastRight
 import com.swordfish.touchinput.radial.layouts.GBALeft
 import com.swordfish.touchinput.radial.layouts.GBARight
 import com.swordfish.touchinput.radial.layouts.GBLeft
@@ -238,13 +240,15 @@ enum class TouchControllerID {
                         { modifier, settings -> Nintendo3DSRight(modifier, settings) },
                     )
 
-                // Dreamcast's RetroPad mapping (D-pad, analog stick, ABXY diamond, L/R, Start;
-                // see https://docs.libretro.com/library/flycast/#joypad-and-analog-device-type-table)
-                // is button-for-button identical to PSP's, so the layout is reused as-is.
+                // Dreamcast's RetroPad mapping (D-pad, analog stick, ABXY diamond, L/R,
+                // Start; see https://docs.libretro.com/library/flycast/#joypad-and-analog-
+                // device-type-table) matches PSP's for everything except L/R -- flycast
+                // reads those as the analog-capable JOYPAD_L2/R2 ids, not JOYPAD_L/R, so
+                // DreamcastLeft/Right reuse PSP's layout but swap in the L2/R2-bound buttons.
                 DREAMCAST ->
                     Config(
-                        { modifier, settings -> PSPLeft(modifier, settings) },
-                        { modifier, settings -> PSPRight(modifier, settings) },
+                        { modifier, settings -> DreamcastLeft(modifier, settings) },
+                        { modifier, settings -> DreamcastRight(modifier, settings) },
                     )
             }
         }

@@ -86,6 +86,30 @@ fun SecondaryButtonR() {
 
 context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
+fun SecondaryButtonAnalogL() {
+    // Same position/label as SecondaryButtonL, but bound to L2 (id 12) instead of L1 (id
+    // 10): some cores (flycast) map their single physical L trigger to RETRO_DEVICE_ID_
+    // JOYPAD_L2 rather than JOYPAD_L, since libretro only carries an analog value through
+    // the *2 id slots.
+    ChimeroidControlButton(
+        modifier = Modifier.radialPosition(120f),
+        id = Id.Key(KeyEvent.KEYCODE_BUTTON_L2),
+        label = "L",
+    )
+}
+
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
+@Composable
+fun SecondaryButtonAnalogR() {
+    ChimeroidControlButton(
+        modifier = Modifier.radialPosition(60f),
+        id = Id.Key(KeyEvent.KEYCODE_BUTTON_R2),
+        label = "R",
+    )
+}
+
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
+@Composable
 fun SecondaryButtonStart(position: Int = 0) {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(60f + 30f * position),

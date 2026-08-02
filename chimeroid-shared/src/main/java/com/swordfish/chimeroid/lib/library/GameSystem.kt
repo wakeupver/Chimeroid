@@ -1162,10 +1162,17 @@ data class GameSystem(
                                 hashMapOf(
                                     0 to arrayListOf(ControllerConfigs.DREAMCAST),
                                 ),
+                            // Every flycast_libretro_android.so option variable is still
+                            // registered under the legacy "reicast_" prefix internally
+                            // (#define CORE_OPTION_NAME "reicast" in libretro_core_options.h,
+                            // kept for save/config compatibility with the old reicast core) --
+                            // this is what the core actually reports via SET_VARIABLES, so it's
+                            // what has to match here, not the "flycast_" name the option is
+                            // documented under.
                             exposedSettings =
                                 listOf(
                                     ExposedSetting.Registered(
-                                        "flycast_region",
+                                        "reicast_region",
                                         R.string.setting_flycast_region,
                                         listOf(
                                             ExposedSetting.Value(
@@ -1187,7 +1194,7 @@ data class GameSystem(
                                         ),
                                     ),
                                     ExposedSetting.Registered(
-                                        "flycast_language",
+                                        "reicast_language",
                                         R.string.setting_flycast_language,
                                         listOf(
                                             ExposedSetting.Value(
@@ -1221,26 +1228,26 @@ data class GameSystem(
                                         ),
                                     ),
                                     ExposedSetting.Registered(
-                                        "flycast_internal_resolution",
+                                        "reicast_internal_resolution",
                                         R.string.setting_flycast_internal_resolution,
                                     ),
                                 ),
                             exposedAdvancedSettings =
                                 listOf(
                                     ExposedSetting.Registered(
-                                        "flycast_hle_bios",
+                                        "reicast_hle_bios",
                                         R.string.setting_flycast_hle_bios,
                                     ),
                                     ExposedSetting.Registered(
-                                        "flycast_threaded_rendering",
+                                        "reicast_threaded_rendering",
                                         R.string.setting_flycast_threaded_rendering,
                                     ),
                                     ExposedSetting.Registered(
-                                        "flycast_widescreen_hack",
+                                        "reicast_widescreen_hack",
                                         R.string.setting_flycast_widescreen_hack,
                                     ),
                                     ExposedSetting.Registered(
-                                        "flycast_alpha_sorting",
+                                        "reicast_alpha_sorting",
                                         R.string.setting_flycast_alpha_sorting,
                                         listOf(
                                             ExposedSetting.Value(
