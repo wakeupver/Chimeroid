@@ -418,6 +418,15 @@ void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t
     if (data != nullptr) {
         renderer->onNewFrame(data, width, height, pitch);
         isDirty = true;
+    } else if (renderer->rendersInVideoCallback()) {
+        // A duplicate frame from a HW-rendered core (data == nullptr) still
+        // carries this frame's real width/height. FramebufferRenderer::
+        // onNewFrame never touches `data`, so it's safe to still call it here
+        // -- otherwise lastFrameSize (and getValidContentFraction()) would be
+        // stuck at whatever it last was through an entire run of dupes,
+        // which is exactly the kind of gap that could leave the crop wrong
+        // for a visible stretch after a resolution change, not just one frame.
+        renderer->onNewFrame(data, width, height, pitch);
     }
 }
 
