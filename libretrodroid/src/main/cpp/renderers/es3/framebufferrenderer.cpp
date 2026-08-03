@@ -77,6 +77,14 @@ void FramebufferRenderer::updateRenderedResolution(unsigned int width, unsigned 
         this->width = width;
         this->height = height;
         isDirty = true;
+
+        // Whatever lastFrameSize was tracking is from the old allocation. Reset
+        // it rather than let getValidContentFraction() compare a stale
+        // pre-resize value against this new size for the one frame between
+        // now and the next onNewFrame -- {0,0} already means "assume full"
+        // there, which is the same safe behavior this renderer had before
+        // getValidContentFraction() existed at all.
+        lastFrameSize = std::make_pair(0u, 0u);
     }
 }
 
