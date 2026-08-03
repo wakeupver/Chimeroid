@@ -38,6 +38,33 @@ void VideoLayout::updateBuffers() {
     updateRelativeForegroundBounds();
 }
 
+void VideoLayout::updateValidContentFraction(float fractionX, float fractionY) {
+    if (fractionX == validContentFractionX && fractionY == validContentFractionY) {
+        return;
+    }
+
+    validContentFractionX = fractionX;
+    validContentFractionY = fractionY;
+    updateTextureCoordinates();
+}
+
+void VideoLayout::updateTextureCoordinates() {
+    // Same 2-triangle quad as the textureCoordinates default this replaces
+    // ((0,0),(0,1),(1,0),(1,0),(0,1),(1,1)): every 0.0F here is the near edge
+    // of that axis (unaffected -- that's where a core's own rendering starts
+    // from), every 1.0F is the far edge, narrowed to how much of the
+    // allocated buffer is actually valid this frame. Fractions of 1.0
+    // reproduce the exact default this method replaces.
+    textureCoordinates = {
+        0.0F, 0.0F,
+        0.0F, validContentFractionY,
+        validContentFractionX, 0.0F,
+        validContentFractionX, 0.0F,
+        0.0F, validContentFractionY,
+        validContentFractionX, validContentFractionY,
+    };
+}
+
 void VideoLayout::updateForegroundVertices() {
     float cosTheta = cos(-rotation);
     float sinTheta = sin(-rotation);

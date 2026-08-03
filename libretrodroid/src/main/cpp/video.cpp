@@ -150,6 +150,9 @@ void Video::renderFrame() {
     if (skipDuplicateFrames && !isDirty) return;
     isDirty = false;
 
+    auto [validFractionX, validFractionY] = renderer->getValidContentFraction();
+    videoLayout.updateValidContentFraction(validFractionX, validFractionY);
+
     // ── GL state reset ────────────────────────────────────────────────────────
     // HW-accelerated cores (PPSSPP, SwanStation, ...) render through this same
     // GL context and can leave blend/cull/stencil/scissor enabled with

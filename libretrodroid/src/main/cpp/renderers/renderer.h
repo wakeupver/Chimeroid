@@ -46,6 +46,18 @@ public:
     virtual void setShaders(ShaderManager::Chain shaders) = 0;
     virtual PassData getPassData(unsigned int layer) = 0;
 
+    // Fraction of the allocated buffer that's actually valid content this
+    // frame, in each axis -- greater than 0, at most 1. Only meaningful for
+    // renderers whose allocated buffer can be larger than the
+    // currently-rendered frame (FramebufferRenderer, when a core reports a
+    // max_width/max_height bigger than what it's actually drawing right now
+    // -- see its override for why that happens). Defaults to "the whole
+    // buffer is valid" for every other renderer, where lastFrameSize always
+    // matches the allocation exactly anyway.
+    virtual std::pair<float, float> getValidContentFraction() {
+        return {1.0f, 1.0f};
+    }
+
     // Force immediate FBO/buffer recreation if a resize is pending.
     // Called when a HW-accelerated core signals SET_SYSTEM_AV_INFO so the new
     // framebuffer is ready before the next get_current_framebuffer() call.

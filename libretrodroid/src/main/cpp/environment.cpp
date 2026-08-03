@@ -350,40 +350,28 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             // resize the FBO and call hw_context_reset right here, before we return, so the
             // next get_current_framebuffer() sees the correctly-sized FBO.
             struct retro_system_av_info *avInfo = static_cast<struct retro_system_av_info *>(data);
-            // FIX: some HW-rendered cores (flycast, like PPSSPP -- see onSurfaceCreated's
+            // Some HW-rendered cores (flycast, like PPSSPP -- see onSurfaceCreated's
             // fboWidth/fboHeight below) report a small nominal base_width/base_height
             // regardless of the actual render resolution (flycast hardcodes 640x480 here
             // specifically "to avoid a gigantic window size at startup"), and instead put
-            // the true required buffer size in max_width/max_height. Resizing the FBO to
+            // the true required buffer size in max_width/max_height. Sizing the FBO from
             // base_width/height alone meant that raising the internal-resolution core
             // option mid-session shrank the FBO back down to that nominal size while the
-            // core kept rendering at the real (larger) resolution into it -- only the
-            // corner of the frame that fit landed in the FBO, and displaying that at full
-            // screen size is exactly the "zoomed in and cropped" symptom. max_width/height
-            // default to 0 for cores that never set them, so this falls back to plain
-            // base_width/height unchanged for every other core.
-            unsigned w = std::max(avInfo->geometry.base_width, avInfo->geometry.max_width);
-            unsigned h = std::max(avInfo->geometry.base_height, avInfo->geometry.max_height);
-
-            // FIX #2: flycast also sets max_width == max_height on purpose ("Use same
-            // height for rotation potential" -- one square-ish buffer serves both
-            // landscape and portrait without reallocating), so the pair above comes out
-            // e.g. 853x853 instead of the real ~853x480. aspect_ratio is reported
-            // correctly regardless (it's a separate, independently-tracked value in
-            // flycast, not derived from max_width/height), so use it to correct whichever
-            // of w/h is the inflated one, instead of trusting both raw dimensions:
-            // keep the larger side (that's the one genuinely constrained by max_width/
-            // max_height) and derive the other from the aspect ratio.
-            if (avInfo->geometry.aspect_ratio > 0.0f) {
-                if (w >= h) {
-                    h = static_cast<unsigned>(w / avInfo->geometry.aspect_ratio);
-                } else {
-                    w = static_cast<unsigned>(h * avInfo->geometry.aspect_ratio);
-                }
-            }
-
-            gameGeometryHeight     = h;
-            gameGeometryWidth      = w;
+            // core kept rendering at the real (larger) resolution into it, clipping it.
+            // max_width/height default to 0 for cores that never set them, so this falls
+            // back to plain base_width/height unchanged for every other core.
+            //
+            // This only needs to be "big enough", not exact: flycast additionally sets
+            // max_width == max_height on purpose ("Use same height for rotation
+            // potential" -- one square-ish buffer serves both landscape and portrait
+            // without reallocating), which would make gameGeometryWidth/Height a square
+            // that doesn't match the real image shape. Renderer::getValidContentFraction()
+            // (FramebufferRenderer's override) handles that by cropping the display to
+            // whatever fraction of this allocation flycast is actually painting each
+            // frame, using its own accurate per-frame reported size -- so this can stay a
+            // simple upper bound instead of trying to derive the exact true dimensions.
+            gameGeometryHeight     = std::max(avInfo->geometry.base_height, avInfo->geometry.max_height);
+            gameGeometryWidth      = std::max(avInfo->geometry.base_width, avInfo->geometry.max_width);
             gameGeometryAspectRatio = avInfo->geometry.aspect_ratio;
             gameGeometryUpdated    = true;
             avInfoFullUpdate       = true;

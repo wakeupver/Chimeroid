@@ -84,6 +84,29 @@ bool FramebufferRenderer::rendersInVideoCallback() {
     return true;
 }
 
+std::pair<float, float> FramebufferRenderer::getValidContentFraction() {
+    // lastFrameSize (set in Renderer::onNewFrame, called from ours above) is
+    // the width/height the core actually passed to retro_video_refresh_t this
+    // frame -- RETRO_HW_FRAME_BUFFER_VALID cores like flycast still pass real
+    // width/height values even though `data` itself is just a sentinel, so
+    // this is accurate for them too. width/height are what the buffer is
+    // currently allocated at. Before the first frame (lastFrameSize still
+    // {0,0}) or if a core ever reports something equal to or larger than the
+    // allocation, this comes out to 1.0f: draw the whole thing, same as
+    // before this method existed.
+    if (lastFrameSize.first == 0 || lastFrameSize.second == 0 || width == 0 || height == 0) {
+        return {1.0f, 1.0f};
+    }
+
+    float fractionX = static_cast<float>(lastFrameSize.first) / static_cast<float>(width);
+    float fractionY = static_cast<float>(lastFrameSize.second) / static_cast<float>(height);
+
+    return {
+        std::min(fractionX, 1.0f),
+        std::min(fractionY, 1.0f),
+    };
+}
+
 void FramebufferRenderer::forceReinitialize() {
     // Called when the host needs the FBO to match a new geometry immediately
     // (e.g. after SET_SYSTEM_AV_INFO from a HW-accelerated core like PPSSPP).

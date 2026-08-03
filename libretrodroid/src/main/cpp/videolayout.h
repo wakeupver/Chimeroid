@@ -30,6 +30,15 @@ public:
 
     void updateAspectRatio(float aspectRatio);
 
+    // See Renderer::getValidContentFraction(): narrows textureCoordinates so
+    // only the actually-painted fraction of an oversized buffer gets sampled,
+    // instead of always assuming the whole texture is valid. No-op when both
+    // fractions are 1 (every renderer/core except FramebufferRenderer with a
+    // core that reports max_width/height bigger than what it currently
+    // renders), so this doesn't change anything for a system that doesn't
+    // need it.
+    void updateValidContentFraction(float fractionX, float fractionY);
+
     void updateScreenSize(unsigned screenWidth, unsigned screenHeight);
 
     void updateViewportSize(Rect viewportRect);
@@ -62,6 +71,8 @@ private:
     void updateBuffers();
 
     void updateForegroundVertices();
+
+    void updateTextureCoordinates();
 
     void updateBackgroundVertices();
 
@@ -165,6 +176,9 @@ private:
     float rotation = 0.0F;
     float aspectRatio = 1;
     Rect viewportRect = Rect(0.0F, 0.0F, 1.0F, 1.0F);
+
+    float validContentFractionX = 1.0F;
+    float validContentFractionY = 1.0F;
 
     unsigned screenWidth = 0;
     unsigned screenHeight = 0;
