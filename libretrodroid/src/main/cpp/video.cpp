@@ -26,6 +26,7 @@
 #include "log.h"
 
 #include "video.h"
+#include "environment.h"
 #include "renderers/es3/framebufferrenderer.h"
 #include "renderers/es3/imagerendereres3.h"
 #include "renderers/es2/imagerendereres2.h"
@@ -152,6 +153,12 @@ void Video::renderFrame() {
 
     auto [validFractionX, validFractionY] = renderer->getValidContentFraction();
     videoLayout.updateValidContentFraction(validFractionX, validFractionY);
+
+    float currentAspectRatio = Environment::getInstance().retrieveGameSpecificAspectRatio();
+    if (currentAspectRatio > 0.0f && currentAspectRatio != lastSyncedAspectRatio) {
+        lastSyncedAspectRatio = currentAspectRatio;
+        videoLayout.updateAspectRatio(currentAspectRatio);
+    }
 
     // ── GL state reset ────────────────────────────────────────────────────────
     // HW-accelerated cores (PPSSPP, SwanStation, ...) render through this same
