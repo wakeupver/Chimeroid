@@ -2,6 +2,7 @@ package com.swordfish.chimeroid.lib.library
 
 import android.content.SharedPreferences
 import com.swordfish.chimeroid.lib.core.CoreUpdater
+import com.swordfish.chimeroid.lib.core.assetsmanager.DolphinAssetsManager
 import com.swordfish.chimeroid.lib.core.assetsmanager.NoAssetsManager
 import com.swordfish.chimeroid.lib.core.assetsmanager.PPSSPPAssetsManager
 import com.swordfish.chimeroid.lib.storage.DirectoriesManager
@@ -111,12 +112,18 @@ enum class CoreID(
         "Flycast",
         "libflycast_libretro_android.so",
     ),
+    DOLPHIN(
+        "dolphin",
+        "Dolphin",
+        "libdolphin_libretro_android.so",
+    ),
     ;
 
     companion object {
         fun getAssetManager(coreID: CoreID): AssetsManager {
             return when (coreID) {
                 PPSSPP -> PPSSPPAssetsManager()
+                DOLPHIN -> DolphinAssetsManager()
                 else -> NoAssetsManager()
             }
         }

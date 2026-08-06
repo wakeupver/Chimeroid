@@ -56,6 +56,20 @@ fun SecondaryButtonR1() {
 
 context(PadKitScope, LayoutRadialSecondaryDialsScope)
 @Composable
+fun SecondaryButtonZ() {
+    // GameCube's Z has no RetroPad id of its own -- dolphin-libretro reads it off the
+    // digital JOYPAD_R slot (github.com/libretro/dolphin issue #69), the same key
+    // SecondaryButtonR1() sends. Reused here under GameCube's own "Z" label/position
+    // rather than the misleading "R1" one.
+    ChimeroidControlButton(
+        modifier = Modifier.radialPosition(90f),
+        id = Id.Key(KeyEvent.KEYCODE_BUTTON_R1),
+        label = "Z",
+    )
+}
+
+context(PadKitScope, LayoutRadialSecondaryDialsScope)
+@Composable
 fun SecondaryButtonR2() {
     ChimeroidControlButton(
         modifier = Modifier.radialPosition(60f),

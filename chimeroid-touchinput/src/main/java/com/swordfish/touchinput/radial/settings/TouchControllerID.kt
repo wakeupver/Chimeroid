@@ -20,6 +20,8 @@ import com.swordfish.touchinput.radial.layouts.GBLeft
 import com.swordfish.touchinput.radial.layouts.GBRight
 import com.swordfish.touchinput.radial.layouts.GGLeft
 import com.swordfish.touchinput.radial.layouts.GGRight
+import com.swordfish.touchinput.radial.layouts.GameCubeLeft
+import com.swordfish.touchinput.radial.layouts.GameCubeRight
 import com.swordfish.touchinput.radial.layouts.Genesis3Left
 import com.swordfish.touchinput.radial.layouts.Genesis3Right
 import com.swordfish.touchinput.radial.layouts.Genesis6Left
@@ -80,6 +82,7 @@ enum class TouchControllerID {
     WS_PORTRAIT,
     NINTENDO_3DS,
     DREAMCAST,
+    GAMECUBE,
     ;
 
     class Config(
@@ -249,6 +252,12 @@ enum class TouchControllerID {
                     Config(
                         { modifier, settings -> DreamcastLeft(modifier, settings) },
                         { modifier, settings -> DreamcastRight(modifier, settings) },
+                    )
+
+                GAMECUBE ->
+                    Config(
+                        { modifier, settings -> GameCubeLeft(modifier, settings) },
+                        { modifier, settings -> GameCubeRight(modifier, settings) },
                     )
             }
         }

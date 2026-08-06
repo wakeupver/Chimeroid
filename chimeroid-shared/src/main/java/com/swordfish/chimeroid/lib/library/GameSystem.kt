@@ -1312,6 +1312,44 @@ data class GameSystem(
                         ),
                     hasMultiDiskSupport = true,
                 ),
+                GameSystem(
+                    SystemID.GAMECUBE,
+                    "Nintendo - GameCube",
+                    R.string.game_system_title_gamecube,
+                    R.string.game_system_abbr_gamecube,
+                    listOf(
+                        SystemCoreConfig(
+                            CoreID.DOLPHIN,
+                            controllerConfigs =
+                                hashMapOf(
+                                    0 to arrayListOf(ControllerConfigs.GAMECUBE),
+                                    1 to arrayListOf(ControllerConfigs.GAMECUBE),
+                                    2 to arrayListOf(ControllerConfigs.GAMECUBE),
+                                    3 to arrayListOf(ControllerConfigs.GAMECUBE),
+                                ),
+                            // IPL.bin is optional (dolphin-libretro HLEs it) and, unlike
+                            // every other BIOS this app manages, lives split across three
+                            // region subfolders under the Sys/ tree rather than as one flat
+                            // file BiosManager could place -- so it's intentionally left out
+                            // of BiosManager.SUPPORTED_BIOS rather than force-fit there.
+                            rumbleSupported = true,
+                            supportsLibretroVFS = true,
+                            supportsMicrophone = true,
+                            // Cores/chimeroid_core_dolphin only ships an arm64-v8a .so.
+                            supportedOnlyArchitectures = setOf("arm64-v8a"),
+                        ),
+                    ),
+                    uniqueExtensions = listOf(),
+                    supportedExtensions =
+                        listOf("elf", "dol", "gcm", "iso", "tgc", "wbfs", "ciso", "gcz", "wad", "wia", "rvz", "m3u"),
+                    scanOptions =
+                        ScanOptions(
+                            scanByFilename = false,
+                            scanByUniqueExtension = false,
+                            scanByPathAndSupportedExtensions = true,
+                        ),
+                    hasMultiDiskSupport = true,
+                ),
             )
 
         private val byIdCache by lazy { SYSTEMS.associateBy { it.id.dbname } }

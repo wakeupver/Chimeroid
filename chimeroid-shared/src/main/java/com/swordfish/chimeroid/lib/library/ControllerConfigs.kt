@@ -401,4 +401,30 @@ object ControllerConfigs {
                 ),
         )
 
+    val GAMECUBE =
+        ControllerConfig(
+            "default",
+            R.string.controller_default,
+            TouchControllerID.GAMECUBE,
+            allowTouchRotation = true,
+            // dolphin-libretro reports this port's controller subclass as "GameCube
+            // Controller" (RETRO_DEVICE_JOYPAD, id 1) rather than a generic "RetroPad" --
+            // matching it is what makes findControllerId()/setControllerType() actually
+            // fire, same reasoning as DREAMCAST's "Controller" override above.
+            libretroId = 1, // RETRO_DEVICE_JOYPAD
+            libretroDescriptor = "GameCube Controller",
+            tiltConfigurations =
+                listOf(
+                    TILT_CONFIGURATION_DISABLED,
+                    TILT_CONFIGURATION_CROSS,
+                    TILT_CONFIGURATION_ANALOG_LEFT,
+                    TILT_CONFIGURATION_ANALOG_RIGHT,
+                    // GameCube's single analog-capable L/R triggers read as JOYPAD_L2/R2
+                    // (see SecondaryButtonAnalogL/R below), which is TILT_CONFIGURATION_
+                    // L2_R2's binding -- not TILT_CONFIGURATION_L_R, which is L1/R1 and
+                    // would silently do nothing here.
+                    TILT_CONFIGURATION_L2_R2,
+                ),
+        )
+
 }
