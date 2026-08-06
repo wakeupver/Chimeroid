@@ -35,4 +35,7 @@ class GLRetroViewData(context: Context) {
     var enableMicrophone: Boolean = false
     var immersiveMode: ImmersiveMode? = null
     var stretchToFill: Boolean = false
+    // See CoreID.requiredGLESMinorVersion. 0 = keep today's plain, device-capability-only
+    // EGL context request.
+    var requiredGLESMinorVersion: Int = 0
 }

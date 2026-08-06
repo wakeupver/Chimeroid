@@ -42,6 +42,7 @@ abstract class ZipAssetsManager : CoreID.AssetsManager {
             val response = coreUpdaterApi.downloadZip(assetsUrl.toString())
             handleSuccess(directoriesManager, response, sharedPreferences)
         } catch (e: Throwable) {
+            Timber.e(e, "Failed to retrieve assets from $assetsUrl, deleting partial state")
             getAssetsDirectory(directoriesManager).deleteRecursively()
         }
     }
