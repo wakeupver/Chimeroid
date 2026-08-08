@@ -666,23 +666,6 @@ void LibretroDroid::step() {
         dirtyVideo = true;
     }
 
-    // See environment.cpp's SET_SYSTEM_AV_INFO handler: a core can report a new
-    // timing.fps mid-session (flycast's "Detect Frame Rate Changes" locking onto a
-    // game whose logic runs at 30fps instead of 60, for example). Rebuilding here
-    // keeps retro_run()'s pacing in sync with what the core itself now expects,
-    // instead of leaving FPSSync running at whatever fps afterGameLoad() first
-    // built it with for the rest of the session -- which is what was driving
-    // retro_run() (and therefore game logic) at up to 2x the core's real rate.
-    if (Environment::getInstance().isAVInfoFpsUpdated()) {
-        Environment::getInstance().clearAVInfoFpsUpdated();
-
-        double newFps = Environment::getInstance().getAVInfoFps();
-        if (newFps > 0) {
-            LOGD("step: rebuilding FPSSync for new fps %f (screen refresh %f)", newFps, screenRefreshRate);
-            fpsSync = std::make_unique<FPSSync>(newFps, screenRefreshRate);
-        }
-    }
-
     if (video && Environment::getInstance().isScreenRotationUpdated()) {
         Environment::getInstance().clearScreenRotationUpdated();
 

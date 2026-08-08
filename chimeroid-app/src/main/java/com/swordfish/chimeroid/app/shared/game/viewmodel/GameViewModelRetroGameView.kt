@@ -355,7 +355,6 @@ class GameViewModelRetroGameView(
             enableMicrophone = requestMicrophone
             immersiveMode = buildImmersiveModeConfiguration(enableImmersiveMode)
             stretchToFill = (aspectRatioMode == "stretch")
-            requiredGLESMinorVersion = systemCoreConfig.coreID.requiredGLESMinorVersion
         }
     }
 

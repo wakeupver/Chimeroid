@@ -2,7 +2,6 @@ package com.swordfish.chimeroid.lib.library
 
 import android.content.SharedPreferences
 import com.swordfish.chimeroid.lib.core.CoreUpdater
-import com.swordfish.chimeroid.lib.core.assetsmanager.DolphinAssetsManager
 import com.swordfish.chimeroid.lib.core.assetsmanager.NoAssetsManager
 import com.swordfish.chimeroid.lib.core.assetsmanager.PPSSPPAssetsManager
 import com.swordfish.chimeroid.lib.storage.DirectoriesManager
@@ -11,11 +10,6 @@ enum class CoreID(
     val coreName: String,
     val coreDisplayName: String,
     val libretroFileName: String,
-    // 0 = no specific requirement; GLRetroView keeps using its plain device-capability
-    // EGL_CONTEXT_CLIENT_VERSION request exactly as before. Only set this when a core is
-    // known to call RETRO_ENVIRONMENT_SET_HW_RENDER with an explicit version_minor of its
-    // own (e.g. dolphin-libretro requests GLES 3.1) and is known to crash without it.
-    val requiredGLESMinorVersion: Int = 0,
 ) {
     STELLA(
         "stella",
@@ -112,24 +106,12 @@ enum class CoreID(
         "DosBox Pure",
         "libdosbox_pure_libretro_android.so",
     ),
-    FLYCAST(
-        "flycast",
-        "Flycast",
-        "libflycast_libretro_android.so",
-    ),
-    DOLPHIN(
-        "dolphin",
-        "Dolphin",
-        "libdolphin_libretro_android.so",
-        requiredGLESMinorVersion = 1,
-    ),
     ;
 
     companion object {
         fun getAssetManager(coreID: CoreID): AssetsManager {
             return when (coreID) {
                 PPSSPP -> PPSSPPAssetsManager()
-                DOLPHIN -> DolphinAssetsManager()
                 else -> NoAssetsManager()
             }
         }

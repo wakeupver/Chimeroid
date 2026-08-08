@@ -77,42 +77,11 @@ void FramebufferRenderer::updateRenderedResolution(unsigned int width, unsigned 
         this->width = width;
         this->height = height;
         isDirty = true;
-
-        // Whatever lastFrameSize was tracking is from the old allocation. Reset
-        // it rather than let getValidContentFraction() compare a stale
-        // pre-resize value against this new size for the one frame between
-        // now and the next onNewFrame -- {0,0} already means "assume full"
-        // there, which is the same safe behavior this renderer had before
-        // getValidContentFraction() existed at all.
-        lastFrameSize = std::make_pair(0u, 0u);
     }
 }
 
 bool FramebufferRenderer::rendersInVideoCallback() {
     return true;
-}
-
-std::pair<float, float> FramebufferRenderer::getValidContentFraction() {
-    // lastFrameSize (set in Renderer::onNewFrame, called from ours above) is
-    // the width/height the core actually passed to retro_video_refresh_t this
-    // frame -- RETRO_HW_FRAME_BUFFER_VALID cores like flycast still pass real
-    // width/height values even though `data` itself is just a sentinel, so
-    // this is accurate for them too. width/height are what the buffer is
-    // currently allocated at. Before the first frame (lastFrameSize still
-    // {0,0}) or if a core ever reports something equal to or larger than the
-    // allocation, this comes out to 1.0f: draw the whole thing, same as
-    // before this method existed.
-    if (lastFrameSize.first == 0 || lastFrameSize.second == 0 || width == 0 || height == 0) {
-        return {1.0f, 1.0f};
-    }
-
-    float fractionX = static_cast<float>(lastFrameSize.first) / static_cast<float>(width);
-    float fractionY = static_cast<float>(lastFrameSize.second) / static_cast<float>(height);
-
-    return {
-        std::min(fractionX, 1.0f),
-        std::min(fractionY, 1.0f),
-    };
 }
 
 void FramebufferRenderer::forceReinitialize() {

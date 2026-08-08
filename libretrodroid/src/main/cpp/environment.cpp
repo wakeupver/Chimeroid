@@ -22,7 +22,6 @@
 #include <string>
 #include <cstring>
 #include <cmath>
-#include <algorithm>
 #include <EGL/egl.h>
 #include <unordered_map>
 
@@ -344,52 +343,20 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             LOGD("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
             return false;
 
+            // TODO... RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO can also change frame-rate
         case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO: {
             // CRITICAL: this is called from WITHIN retro_run(). PPSSPP (and other HW cores)
             // will call get_current_framebuffer() immediately after this returns.  We MUST
             // resize the FBO and call hw_context_reset right here, before we return, so the
             // next get_current_framebuffer() sees the correctly-sized FBO.
             struct retro_system_av_info *avInfo = static_cast<struct retro_system_av_info *>(data);
-            // Some HW-rendered cores (flycast, like PPSSPP -- see onSurfaceCreated's
-            // fboWidth/fboHeight below) report a small nominal base_width/base_height
-            // regardless of the actual render resolution (flycast hardcodes 640x480 here
-            // specifically "to avoid a gigantic window size at startup"), and instead put
-            // the true required buffer size in max_width/max_height. Sizing the FBO from
-            // base_width/height alone meant that raising the internal-resolution core
-            // option mid-session shrank the FBO back down to that nominal size while the
-            // core kept rendering at the real (larger) resolution into it, clipping it.
-            // max_width/height default to 0 for cores that never set them, so this falls
-            // back to plain base_width/height unchanged for every other core.
-            //
-            // This only needs to be "big enough", not exact: flycast additionally sets
-            // max_width == max_height on purpose ("Use same height for rotation
-            // potential" -- one square-ish buffer serves both landscape and portrait
-            // without reallocating), which would make gameGeometryWidth/Height a square
-            // that doesn't match the real image shape. Renderer::getValidContentFraction()
-            // (FramebufferRenderer's override) handles that by cropping the display to
-            // whatever fraction of this allocation flycast is actually painting each
-            // frame, using its own accurate per-frame reported size -- so this can stay a
-            // simple upper bound instead of trying to derive the exact true dimensions.
-            gameGeometryHeight     = std::max(avInfo->geometry.base_height, avInfo->geometry.max_height);
-            gameGeometryWidth      = std::max(avInfo->geometry.base_width, avInfo->geometry.max_width);
+            gameGeometryHeight     = avInfo->geometry.base_height;
+            gameGeometryWidth      = avInfo->geometry.base_width;
             gameGeometryAspectRatio = avInfo->geometry.aspect_ratio;
             gameGeometryUpdated    = true;
             avInfoFullUpdate       = true;
 
-            // A core reporting a new timing.fps here (e.g. flycast's "Detect Frame Rate
-            // Changes" locking onto a game running its logic at 30fps instead of 60) used
-            // to be silently dropped: FPSSync is built once from the original fps in
-            // afterGameLoad() and nothing ever told it to rebuild, so retro_run() kept being
-            // paced at the stale rate while the core itself now expects to be driven at
-            // half that -- the frontend ended up calling it twice as often as the core's own
-            // new timing implies, i.e. double speed. step() rebuilds FPSSync once it sees
-            // this flag (same thread/lock as the geometry flags below, so no new locking
-            // needed: both are written here inside retro_run(), read afterwards in the same
-            // step() call).
-            avInfoFps        = avInfo->timing.fps;
-            avInfoFpsUpdated = true;
-
-            LOGD("SET_SYSTEM_AV_INFO: new geometry %dx%d, fps %f", gameGeometryWidth, gameGeometryHeight, avInfoFps);
+            LOGD("SET_SYSTEM_AV_INFO: new geometry %dx%d", gameGeometryWidth, gameGeometryHeight);
 
             if (avInfoChangedCallback) {
                 avInfoChangedCallback(gameGeometryWidth, gameGeometryHeight);
@@ -406,10 +373,6 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             gameGeometryHeight     = geometry->base_height;
             gameGeometryWidth      = geometry->base_width;
             gameGeometryAspectRatio = geometry->aspect_ratio;
-            // Note: unlike SET_SYSTEM_AV_INFO above, libretro.h documents max_width/
-            // max_height as "ignored and cannot be changed" via this call, so they're
-            // not read here -- a spec-compliant core has no reason to keep them valid
-            // in a SET_GEOMETRY-only payload.
             gameGeometryUpdated    = true;
             // avInfoFullUpdate intentionally NOT set here
             LOGD("SET_GEOMETRY: new geometry %dx%d", gameGeometryWidth, gameGeometryHeight);
@@ -593,16 +556,4 @@ bool Environment::isAVInfoFullUpdate() const {
 
 void Environment::clearAVInfoFullUpdate() {
     avInfoFullUpdate = false;
-}
-
-double Environment::getAVInfoFps() const {
-    return avInfoFps;
-}
-
-bool Environment::isAVInfoFpsUpdated() const {
-    return avInfoFpsUpdated;
-}
-
-void Environment::clearAVInfoFpsUpdated() {
-    avInfoFpsUpdated = false;
 }

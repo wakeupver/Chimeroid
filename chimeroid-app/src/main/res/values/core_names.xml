@@ -19,5 +19,4 @@
     <string name="core_name_mednafen_ngp" translatable="false">mednafen_ngp</string>
     <string name="core_name_mednafen_wswan" translatable="false">mednafen_wswan</string>
     <string name="core_name_citra" translatable="false">citra</string>
-    <string name="core_name_flycast" translatable="false">flycast</string>
 </resources>

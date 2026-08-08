@@ -121,14 +121,6 @@ public:
     bool isAVInfoFullUpdate() const;
     void clearAVInfoFullUpdate();
 
-    /** Set alongside avInfoFullUpdate when SET_SYSTEM_AV_INFO carries a changed
-     *  timing.fps (e.g. a core detecting a game locked to a lower internal frame
-     *  rate). SET_GEOMETRY never touches this -- retro_game_geometry has no timing
-     *  field, so this can only ever be set from the SET_SYSTEM_AV_INFO branch. */
-    double getAVInfoFps() const;
-    bool isAVInfoFpsUpdated() const;
-    void clearAVInfoFpsUpdated();
-
     std::array<libretrodroid::RumbleState, 4> & getLastRumbleStates();
 
     const std::vector<struct Variable> getVariables() const;
@@ -169,8 +161,6 @@ private:
     unsigned gameGeometryHeight = 0;
     float gameGeometryAspectRatio = -1.0f;
     bool avInfoFullUpdate = false;          // true when update came from SET_SYSTEM_AV_INFO
-    double avInfoFps = 0.0;
-    bool avInfoFpsUpdated = false;
     AVInfoChangedCallback avInfoChangedCallback = nullptr;
 
     std::array<libretrodroid::RumbleState, 4> rumbleStates;

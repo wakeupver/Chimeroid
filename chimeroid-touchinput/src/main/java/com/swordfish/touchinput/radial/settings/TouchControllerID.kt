@@ -12,16 +12,12 @@ import com.swordfish.touchinput.radial.layouts.Atari7800Left
 import com.swordfish.touchinput.radial.layouts.Atari7800Right
 import com.swordfish.touchinput.radial.layouts.DOSLeft
 import com.swordfish.touchinput.radial.layouts.DOSRight
-import com.swordfish.touchinput.radial.layouts.DreamcastLeft
-import com.swordfish.touchinput.radial.layouts.DreamcastRight
 import com.swordfish.touchinput.radial.layouts.GBALeft
 import com.swordfish.touchinput.radial.layouts.GBARight
 import com.swordfish.touchinput.radial.layouts.GBLeft
 import com.swordfish.touchinput.radial.layouts.GBRight
 import com.swordfish.touchinput.radial.layouts.GGLeft
 import com.swordfish.touchinput.radial.layouts.GGRight
-import com.swordfish.touchinput.radial.layouts.GameCubeLeft
-import com.swordfish.touchinput.radial.layouts.GameCubeRight
 import com.swordfish.touchinput.radial.layouts.Genesis3Left
 import com.swordfish.touchinput.radial.layouts.Genesis3Right
 import com.swordfish.touchinput.radial.layouts.Genesis6Left
@@ -81,8 +77,6 @@ enum class TouchControllerID {
     WS_LANDSCAPE,
     WS_PORTRAIT,
     NINTENDO_3DS,
-    DREAMCAST,
-    GAMECUBE,
     ;
 
     class Config(
@@ -241,23 +235,6 @@ enum class TouchControllerID {
                     Config(
                         { modifier, settings -> Nintendo3DSLeft(modifier, settings) },
                         { modifier, settings -> Nintendo3DSRight(modifier, settings) },
-                    )
-
-                // Dreamcast's RetroPad mapping (D-pad, analog stick, ABXY diamond, L/R,
-                // Start; see https://docs.libretro.com/library/flycast/#joypad-and-analog-
-                // device-type-table) matches PSP's for everything except L/R -- flycast
-                // reads those as the analog-capable JOYPAD_L2/R2 ids, not JOYPAD_L/R, so
-                // DreamcastLeft/Right reuse PSP's layout but swap in the L2/R2-bound buttons.
-                DREAMCAST ->
-                    Config(
-                        { modifier, settings -> DreamcastLeft(modifier, settings) },
-                        { modifier, settings -> DreamcastRight(modifier, settings) },
-                    )
-
-                GAMECUBE ->
-                    Config(
-                        { modifier, settings -> GameCubeLeft(modifier, settings) },
-                        { modifier, settings -> GameCubeRight(modifier, settings) },
                     )
             }
         }

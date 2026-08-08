@@ -186,34 +186,6 @@ class BiosManager(private val directoriesManager: DirectoriesManager) {
                     "945F9DC9",
                     "nds_firmware.bin",
                 ),
-                Bios(
-                    "dc_boot.bin",
-                    "E10C53C2F8B90BAB96EAD2D368858623",
-                    "Dreamcast BIOS (World)",
-                    SystemID.DREAMCAST,
-                    "89F2B1A1",
-                ),
-                Bios(
-                    "dc_flash.bin",
-                    "0A93F7940C455905BEA6E392DFDE92A4",
-                    "Dreamcast Flash (USA)",
-                    SystemID.DREAMCAST,
-                    "C611B498",
-                ),
-                Bios(
-                    "dc_flash.bin",
-                    "23DF18AA53C8B30784CD9A84E061D008",
-                    "Dreamcast Flash (Europe)",
-                    SystemID.DREAMCAST,
-                    "B7E5AEEB",
-                ),
-                Bios(
-                    "dc_flash.bin",
-                    "69C036ADFCA4EBEA0B0C6FA4ACFC8538",
-                    "Dreamcast Flash (Japan)",
-                    SystemID.DREAMCAST,
-                    "5F92BF76",
-                ),
             )
     }
 }

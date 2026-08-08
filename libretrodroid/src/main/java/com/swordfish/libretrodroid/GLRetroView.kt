@@ -38,10 +38,7 @@ import com.swordfish.libretrodroid.KtUtils.awaitUninterruptibly
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import java.util.*
 import java.util.concurrent.CountDownLatch
-import javax.microedition.khronos.egl.EGL10
 import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.egl.EGLContext
-import javax.microedition.khronos.egl.EGLDisplay
 import javax.microedition.khronos.opengles.GL10
 import kotlin.properties.Delegates
 import kotlinx.coroutines.GlobalScope
@@ -175,12 +172,6 @@ class GLRetroView(
         openGLESVersion = getGLESVersion(context)
         preserveEGLContextOnPause = true
         setEGLContextClientVersion(openGLESVersion)
-        // Only cores that are known to need a specific GLES minor version (see
-        // CoreID.requiredGLESMinorVersion) install this; every other core keeps using
-        // GLSurfaceView's own DefaultContextFactory exactly as before.
-        if (data.requiredGLESMinorVersion > 0) {
-            setEGLContextFactory(VersionedEGLContextFactory(openGLESVersion, data.requiredGLESMinorVersion))
-        }
         setRenderer(Renderer())
         keepScreenOn = true
     }
@@ -481,68 +472,6 @@ class GLRetroView(
             isEmulationReady = false
             onPause()
             LibretroDroid.pause()
-        }
-    }
-
-    /**
-     * GLSurfaceView.setEGLContextClientVersion() only ever negotiates a *major* GLES
-     * version (2 or 3); it has no way to ask for EGL_CONTEXT_MINOR_VERSION_KHR. Cores that
-     * call RETRO_ENVIRONMENT_SET_HW_RENDER with an explicit version_minor of their own (e.g.
-     * dolphin-libretro requests GLES 3.1 for its context_reset renderer setup) can end up
-     * resolving a needed GL entry point to null on drivers that gate it behind that
-     * negotiated minor version, crashing with SIGSEGV the moment the core calls it.
-     *
-     * This factory asks for [minorVersion] via that extension when the driver advertises
-     * support for it, and falls back to the exact plain EGL_CONTEXT_CLIENT_VERSION-only
-     * request (i.e. GLSurfaceView's own DefaultContextFactory behavior) for every other
-     * core, and for this core too if the extension isn't advertised or context creation
-     * with it is refused.
-     */
-    private class VersionedEGLContextFactory(
-        private val clientVersion: Int,
-        private val minorVersion: Int,
-    ) : GLSurfaceView.EGLContextFactory {
-        override fun createContext(egl: EGL10, display: EGLDisplay, eglConfig: EGLConfig): EGLContext {
-            if (minorVersion > 0 && isCreateContextExtensionAvailable(egl, display)) {
-                createContextOrNull(egl, display, eglConfig, versionedAttribs())?.let { return it }
-            }
-            return createContextOrNull(egl, display, eglConfig, plainAttribs())
-                ?: throw RuntimeException("eglCreateContext failed: 0x${Integer.toHexString(egl.eglGetError())}")
-        }
-
-        override fun destroyContext(egl: EGL10, display: EGLDisplay, context: EGLContext) {
-            if (!egl.eglDestroyContext(display, context)) {
-                throw RuntimeException("eglDestroyContext failed: 0x${Integer.toHexString(egl.eglGetError())}")
-            }
-        }
-
-        private fun createContextOrNull(
-            egl: EGL10,
-            display: EGLDisplay,
-            eglConfig: EGLConfig,
-            attribs: IntArray,
-        ): EGLContext? {
-            val context = egl.eglCreateContext(display, eglConfig, EGL10.EGL_NO_CONTEXT, attribs)
-            return context.takeIf { it != null && it !== EGL10.EGL_NO_CONTEXT }
-        }
-
-        private fun isCreateContextExtensionAvailable(egl: EGL10, display: EGLDisplay): Boolean {
-            val extensions = egl.eglQueryString(display, EGL10.EGL_EXTENSIONS).orEmpty()
-            return extensions.contains("EGL_KHR_create_context")
-        }
-
-        private fun versionedAttribs() =
-            intArrayOf(
-                EGL_CONTEXT_CLIENT_VERSION, clientVersion,
-                EGL_CONTEXT_MINOR_VERSION_KHR, minorVersion,
-                EGL10.EGL_NONE,
-            )
-
-        private fun plainAttribs() = intArrayOf(EGL_CONTEXT_CLIENT_VERSION, clientVersion, EGL10.EGL_NONE)
-
-        private companion object {
-            const val EGL_CONTEXT_CLIENT_VERSION = 0x3098
-            const val EGL_CONTEXT_MINOR_VERSION_KHR = 0x30FB
         }
     }
 

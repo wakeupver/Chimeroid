@@ -170,7 +170,6 @@ private:
     std::optional<ShaderManager::Config> loadedShaderType = std::nullopt;
 
     bool isDirty = false;
-    float lastSyncedAspectRatio = -1.0f;
     bool skipDuplicateFrames = false;
 
     std::vector<ShaderChainEntry> shadersChain;

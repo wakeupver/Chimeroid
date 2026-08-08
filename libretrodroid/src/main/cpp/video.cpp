@@ -26,7 +26,6 @@
 #include "log.h"
 
 #include "video.h"
-#include "environment.h"
 #include "renderers/es3/framebufferrenderer.h"
 #include "renderers/es3/imagerendereres3.h"
 #include "renderers/es2/imagerendereres2.h"
@@ -150,15 +149,6 @@ void Video::updateProgram() {
 void Video::renderFrame() {
     if (skipDuplicateFrames && !isDirty) return;
     isDirty = false;
-
-    auto [validFractionX, validFractionY] = renderer->getValidContentFraction();
-    videoLayout.updateValidContentFraction(validFractionX, validFractionY);
-
-    float currentAspectRatio = Environment::getInstance().retrieveGameSpecificAspectRatio();
-    if (currentAspectRatio > 0.0f && currentAspectRatio != lastSyncedAspectRatio) {
-        lastSyncedAspectRatio = currentAspectRatio;
-        videoLayout.updateAspectRatio(currentAspectRatio);
-    }
 
     // ── GL state reset ────────────────────────────────────────────────────────
     // HW-accelerated cores (PPSSPP, SwanStation, ...) render through this same
@@ -425,15 +415,6 @@ void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t
     if (data != nullptr) {
         renderer->onNewFrame(data, width, height, pitch);
         isDirty = true;
-    } else if (renderer->rendersInVideoCallback()) {
-        // A duplicate frame from a HW-rendered core (data == nullptr) still
-        // carries this frame's real width/height. FramebufferRenderer::
-        // onNewFrame never touches `data`, so it's safe to still call it here
-        // -- otherwise lastFrameSize (and getValidContentFraction()) would be
-        // stuck at whatever it last was through an entire run of dupes,
-        // which is exactly the kind of gap that could leave the crop wrong
-        // for a visible stretch after a resolution change, not just one frame.
-        renderer->onNewFrame(data, width, height, pitch);
     }
 }
 

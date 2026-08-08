@@ -43,8 +43,6 @@ public:
 
     bool rendersInVideoCallback() override;
 
-    std::pair<float, float> getValidContentFraction() override;
-
     void setShaders(ShaderManager::Chain shaders) override;
     PassData getPassData(unsigned int layer) override;
 
