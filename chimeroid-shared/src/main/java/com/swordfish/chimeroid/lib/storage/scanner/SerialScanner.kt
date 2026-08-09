@@ -150,7 +150,6 @@ object SerialScanner {
             return when (FileUtils.extractExtension(fileName)) {
                 "pbp" -> extractInfoForPBP(it)
                 "iso", "bin" -> standardExtractInfo(it)
-                "3ds" -> extractInfoFor3DS(it)
                 else -> DiskInfo(null, null)
             }
         }
@@ -187,19 +186,6 @@ object SerialScanner {
 
             else -> DiskInfo(null, null)
         }
-    }
-
-    private fun extractInfoFor3DS(openedStream: InputStream): DiskInfo {
-        Timber.d("Parsing 3DS game")
-        openedStream.mark(0x2000)
-        openedStream.skip(0x1150)
-
-        val rawSerial = String(readByteArray(openedStream, ByteArray(10)), Charsets.US_ASCII)
-
-        openedStream.reset()
-
-        Timber.d("Found 3DS serial: $rawSerial")
-        return DiskInfo(rawSerial, SystemID.NINTENDO_3DS)
     }
 
     private fun extractInfoForSegaCD(openedStream: InputStream): DiskInfo {

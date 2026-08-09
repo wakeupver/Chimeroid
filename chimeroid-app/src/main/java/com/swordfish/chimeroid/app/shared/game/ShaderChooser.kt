@@ -51,7 +51,6 @@ object ShaderChooser {
             SystemID.FBNEO -> ShaderConfig.CRT
             SystemID.SMS -> ShaderConfig.CRT
             SystemID.PSP -> ShaderConfig.LCD
-            SystemID.NDS -> ShaderConfig.LCD
             SystemID.GG -> ShaderConfig.LCD
             SystemID.ATARI2600 -> ShaderConfig.CRT
             SystemID.PSX -> ShaderConfig.CRT
@@ -64,7 +63,6 @@ object ShaderChooser {
             SystemID.NGC -> ShaderConfig.LCD
             SystemID.WS -> ShaderConfig.LCD
             SystemID.WSC -> ShaderConfig.LCD
-            SystemID.NINTENDO_3DS -> ShaderConfig.LCD
         }
     }
 
@@ -274,7 +272,6 @@ object ShaderChooser {
             SystemID.FBNEO -> upscale32Bits
             SystemID.SMS -> upscale8Bits
             SystemID.PSP -> modern
-            SystemID.NDS -> upscale32Bits
             SystemID.GG -> upscale8BitsMobile
             SystemID.ATARI2600 -> upscale8Bits
             SystemID.PSX -> upscale32Bits
@@ -287,7 +284,6 @@ object ShaderChooser {
             SystemID.NGC -> upscale8BitsMobile
             SystemID.WS -> upscale16BitsMobile
             SystemID.WSC -> upscale16BitsMobile
-            SystemID.NINTENDO_3DS -> modern
         }
     }
 }

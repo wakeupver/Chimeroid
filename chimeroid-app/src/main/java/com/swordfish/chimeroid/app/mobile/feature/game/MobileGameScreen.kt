@@ -144,12 +144,8 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
             val fullScreenPosition = remember { mutableStateOf<Rect?>(null) }
             val viewportPosition = remember { mutableStateOf<Rect?>(null) }
 
-            // Determine once whether this system uses dual-screen rendering
-            val isDualScreen = remember { viewModel.getSystem().isDualScreen }
-
-            // Master visibility flag shared by the virtual gamepad AND the
-            // dual-screen divider, so the divider never pops in ahead of the
-            // pads while controllerConfigState/touchControlsVisibleState are
+            // Master visibility flag shared by the virtual gamepad so it never
+            // pops in ahead of controllerConfigState/touchControlsVisibleState
             // still emitting their initial values.
             val isVisible =
                 touchControllerSettings != null &&
@@ -169,9 +165,8 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
             val fullPos = fullScreenPosition.value
             val viewPos = viewportPosition.value
 
-            // Single-viewport path (non-dual-screen systems)
+            // Single-viewport mapping: GL surface bounds -> Compose viewport bounds
             LaunchedEffect(fullPos, viewPos) {
-                if (isDualScreen) return@LaunchedEffect   // handled by DualScreenPanels
                 val gameView = viewModel.retroGameView.retroGameViewFlow()
                 if (fullPos == null || viewPos == null) return@LaunchedEffect
                 val viewport =
@@ -182,11 +177,6 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                         (viewPos.bottom - fullPos.top) / fullPos.height,
                     )
                 gameView.viewport = viewport
-            }
-
-            // Clear dual-screen config on the GL layer when leaving
-            LaunchedEffect(isDualScreen) {
-                if (!isDualScreen) viewModel.clearDualScreenLayout()
             }
 
             ConstraintLayout(
@@ -203,17 +193,7 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                             .layoutId(GameScreenLayout.CONSTRAINTS_GAME_VIEW)
                             .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Top))
                             .onGloballyPositioned { viewportPosition.value = it.boundsInRoot() },
-                ) {
-                    // ── Dual-screen split panels (NDS / 3DS only) ───────────
-                    // Gated on isVisible so the divider appears in sync with
-                    // the virtual gamepad instead of showing up first on open.
-                    if (isDualScreen && isVisible) {
-                        DualScreenPanels(
-                            fullScreenPosition = fullScreenPosition,
-                            viewModel = viewModel,
-                        )
-                    }
-                }
+                )
 
                 if (isVisible) {
                     CompositionLocalProvider(LocalChimeroidPadTheme provides ChimeroidPadTheme()) {

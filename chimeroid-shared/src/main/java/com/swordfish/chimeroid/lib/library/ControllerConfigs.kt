@@ -250,21 +250,6 @@ object ControllerConfigs {
                 ),
         )
 
-    val MELONDS =
-        ControllerConfig(
-            "default",
-            R.string.controller_default,
-            TouchControllerID.MELONDS,
-            mergeDPADAndLeftStickEvents = true,
-            allowTouchOverlay = false,
-            tiltConfigurations =
-                listOf(
-                    TILT_CONFIGURATION_DISABLED,
-                    TILT_CONFIGURATION_CROSS,
-                    TILT_CONFIGURATION_L_R,
-                ),
-        )
-
     val LYNX =
         ControllerConfig(
             "default",
@@ -358,21 +343,6 @@ object ControllerConfigs {
                 listOf(
                     TILT_CONFIGURATION_DISABLED,
                     TILT_CONFIGURATION_CROSS,
-                ),
-        )
-
-    val NINTENDO_3DS =
-        ControllerConfig(
-            "default",
-            R.string.controller_default,
-            TouchControllerID.NINTENDO_3DS,
-            allowTouchOverlay = false,
-            tiltConfigurations =
-                listOf(
-                    TILT_CONFIGURATION_DISABLED,
-                    TILT_CONFIGURATION_CROSS,
-                    TILT_CONFIGURATION_ANALOG_LEFT,
-                    TILT_CONFIGURATION_L_R,
                 ),
         )
 

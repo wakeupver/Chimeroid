@@ -48,17 +48,9 @@
     <string name="setting_ppsspp_texture_filtering">Filtro de textura</string>
     <string name="setting_fbneo_frameskip">Salto de fotogramas</string>
     <string name="setting_fbneo_cpu_speed_adjust">Velocidad del CPU</string>
-    <string name="setting_melonds_screen_layout">Disposición de pantallas</string>
-    <string name="setting_melonds_threaded_renderer">Renderizador en paralelo</string>
-    <string name="setting_melonds_jit_enable">Recompilador dinámico</string>
-    <string name="setting_melonds_mic_input">Modo del micrófono</string>
     <string name="setting_wswan_rotate_display">Orientación</string>
     <string name="setting_wswan_mono_palette">Colorización</string>
     <string name="setting_handy_rot">Rotación de pantalla</string>
-    <string name="setting_citra_layout_option">Orden de pantallas</string>
-    <string name="setting_citra_resolution_factor">Escala de resolución</string>
-    <string name="setting_citra_use_acc_mul">Multiplicación de sombras precisas</string>
-    <string name="setting_citra_use_acc_geo_shaders">Sombreadores de geometría precisos</string>
     <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Desactivado</string>
     <string name="value_gambatte_mix_frames_mix">Simple</string>
@@ -98,14 +90,6 @@
     <string name="value_mupen64plus_mupen64plus_pak1_none">Ninguno</string>
     <string name="value_mupen64plus_mupen64plus_pak2_none">Ninguno</string>
     <string name="value_mupen64plus_mupen64plus_pak2_rumble">Vibración</string>
-    <string name="value_melonds_screen_layout_topbottom">Arriba - Abajo</string>
-    <string name="value_melonds_screen_layout_leftright">Izquierda - Derecha</string>
-    <string name="value_melonds_screen_layout_hybridtop">Superior híbrido</string>
-    <string name="value_melonds_screen_layout_hybridbottom">Inferior híbrido</string>
-    <string name="value_melonds_mic_input_microphone">Usando un micrófono real</string>
-    <string name="value_melonds_mic_input_blow">Simular sonidos de golpe</string>
-    <string name="value_citra_layout_option_topbottom">Arriba - Abajo</string>
-    <string name="value_citra_layout_option_sidebyside">Izquierda - Derecha</string>
     <string name="value_ppsspp_cpu_core_jit">JIT</string>
     <string name="value_ppsspp_cpu_core_irjit">IR JIT</string>
     <string name="value_ppsspp_cpu_core_interpreter">Intérprete</string>

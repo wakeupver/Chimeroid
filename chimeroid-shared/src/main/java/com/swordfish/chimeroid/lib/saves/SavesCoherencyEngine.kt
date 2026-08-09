@@ -16,15 +16,8 @@ class SavesCoherencyEngine(val savesManager: SavesManager, val statesManager: St
     suspend fun shouldDiscardAutoSaveState(
         game: Game,
         coreID: CoreID,
-        // Set when SRAM was resolved from a converted legacy DSV save (see NdsSaveMigrationHandler)
-        sramTimestampOverride: Long? = null,
     ): Boolean {
-        val autoSRAM =
-            if (sramTimestampOverride != null) {
-                SaveInfo(true, sramTimestampOverride)
-            } else {
-                savesManager.getSaveRAMInfo(game)
-            }
+        val autoSRAM = savesManager.getSaveRAMInfo(game)
         val autoSave = statesManager.getAutoSaveInfo(game, coreID)
         return autoSRAM.exists && autoSave.exists && autoSRAM.date > autoSave.date + TOLERANCE
     }

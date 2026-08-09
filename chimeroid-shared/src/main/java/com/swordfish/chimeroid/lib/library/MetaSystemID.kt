@@ -53,11 +53,6 @@ enum class MetaSystemID(val titleResId: Int, val imageResId: Int, val systemIDs:
         R.drawable.game_system_psp,
         listOf(SystemID.PSP),
     ),
-    NDS(
-        R.string.game_system_title_nds,
-        R.drawable.game_system_ds,
-        listOf(SystemID.NDS),
-    ),
     GG(
         R.string.game_system_title_gg,
         R.drawable.game_system_gg,
@@ -108,11 +103,6 @@ enum class MetaSystemID(val titleResId: Int, val imageResId: Int, val systemIDs:
         R.drawable.game_system_dos,
         listOf(SystemID.DOS),
     ),
-    NINTENDO_3DS(
-        R.string.game_system_title_3ds,
-        R.drawable.game_system_3ds,
-        listOf(SystemID.NINTENDO_3DS),
-    ),
     ;
 
     fun color(): Int {
@@ -132,7 +122,6 @@ enum class MetaSystemID(val titleResId: Int, val imageResId: Int, val systemIDs:
                 SystemID.SEGACD -> GENESIS
                 SystemID.GG -> GG
                 SystemID.N64 -> N64
-                SystemID.NDS -> NDS
                 SystemID.NES -> NES
                 SystemID.PSP -> PSP
                 SystemID.PSX -> PSX
@@ -146,7 +135,6 @@ enum class MetaSystemID(val titleResId: Int, val imageResId: Int, val systemIDs:
                 SystemID.NGC -> NGP
                 SystemID.WS -> WS
                 SystemID.WSC -> WS
-                SystemID.NINTENDO_3DS -> NINTENDO_3DS
             }
         }
     }

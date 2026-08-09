@@ -17,7 +17,8 @@ import java.io.InputStream
 class BiosManager(private val directoriesManager: DirectoriesManager) {
     private val crcLookup = SUPPORTED_BIOS.associateByNotNull { it.externalCRC32 }
 
-    // externalName is the user-facing filename (e.g. "nds_firmware.bin").
+    // externalName is the user-facing filename when it differs from libretroFileName
+    // (e.g. a friendlier or disambiguated display name for that BIOS file).
     // For entries that have no externalName, fall back to libretroFileName so that
     // standard filenames like "scph101.bin" / "lynxboot.img" are also matched by name.
     private val nameLookup = SUPPORTED_BIOS.associateByNotNull { it.externalName ?: it.libretroFileName }
@@ -163,28 +164,6 @@ class BiosManager(private val directoriesManager: DirectoriesManager) {
                     "Sega CD U",
                     SystemID.SEGACD,
                     "C6D10268",
-                ),
-                Bios(
-                    "bios7.bin",
-                    "DF692A80A5B1BC90728BC3DFC76CD948",
-                    "Nintendo DS ARM7",
-                    SystemID.NDS,
-                    "1280F0D5",
-                ),
-                Bios(
-                    "bios9.bin",
-                    "A392174EB3E572FED6447E956BDE4B25",
-                    "Nintendo DS ARM9",
-                    SystemID.NDS,
-                    "2AB23573",
-                ),
-                Bios(
-                    "firmware.bin",
-                    "E45033D9B0FA6B0DE071292BBA7C9D13",
-                    "Nintendo DS Firmware",
-                    SystemID.NDS,
-                    "945F9DC9",
-                    "nds_firmware.bin",
                 ),
             )
     }

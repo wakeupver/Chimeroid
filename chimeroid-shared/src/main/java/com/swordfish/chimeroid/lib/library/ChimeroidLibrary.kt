@@ -248,7 +248,7 @@ class ChimeroidLibrary(
         startedAtMs: Long,
     ): ScanEntry {
         // ── Quick pre-check (zero I/O) ─────────────────────────────────────────────
-        // If the primary file has a unique extension (e.g. .gba, .nes, .sfc, .nds)
+        // If the primary file has a unique extension (e.g. .gba, .nes, .sfc)
         // we can build a lightweight StorageFile and ask the metadata provider right
         // away. Only if that fails do we open the file for CRC / serial scanning.
         val primaryFile = groupedStorageFile.primaryFile

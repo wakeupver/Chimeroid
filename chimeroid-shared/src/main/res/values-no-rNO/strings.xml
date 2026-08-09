@@ -48,17 +48,9 @@
     <string name="setting_ppsspp_texture_filtering">Tekstur filtrering</string>
     <string name="setting_fbneo_frameskip">Frameskip</string>
     <string name="setting_fbneo_cpu_speed_adjust">CPU hastighet</string>
-    <string name="setting_melonds_screen_layout">Skjermoppsett</string>
-    <string name="setting_melonds_threaded_renderer">Tråd-basert renderingsmotor</string>
-    <string name="setting_melonds_jit_enable">Dynamisk re-kompilator</string>
-    <string name="setting_melonds_mic_input">Mikrofon modus</string>
     <string name="setting_wswan_rotate_display">Retning</string>
     <string name="setting_wswan_mono_palette">Fargelegging</string>
     <string name="setting_handy_rot">Skjermrotasjon</string>
-    <string name="setting_citra_layout_option">Skjermoppsett</string>
-    <string name="setting_citra_resolution_factor">Oppløsningsskalering</string>
-    <string name="setting_citra_use_acc_mul">Nøyaktige multiplikasjon av skyggereguleringer</string>
-    <string name="setting_citra_use_acc_geo_shaders">Nøyaktige geometriskygger</string>
     <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Deaktivert</string>
     <string name="value_gambatte_mix_frames_mix">Enkel</string>
@@ -98,14 +90,6 @@
     <string name="value_mupen64plus_mupen64plus_pak1_none">Ingen</string>
     <string name="value_mupen64plus_mupen64plus_pak2_none">Ingen</string>
     <string name="value_mupen64plus_mupen64plus_pak2_rumble">Vibrasjon</string>
-    <string name="value_melonds_screen_layout_topbottom">Topp - Bunn</string>
-    <string name="value_melonds_screen_layout_leftright">Venstre - Høyre</string>
-    <string name="value_melonds_screen_layout_hybridtop">Hybrid øverst</string>
-    <string name="value_melonds_screen_layout_hybridbottom">Hybrid nederst</string>
-    <string name="value_melonds_mic_input_microphone">Virkelig mikrofon</string>
-    <string name="value_melonds_mic_input_blow">Simuler klyder</string>
-    <string name="value_citra_layout_option_topbottom">Topp - Bunn</string>
-    <string name="value_citra_layout_option_sidebyside">Venstre - Høyre</string>
     <string name="value_ppsspp_cpu_core_jit">JIT</string>
     <string name="value_ppsspp_cpu_core_irjit">IR JIT</string>
     <string name="value_ppsspp_cpu_core_interpreter">Tolk</string>

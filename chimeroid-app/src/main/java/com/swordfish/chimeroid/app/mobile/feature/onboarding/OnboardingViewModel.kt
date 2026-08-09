@@ -34,7 +34,6 @@ data class OnboardingUiState(
     val baseDirectoryValid: Boolean = false,
     val allFilesAccessGranted: Boolean = false,
     val notificationGranted: Boolean = false,
-    val microphoneGranted: Boolean = false,
     val canContinue: Boolean = false,
     val currentPage: Int = 0,
     val totalPages: Int = ONBOARDING_TOTAL_PAGES,
@@ -46,7 +45,6 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
         OnboardingUiState(
             allFilesAccessGranted = hasAllFilesAccess(),
             notificationGranted = hasNotificationPermission(application),
-            microphoneGranted = hasMicrophonePermission(application),
         ),
     )
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
@@ -130,14 +128,6 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     // -------------------------------------------------------------------------
-    // Microphone permission
-    // -------------------------------------------------------------------------
-
-    fun refreshMicrophonePermission() {
-        updateState { copy(microphoneGranted = hasMicrophonePermission(getApplication())) }
-    }
-
-    // -------------------------------------------------------------------------
     // Pager navigation
     // -------------------------------------------------------------------------
 
@@ -192,11 +182,5 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
             } else {
                 true // Granted implicitly on API < 33
             }
-
-        fun hasMicrophonePermission(context: Context): Boolean =
-            PackageManager.PERMISSION_GRANTED ==
-                ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.RECORD_AUDIO,
-                )
     }
 }

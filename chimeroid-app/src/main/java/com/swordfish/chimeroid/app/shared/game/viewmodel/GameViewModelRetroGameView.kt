@@ -2,8 +2,6 @@ package com.swordfish.chimeroid.app.shared.game.viewmodel
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.RectF
-import androidx.compose.ui.geometry.Rect
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
@@ -233,17 +231,10 @@ class GameViewModelRetroGameView(
                     isFocusableInTouchMode = false
                 }
 
-        // Dual-screen systems (NDS/3DS) handle the bottom-screen touch panel entirely
-        // through Compose's DualScreenPanels -> sendTouchPanelRelative pipeline, which
-        // maps taps against the real per-panel content bounds (letterbox-aware, full
-        // panel touchable, no dead zones). The raw GLRetroView.onTouchEvent listener
-        // must be disabled here too, or it keeps firing in parallel using the whole
-        // surface's width/height with a cruder viewport-only mapping — the two
-        // pipelines fight over the same pointer, which is what makes the touch screen
-        // feel like it only responds across half its area, squeezed toward the bottom.
-        if (!system.hasTouchScreen || system.isDualScreen) {
-            result.disableTouchEvents()
-        }
+        // PadKit's Compose overlay owns all touch input; the raw GLRetroView.onTouchEvent
+        // listener is always disabled so it never fires in parallel and fights the
+        // Compose-side virtual-pad/gesture handling for the same pointer.
+        result.disableTouchEvents()
 
         lifecycle.lifecycle.addObserver(result)
 
@@ -272,51 +263,6 @@ class GameViewModelRetroGameView(
         retroView.getGLRetroEvents()
             .filterIsInstance<T>()
             .first()
-    }
-
-    /**
-     * Applies (or clears) the dual-screen split on the live [GLRetroView].
-     *
-     * Converts Compose pixel positions → 0-1 GL surface fractions, then
-     * pushes a [GLRetroView.DualScreenConfig] to the view.  Safe to call
-     * from the Compose thread; the observable property queues to the GL thread.
-     */
-    fun applyDualScreenLayout(
-        fullPos: RectF,
-        topPanelPos: Rect,
-        bottomPanelPos: Rect,
-        system: GameSystem,
-    ) {
-        val view = retroGameView ?: return
-        val uvCfg = system.dualScreenUVConfig ?: return
-
-        if (fullPos.width() == 0f || fullPos.height() == 0f) return
-
-        fun Rect.toGLViewport(): RectF {
-            val l = (left   - fullPos.left) / fullPos.width()
-            val t = (top    - fullPos.top)  / fullPos.height()
-            val r = (right  - fullPos.left) / fullPos.width()
-            val b = (bottom - fullPos.top)  / fullPos.height()
-            return RectF(l, t, r, b)
-        }
-
-        view.dualScreenConfig = GLRetroView.DualScreenConfig(
-            primaryViewport   = topPanelPos.toGLViewport(),
-            secondaryViewport = bottomPanelPos.toGLViewport(),
-            primaryUVxMin     = uvCfg.primaryUVxMin,
-            primaryUVyMin     = uvCfg.primaryUVyMin,
-            primaryUVxMax     = uvCfg.primaryUVxMax,
-            primaryUVyMax     = uvCfg.primaryUVyMax,
-            secondaryUVxMin   = uvCfg.secondaryUVxMin,
-            secondaryUVyMin   = uvCfg.secondaryUVyMin,
-            secondaryUVxMax   = uvCfg.secondaryUVxMax,
-            secondaryUVyMax   = uvCfg.secondaryUVyMax,
-        )
-    }
-
-    /** Disable dual-screen mode and return to normal rendering. */
-    fun clearDualScreenLayout() {
-        retroGameView?.dualScreenConfig = null
     }
 
     private fun buildRetroViewData(
@@ -418,22 +364,6 @@ class GameViewModelRetroGameView(
         retroGameViewFlow().getGLRetroErrors()
             .catch { Timber.e(it, "Exception in GLRetroErrors stream.") }
             .collect { handleRetroViewError(it) }
-    }
-
-    /**
-     * Forwards a touch expressed as [0,1] fractions within the secondary panel.
-     * The coordinate-to-NDC conversion happens inside C++ using the stored viewport
-     * config, guaranteeing consistency with the rendered game content position.
-     */
-    fun sendRetroTouchPanelRelative(panelRelX: Float, panelRelY: Float) {
-        retroGameView?.sendTouchPanelRelative(panelRelX, panelRelY)
-    }
-
-    /**
-     * Releases the current dual-screen touch (call on ACTION_UP / pointer cancel).
-     */
-    fun sendRetroTouchRelease() {
-        retroGameView?.sendTouchRelease()
     }
 
     private fun updateCoreVariables(options: List<CoreVariable>) {

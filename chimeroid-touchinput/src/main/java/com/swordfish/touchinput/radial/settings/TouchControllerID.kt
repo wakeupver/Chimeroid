@@ -24,16 +24,12 @@ import com.swordfish.touchinput.radial.layouts.Genesis6Left
 import com.swordfish.touchinput.radial.layouts.Genesis6Right
 import com.swordfish.touchinput.radial.layouts.LynxLeft
 import com.swordfish.touchinput.radial.layouts.LynxRight
-import com.swordfish.touchinput.radial.layouts.MelonDSLeft
-import com.swordfish.touchinput.radial.layouts.MelonDSRight
 import com.swordfish.touchinput.radial.layouts.N64Left
 import com.swordfish.touchinput.radial.layouts.N64Right
 import com.swordfish.touchinput.radial.layouts.NESLeft
 import com.swordfish.touchinput.radial.layouts.NESRight
 import com.swordfish.touchinput.radial.layouts.NGPLeft
 import com.swordfish.touchinput.radial.layouts.NGPRight
-import com.swordfish.touchinput.radial.layouts.Nintendo3DSLeft
-import com.swordfish.touchinput.radial.layouts.Nintendo3DSRight
 import com.swordfish.touchinput.radial.layouts.PCELeft
 import com.swordfish.touchinput.radial.layouts.PCERight
 import com.swordfish.touchinput.radial.layouts.PSPLeft
@@ -55,7 +51,6 @@ import gg.padkit.PadKitScope
 enum class TouchControllerID {
     GB,
     NES,
-    MELONDS,
     PSX,
     PSX_DUALSHOCK,
     N64,
@@ -76,7 +71,6 @@ enum class TouchControllerID {
     DOS,
     WS_LANDSCAPE,
     WS_PORTRAIT,
-    NINTENDO_3DS,
     ;
 
     class Config(
@@ -103,12 +97,6 @@ enum class TouchControllerID {
                     Config(
                         { modifier, settings -> NESLeft(modifier, settings) },
                         { modifier, settings -> NESRight(modifier, settings) },
-                    )
-
-                MELONDS ->
-                    Config(
-                        { modifier, settings -> MelonDSLeft(modifier, settings) },
-                        { modifier, settings -> MelonDSRight(modifier, settings) },
                     )
 
                 PSX ->
@@ -229,12 +217,6 @@ enum class TouchControllerID {
                     Config(
                         { modifier, settings -> WSPortraitLeft(modifier, settings) },
                         { modifier, settings -> WSPortraitRight(modifier, settings) },
-                    )
-
-                NINTENDO_3DS ->
-                    Config(
-                        { modifier, settings -> Nintendo3DSLeft(modifier, settings) },
-                        { modifier, settings -> Nintendo3DSRight(modifier, settings) },
                     )
             }
         }

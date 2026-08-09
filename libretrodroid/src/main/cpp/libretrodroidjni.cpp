@@ -382,22 +382,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onTouchEve
     LibretroDroid::getInstance().onTouchEvent(xAxis, yAxis);
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_releaseSecondaryTouch(
-    JNIEnv* env,
-    jclass obj
-) {
-    LibretroDroid::getInstance().releaseSecondaryTouch();
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setSecondaryTouchDirect(
-    JNIEnv* env,
-    jclass obj,
-    jfloat relX,
-    jfloat relY
-) {
-    LibretroDroid::getInstance().setSecondaryTouchDirect(relX, relY);
-}
-
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(
     JNIEnv* env,
     jclass obj,
@@ -688,24 +672,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setViewpor
     jfloat height
 ) {
     LibretroDroid::getInstance().setViewport(Rect(x, y, width, height));
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setDualScreenConfig(
-    JNIEnv* env,
-    jclass obj,
-    jboolean enabled,
-    jfloat primaryVpX,   jfloat primaryVpY,   jfloat primaryVpW,   jfloat primaryVpH,
-    jfloat secondaryVpX, jfloat secondaryVpY, jfloat secondaryVpW, jfloat secondaryVpH,
-    jfloat primaryUVxMin,   jfloat primaryUVyMin,   jfloat primaryUVxMax,   jfloat primaryUVyMax,
-    jfloat secondaryUVxMin, jfloat secondaryUVyMin, jfloat secondaryUVxMax, jfloat secondaryUVyMax
-) {
-    LibretroDroid::getInstance().setDualScreenConfig(
-        enabled,
-        primaryVpX,   primaryVpY,   primaryVpW,   primaryVpH,
-        secondaryVpX, secondaryVpY, secondaryVpW, secondaryVpH,
-        primaryUVxMin,   primaryUVyMin,   primaryUVxMax,   primaryUVyMax,
-        secondaryUVxMin, secondaryUVyMin, secondaryUVxMax, secondaryUVyMax
-    );
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_refreshAspectRatio(

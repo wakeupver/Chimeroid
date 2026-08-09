@@ -38,26 +38,7 @@ data class GameSystem(
     val supportedExtensions: List<String> = uniqueExtensions,
     val hasMultiDiskSupport: Boolean = false,
     val fastForwardSupport: Boolean = true,
-    val hasTouchScreen: Boolean = false,
-    /** True for systems that render two physical screens (NDS, 3DS). */
-    val isDualScreen: Boolean = false,
-    /** UV crop config for dual-screen split. Null when isDualScreen = false. */
-    val dualScreenUVConfig: DualScreenUVConfig? = null,
 ) {
-    /**
-     * Describes how the combined game texture is split into two screen panels.
-     * All values are 0-1 fractions of the combined texture.
-     */
-    data class DualScreenUVConfig(
-        val primaryUVxMin: Float   = 0f,
-        val primaryUVyMin: Float   = 0f,
-        val primaryUVxMax: Float   = 1f,
-        val primaryUVyMax: Float   = 0.5f,
-        val secondaryUVxMin: Float = 0f,
-        val secondaryUVyMin: Float = 0.5f,
-        val secondaryUVxMax: Float = 1f,
-        val secondaryUVyMax: Float = 1f,
-    )
     companion object {
         // ── Shared settings reused across SMS / GENESIS / SEGACD ─────────────
         private val GENESIS_NTSC_FILTER_SETTING = ExposedSetting.Registered(
@@ -795,80 +776,6 @@ data class GameSystem(
                         ),
                 ),
                 GameSystem(
-                    SystemID.NDS,
-                    "Nintendo - Nintendo DS",
-                    R.string.game_system_title_nds,
-                    R.string.game_system_abbr_nds,
-                    listOf(
-                        SystemCoreConfig(
-                            CoreID.MELONDS,
-                            exposedSettings =
-                                listOf(
-                                    ExposedSetting.Registered(
-                                        "melonds_screen_layout1",
-                                        R.string.setting_melonds_screen_layout,
-                                        listOf(
-                                            ExposedSetting.Value(
-                                                "top-bottom",
-                                                R.string.value_melonds_screen_layout_topbottom,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "left-right",
-                                                R.string.value_melonds_screen_layout_leftright,
-                                            ),
-                                        ),
-                                    ),
-                                    ExposedSetting.Registered(
-                                        "melonds_mic_input",
-                                        R.string.setting_melonds_mic_input,
-                                        listOf(
-                                            ExposedSetting.Value(
-                                                "microphone",
-                                                R.string.value_melonds_mic_input_microphone,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "blow",
-                                                R.string.value_melonds_mic_input_blow,
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                            exposedAdvancedSettings =
-                                listOf(
-                                    ExposedSetting.Registered(
-                                        "melonds_threaded_renderer",
-                                        R.string.setting_melonds_threaded_renderer,
-                                    ),
-                                    ExposedSetting.Registered(
-                                        "melonds_jit_enable",
-                                        R.string.setting_melonds_jit_enable,
-                                    ),
-                                ),
-                            defaultSettings =
-                                listOf(
-                                    CoreVariable("melonds_number_of_screen_layouts", "1"),
-                                    CoreVariable("melonds_touch_mode", "Touch"),
-                                    CoreVariable("melonds_threaded_renderer", "enabled"),
-                                ),
-                            controllerConfigs =
-                                hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.MELONDS),
-                                ),
-                            statesVersion = 2,
-                            supportsMicrophone = true,
-                        ),
-                    ),
-                    uniqueExtensions = listOf("nds"),
-                    hasTouchScreen = true,
-                    isDualScreen = true,
-                    dualScreenUVConfig = GameSystem.DualScreenUVConfig(
-                        primaryUVxMin   = 0f,    primaryUVyMin   = 0f,
-                        primaryUVxMax   = 1f,    primaryUVyMax   = 0.5f,
-                        secondaryUVxMin = 0f,    secondaryUVyMin = 0.5f,
-                        secondaryUVxMax = 1f,    secondaryUVyMax = 1f,
-                    ),
-                ),
-                GameSystem(
                     SystemID.ATARI7800,
                     "Atari - 7800",
                     R.string.game_system_title_atari7800,
@@ -1083,72 +990,6 @@ data class GameSystem(
                             scanByPathAndFilename = false,
                             scanByPathAndSupportedExtensions = true,
                         ),
-                ),
-                GameSystem(
-                    SystemID.NINTENDO_3DS,
-                    "Nintendo - Nintendo 3DS",
-                    R.string.game_system_title_3ds,
-                    R.string.game_system_abbr_3ds,
-                    listOf(
-                        SystemCoreConfig(
-                            CoreID.CITRA,
-                            controllerConfigs =
-                                hashMapOf(
-                                    0 to arrayListOf(ControllerConfigs.NINTENDO_3DS),
-                                ),
-                            defaultSettings =
-                                listOf(
-                                    CoreVariable("citra_use_acc_mul", "disabled"),
-                                    CoreVariable("citra_touch_touchscreen", "enabled"),
-                                    CoreVariable("citra_mouse_touchscreen", "disabled"),
-                                    CoreVariable("citra_render_touchscreen", "disabled"),
-                                    CoreVariable("citra_use_hw_shader_cache", "disabled"),
-                                ),
-                            exposedSettings =
-                                listOf(
-                                    ExposedSetting.Registered(
-                                        "citra_layout_option",
-                                        R.string.setting_citra_layout_option,
-                                        listOf(
-                                            ExposedSetting.Value(
-                                                "Default Top-Bottom Screen",
-                                                R.string.value_citra_layout_option_topbottom,
-                                            ),
-                                            ExposedSetting.Value(
-                                                "Side by Side",
-                                                R.string.value_citra_layout_option_sidebyside,
-                                            ),
-                                        ),
-                                    ),
-                                    ExposedSetting.Registered(
-                                        "citra_resolution_factor",
-                                        R.string.setting_citra_resolution_factor,
-                                    ),
-                                    ExposedSetting.Registered(
-                                        "citra_use_acc_mul",
-                                        R.string.setting_citra_use_acc_mul,
-                                    ),
-                                    ExposedSetting.Registered(
-                                        "citra_use_acc_geo_shaders",
-                                        R.string.setting_citra_use_acc_geo_shaders,
-                                    ),
-                                ),
-                            statesSupported = false,
-                            supportsLibretroVFS = true,
-                            supportedOnlyArchitectures = setOf("arm64-v8a"),
-                        ),
-                    ),
-                    uniqueExtensions = listOf("3ds"),
-                    hasTouchScreen = true,
-                    isDualScreen = true,
-                    dualScreenUVConfig = GameSystem.DualScreenUVConfig(
-                        // 3DS top: 400×240 (full combined width)
-                        primaryUVxMin   = 0f,    primaryUVyMin   = 0f,
-                        primaryUVxMax   = 1f,    primaryUVyMax   = 0.5f,
-                        // 3DS bottom: 320×240 centred in 400px → X offset 40/400 = 0.1
-                        secondaryUVxMin = 0.1f,  secondaryUVyMin = 0.5f,
-                        secondaryUVxMax = 0.9f,  secondaryUVyMax = 1f,
-                    ),
                 ),
             )
 

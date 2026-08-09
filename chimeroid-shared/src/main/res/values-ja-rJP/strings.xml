@@ -48,17 +48,9 @@
     <string name="setting_ppsspp_texture_filtering">テクスチャフィルタリング</string>
     <string name="setting_fbneo_frameskip">Frameskip</string>
     <string name="setting_fbneo_cpu_speed_adjust">CPU速度</string>
-    <string name="setting_melonds_screen_layout">画面のレイアウト</string>
-    <string name="setting_melonds_threaded_renderer">スレッドレンダラー</string>
-    <string name="setting_melonds_jit_enable">Dynamic recompiler</string>
-    <string name="setting_melonds_mic_input">マイクモード</string>
     <string name="setting_wswan_rotate_display">方向</string>
     <string name="setting_wswan_mono_palette">色付け</string>
     <string name="setting_handy_rot">ディスプレイの回転</string>
-    <string name="setting_citra_layout_option">画面のレイアウト</string>
-    <string name="setting_citra_resolution_factor">解像度の拡大縮小</string>
-    <string name="setting_citra_use_acc_mul">正確なシェーダーのかけ算</string>
-    <string name="setting_citra_use_acc_geo_shaders">正確なジオメトリシェーダー</string>
     <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">無効</string>
     <string name="value_gambatte_mix_frames_mix">単純な</string>
@@ -98,14 +90,6 @@
     <string name="value_mupen64plus_mupen64plus_pak1_none">なし</string>
     <string name="value_mupen64plus_mupen64plus_pak2_none">なし</string>
     <string name="value_mupen64plus_mupen64plus_pak2_rumble">Rumble</string>
-    <string name="value_melonds_screen_layout_topbottom">上 - 下</string>
-    <string name="value_melonds_screen_layout_leftright">左 - 右</string>
-    <string name="value_melonds_screen_layout_hybridtop">ハイブリッドトップ</string>
-    <string name="value_melonds_screen_layout_hybridbottom">下部ハイブリッド（ハイブリッド）</string>
-    <string name="value_melonds_mic_input_microphone">本物のマイク</string>
-    <string name="value_melonds_mic_input_blow">吹き出し音をシミュレートする</string>
-    <string name="value_citra_layout_option_topbottom">上 - 下</string>
-    <string name="value_citra_layout_option_sidebyside">左 - 右</string>
     <string name="value_ppsspp_cpu_core_jit">JIT</string>
     <string name="value_ppsspp_cpu_core_irjit">IR JIT</string>
     <string name="value_ppsspp_cpu_core_interpreter">インタープリター</string>

@@ -24,9 +24,4 @@
     <string name="macro_cancel">Cancel</string>
     <string name="macro_confirm_add">Add</string>
     <string name="macro_at_limit">Maximum %1$d macro buttons reached</string>
-    <!-- Dual-screen layout -->
-    <string name="dual_screen_top_label">Top Screen</string>
-    <string name="dual_screen_bottom_label">Bottom Screen</string>
-    <string name="dual_screen_drag_handle">Drag to resize screens</string>
-    <string name="dual_screen_reset_ratio">Reset split</string>
 </resources>

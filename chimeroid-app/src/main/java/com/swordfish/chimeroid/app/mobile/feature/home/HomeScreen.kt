@@ -123,7 +123,6 @@ fun HomeScreen(
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@HomeScreen
             permissionsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         },
-        onEnableMicrophoneClicked = { permissionsLauncher.launch(Manifest.permission.RECORD_AUDIO) },
         onSetDirectoryClicked = { viewModel.changeLocalStorageFolder(context) },
         onSelectStorageLocationClicked = { viewModel.selectStorageLocation(context) },
     )
@@ -146,7 +145,6 @@ private fun HomeScreen(
     operationInProgress: Boolean,
     onSyncClick: () -> Unit,
     onEnableNotificationsClicked: () -> Unit,
-    onEnableMicrophoneClicked: () -> Unit,
     onSetDirectoryClicked: () -> Unit,
     onSelectStorageLocationClicked: () -> Unit,
 ) {
@@ -195,13 +193,6 @@ private fun HomeScreen(
                     actionId = R.string.home_empty_action,
                     onAction = onSetDirectoryClicked,
                     enabled = !state.indexInProgress,
-                )
-            }
-            AnimatedVisibility(state.showNoMicrophonePermissionCard) {
-                HomeNotificationBanner(
-                    message = stringResource(R.string.home_microphone_title),
-                    actionId = R.string.home_microphone_action,
-                    onAction = onEnableMicrophoneClicked,
                 )
             }
 

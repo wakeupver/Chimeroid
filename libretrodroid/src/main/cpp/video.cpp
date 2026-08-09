@@ -173,29 +173,6 @@ void Video::renderFrame() {
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // ── Dual-screen: two single-pass draws, one per panel ────────────────────
-    if (dualCfg.enabled && !shadersChain.empty()) {
-        const auto& shader = shadersChain.back(); // single-pass only in dual mode
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(
-            0, 0,
-            videoLayout.getScreenWidth(),
-            videoLayout.getScreenHeight()
-        );
-
-        // primaryUV/secondaryUV are precomputed in setDualScreenConfig(): they
-        // only depend on dualCfg + texture size, not on anything that changes
-        // frame-to-frame.
-        drawQuadPass(videoLayout.getForegroundVertices(), primaryUV, shader);
-        drawQuadPass(secondaryLayout.getForegroundVertices(), secondaryUV, shader);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        return;
-    }
-
-    // ── Normal single-screen rendering ───────────────────────────────────────
-
     if (immersiveModeEnabled) {
         immersiveMode.renderBackground(
             videoLayout.getScreenWidth(),
@@ -267,26 +244,6 @@ void Video::renderFrame() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-// ── Dual-screen helpers ───────────────────────────────────────────────────────
-
-std::array<float, 12> Video::buildUVQuad(
-    float xMin, float yMin, float xMax, float yMax
-) const {
-    // When bottomLeftOrigin=true the texture's Y=0 is the bottom of the image.
-    // In that case we flip the Y so "visual top" still maps to the top panel.
-    float y0 = bottomLeftOrigin ? (1.0f - yMax) : yMin;
-    float y1 = bottomLeftOrigin ? (1.0f - yMin) : yMax;
-
-    return {
-        xMin, y0,   // TL
-        xMin, y1,   // BL
-        xMax, y0,   // TR
-        xMax, y0,   // TR (triangle 2)
-        xMin, y1,   // BL (triangle 2)
-        xMax, y1,   // BR
-    };
-}
-
 void Video::uploadAndDraw(
     const std::array<float, 12>& vertices,
     const std::array<float, 12>& uvs,
@@ -315,80 +272,6 @@ void Video::uploadAndDraw(
     glDisableVertexAttribArray(posHandle);
     glDisableVertexAttribArray(coordHandle);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void Video::drawQuadPass(
-    const std::array<float, 12>& vertices,
-    const std::array<float, 12>& uvs,
-    const ShaderChainEntry&       shader
-) {
-    glUseProgram(shader.gProgram);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
-    glUniform1i(shader.gTextureHandle, 0);
-
-    glUniform2f(shader.gTextureSizeHandle,   getTextureWidth(), getTextureHeight());
-    glUniform1f(shader.gScreenDensityHandle, getScreenDensity());
-
-    uploadAndDraw(vertices, uvs, shader.gvPositionHandle, shader.gvCoordinateHandle);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glUseProgram(0);
-}
-
-void Video::setDualScreenConfig(DualScreenCfg cfg) {
-    dualCfg = cfg;
-
-    if (!cfg.enabled) return;
-
-    // Compute per-panel aspect ratio from the actual game texture dimensions
-    // (e.g. 256×384 for NDS, 400×480 for 3DS default-top-bottom layout).
-    // Texture size may be 0 before the first frame — fall back to 4:3.
-    float texW = getTextureWidth();
-    float texH = getTextureHeight();
-
-    constexpr float kFallbackAspectRatio = 4.f / 3.f;   // safe fallback (NDS-like)
-    auto panelAspectRatio = [texW, texH](float uMin, float uMax, float vMin, float vMax) {
-        float uvHeight = vMax - vMin;
-        if (texW <= 0.f || texH <= 0.f || uvHeight <= 0.f) {
-            return kFallbackAspectRatio;
-        }
-        return ((uMax - uMin) * texW) / (uvHeight * texH);
-    };
-
-    float primaryAR = panelAspectRatio(
-        cfg.primaryUVxMin, cfg.primaryUVxMax, cfg.primaryUVyMin, cfg.primaryUVyMax
-    );
-    float secondaryAR = panelAspectRatio(
-        cfg.secondaryUVxMin, cfg.secondaryUVxMax, cfg.secondaryUVyMin, cfg.secondaryUVyMax
-    );
-
-    videoLayout.updateViewportSize(
-        Rect(cfg.primaryVpX, cfg.primaryVpY, cfg.primaryVpW, cfg.primaryVpH)
-    );
-    videoLayout.updateAspectRatio(primaryAR);
-
-    secondaryLayout.updateScreenSize(
-        videoLayout.getScreenWidth(),
-        videoLayout.getScreenHeight()
-    );
-    secondaryLayout.updateViewportSize(
-        Rect(cfg.secondaryVpX, cfg.secondaryVpY, cfg.secondaryVpW, cfg.secondaryVpH)
-    );
-    secondaryLayout.updateAspectRatio(secondaryAR);
-
-    // Cache the per-panel UV quads: they only depend on cfg (and
-    // bottomLeftOrigin, which is fixed), so resolving them here means
-    // renderFrame() can reuse them every frame instead of rebuilding two
-    // std::array<float,12> from scratch on every single draw.
-    primaryUV = buildUVQuad(
-        cfg.primaryUVxMin, cfg.primaryUVyMin, cfg.primaryUVxMax, cfg.primaryUVyMax
-    );
-    secondaryUV = buildUVQuad(
-        cfg.secondaryUVxMin, cfg.secondaryUVyMin, cfg.secondaryUVxMax, cfg.secondaryUVyMax
-    );
 }
 
 float Video::getScreenDensity() {
@@ -420,7 +303,6 @@ void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t
 
 void Video::updateScreenSize(unsigned width, unsigned height) {
     videoLayout.updateScreenSize(width, height);
-    secondaryLayout.updateScreenSize(width, height);
 }
 
 void Video::updateViewportSize(Rect viewportRect) {
@@ -455,7 +337,6 @@ Video::Video(
     immersiveModeEnabled(immersiveModeEnabled),
     immersiveMode(immersiveModeConfig),
     videoLayout(bottomLeftOrigin, rotation, viewportRect),
-    secondaryLayout(bottomLeftOrigin, rotation, Rect(0.f, 0.5f, 1.f, 0.5f)),
     bottomLeftOrigin(bottomLeftOrigin) {
 
     printGLString("Version", GL_VERSION);

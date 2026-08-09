@@ -61,16 +61,6 @@ public:
 
     void setViewport(Rect viewportRect);
 
-    // Set dual-screen split layout for NDS / 3DS systems.
-    // Pass enabled=false to return to normal single-screen rendering.
-    void setDualScreenConfig(
-        bool   enabled,
-        float  primaryVpX, float primaryVpY, float primaryVpW, float primaryVpH,
-        float  secondaryVpX, float secondaryVpY, float secondaryVpW, float secondaryVpH,
-        float  primaryUVxMin, float primaryUVyMin, float primaryUVxMax, float primaryUVyMax,
-        float  secondaryUVxMin, float secondaryUVyMin, float secondaryUVxMax, float secondaryUVyMax
-    );
-
 private:
     LibretroDroid() {}
 
@@ -117,16 +107,6 @@ public:
     void onMotionEvent(unsigned int port, unsigned int source, float xAxis, float yAxis);
     void onTouchEvent(float xAxis, float yAxis);
 
-    /**
-     * Sends a touch expressed as [0,1] fractions within the secondary (bottom) panel.
-     * C++ converts to NDC using the stored secondary viewport config, then clamps into
-     * the panel's foreground (content) bounds, so the mapping is guaranteed consistent
-     * with what actually gets rendered — including letterbox/pillarbox dead zones.
-     * Call releaseSecondaryTouch() on finger lift.
-     */
-    void setSecondaryTouchDirect(float relX, float relY);
-    void releaseSecondaryTouch();
-
     void refreshAspectRatio();
     float getAspectRatio();
     void setAspectRatioOverride(float aspectRatio);
@@ -167,11 +147,6 @@ private:
     float findDefaultAspectRatio(const retro_system_av_info &system_av_info);
     void afterGameLoad();
 
-    // Shared by onTouchEvent()'s dual-screen fallback and setSecondaryTouchDirect():
-    // maps a full-surface NDC point onto the secondary panel's content bounds
-    // (clamped, letterbox-aware) and dispatches it as the pointer device state.
-    void dispatchSecondaryTouch(float ndcX, float ndcY);
-
 protected:
     static void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch);
     static size_t callback_set_audio_sample_batch(const int16_t* data, size_t frames);
@@ -191,7 +166,6 @@ private:
     };
 
     Rect viewportRect = Rect(0.0F, 0.0F, 1.0F, 1.0F);
-    Video::DualScreenCfg dualScreenCfg;
     float screenRefreshRate = 60.0;
     int openglESVersion = 2;
     bool skipDuplicateFrames = false;

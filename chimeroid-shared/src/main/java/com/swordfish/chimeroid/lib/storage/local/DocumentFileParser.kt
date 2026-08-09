@@ -31,7 +31,7 @@ object DocumentFileParser {
      * Extensions that require serial-number scanning (disc images).
      * These still need a small header read but skip the full-file CRC pass.
      */
-    private val SERIAL_SCAN_EXTENSIONS = setOf("iso", "bin", "pbp", "3ds")
+    private val SERIAL_SCAN_EXTENSIONS = setOf("iso", "bin", "pbp")
 
     fun parseDocumentFile(
         context: Context,
@@ -50,7 +50,7 @@ object DocumentFileParser {
      * Fast-path: returns a StorageFile with systemID populated but NO file I/O.
      *
      * Called when the file extension belongs to a single known system (e.g. .gba,
-     * .nes, .sfc, .nds, .n64, .gb, .gbc …). The metadata provider will match it
+     * .nes, .sfc, .n64, .gb, .gbc …). The metadata provider will match it
      * instantly via [findByUniqueExtension] without reading the file contents.
      */
     private fun parseUniqueExtensionFile(
@@ -111,7 +111,7 @@ object DocumentFileParser {
     ): StorageFile {
         val ext = baseStorageFile.extension.lowercase()
 
-        // ── Fast-path A: unique-extension files (gba, nes, sfc, gb, gbc, nds, n64…) ─────────
+        // ── Fast-path A: unique-extension files (gba, nes, sfc, gb, gbc, n64…) ──────────────
         // These are unambiguously identified by their extension alone.
         // Skip ALL file I/O — the metadata provider will match via findByUniqueExtension.
         val uniqueExtensionSystem = GameSystem.findByFileName(baseStorageFile.name)
@@ -119,7 +119,7 @@ object DocumentFileParser {
             return parseUniqueExtensionFile(baseStorageFile, uniqueExtensionSystem)
         }
 
-        // ── Fast-path B: disc images (iso, bin, pbp, 3ds) ────────────────────────────
+        // ── Fast-path B: disc images (iso, bin, pbp) ────────────────────────────────
         // Only read the small header for serial extraction; skip the full-file CRC pass.
         // These files are matched via serial number, folder name, or path heuristics.
         if (ext in SERIAL_SCAN_EXTENSIONS) {

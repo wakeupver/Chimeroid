@@ -48,17 +48,9 @@
     <string name="setting_ppsspp_texture_filtering">Tekstur filtrering</string>
     <string name="setting_fbneo_frameskip">Frameskip</string>
     <string name="setting_fbneo_cpu_speed_adjust">CPU hastighed</string>
-    <string name="setting_melonds_screen_layout">Skærme layout</string>
-    <string name="setting_melonds_threaded_renderer">Gevind rendering</string>
-    <string name="setting_melonds_jit_enable">Dynamisk recompiler</string>
-    <string name="setting_melonds_mic_input">Mikrofon tilstand</string>
     <string name="setting_wswan_rotate_display">Retning</string>
     <string name="setting_wswan_mono_palette">Farvelægning</string>
     <string name="setting_handy_rot">Vis rotation</string>
-    <string name="setting_citra_layout_option">Skærme layout</string>
-    <string name="setting_citra_resolution_factor">Skalering af opløsning</string>
-    <string name="setting_citra_use_acc_mul">Præcis shaders multiplikation</string>
-    <string name="setting_citra_use_acc_geo_shaders">Nøjagtig geometri shadere</string>
     <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Deaktiveret</string>
     <string name="value_gambatte_mix_frames_mix">Simpel</string>
@@ -98,14 +90,6 @@
     <string name="value_mupen64plus_mupen64plus_pak1_none">Ingen</string>
     <string name="value_mupen64plus_mupen64plus_pak2_none">Ingen</string>
     <string name="value_mupen64plus_mupen64plus_pak2_rumble">Rumble</string>
-    <string name="value_melonds_screen_layout_topbottom">Top - Nederst</string>
-    <string name="value_melonds_screen_layout_leftright">Venstre - Højre</string>
-    <string name="value_melonds_screen_layout_hybridtop">Hybrid Top</string>
-    <string name="value_melonds_screen_layout_hybridbottom">Hybrid Bund</string>
-    <string name="value_melonds_mic_input_microphone">Rigtig mikrofon</string>
-    <string name="value_melonds_mic_input_blow">Simulér blæse lyde</string>
-    <string name="value_citra_layout_option_topbottom">Top - Nederst</string>
-    <string name="value_citra_layout_option_sidebyside">Venstre - Højre</string>
     <string name="value_ppsspp_cpu_core_jit">JIT</string>
     <string name="value_ppsspp_cpu_core_irjit">IR JIT</string>
     <string name="value_ppsspp_cpu_core_interpreter">Fortolker</string>

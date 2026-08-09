@@ -57,7 +57,6 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Gamepad
 import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.SmartDisplay
 import androidx.compose.material3.Button
@@ -156,11 +155,6 @@ fun OnboardingScreen(
         contract = ActivityResultContracts.RequestPermission(),
     ) { viewModel.refreshNotificationPermission() }
 
-    // Microphone permission launcher
-    val microphoneLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { viewModel.refreshMicrophonePermission() }
-
     // Refresh on every ON_RESUME (returning from settings)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -168,7 +162,6 @@ fun OnboardingScreen(
                 viewModel.refreshAllFilesAccess()
                 viewModel.refreshBaseDirectory()
                 viewModel.refreshNotificationPermission()
-                viewModel.refreshMicrophonePermission()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -197,10 +190,6 @@ fun OnboardingScreen(
         } else {
             viewModel.refreshNotificationPermission()
         }
-    }
-
-    val launchMicrophonePermission: () -> Unit = {
-        microphoneLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
 
     val launchBaseDirPicker: () -> Unit = {
@@ -291,7 +280,6 @@ fun OnboardingScreen(
                 onGetStarted = onGetStarted,
                 onGrantAllFiles = launchAllFilesAccess,
                 onGrantNotification = launchNotificationPermission,
-                onGrantMicrophone = launchMicrophonePermission,
                 onPickBaseDir = launchBaseDirPicker,
                 onPickRomsFolder = launchRomsFolderPicker,
             )
@@ -351,7 +339,6 @@ private class OnboardingActions(
     val onGetStarted: () -> Unit,
     val onGrantAllFiles: () -> Unit,
     val onGrantNotification: () -> Unit,
-    val onGrantMicrophone: () -> Unit,
     val onPickBaseDir: () -> Unit,
     val onPickRomsFolder: () -> Unit,
 )
@@ -391,7 +378,6 @@ private fun PortraitContent(
                             uiState = uiState,
                             onGrantAllFiles = actions.onGrantAllFiles,
                             onGrantNotification = actions.onGrantNotification,
-                            onGrantMicrophone = actions.onGrantMicrophone,
                             onPickBaseDir = actions.onPickBaseDir,
                             onPickRomsFolder = actions.onPickRomsFolder,
                         )
@@ -489,7 +475,6 @@ private fun LandscapeContent(
                             uiState = uiState,
                             onGrantAllFiles = actions.onGrantAllFiles,
                             onGrantNotification = actions.onGrantNotification,
-                            onGrantMicrophone = actions.onGrantMicrophone,
                             onPickBaseDir = actions.onPickBaseDir,
                             onPickRomsFolder = actions.onPickRomsFolder,
                             modifier = Modifier.padding(horizontal = 32.dp),
@@ -708,7 +693,6 @@ private fun OnboardingSetupContent(
     uiState: OnboardingUiState,
     onGrantAllFiles: () -> Unit,
     onGrantNotification: () -> Unit,
-    onGrantMicrophone: () -> Unit,
     onPickBaseDir: () -> Unit,
     onPickRomsFolder: () -> Unit,
     modifier: Modifier = Modifier,
@@ -739,18 +723,7 @@ private fun OnboardingSetupContent(
 
         Spacer(Modifier.height(8.dp))
 
-        // 3. Allow microphone — Optional
-        SetupCard(
-            icon = Icons.Rounded.Mic,
-            title = stringResource(R.string.onboarding_microphone_title),
-            description = stringResource(R.string.onboarding_microphone_desc),
-            status = if (uiState.microphoneGranted) SetupItemStatus.READY else SetupItemStatus.OPTIONAL,
-            onClick = onGrantMicrophone,
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        // 4. Choose base directory — Optional
+        // 3. Choose base directory — Optional
         SetupCard(
             icon = Icons.Rounded.FolderOpen,
             title = stringResource(R.string.onboarding_base_dir_title),
@@ -762,7 +735,7 @@ private fun OnboardingSetupContent(
 
         Spacer(Modifier.height(8.dp))
 
-        // 5. Choose ROMs folder — Required
+        // 4. Choose ROMs folder — Required
         SetupCard(
             icon = Icons.Rounded.FolderOpen,
             title = stringResource(R.string.onboarding_roms_title),

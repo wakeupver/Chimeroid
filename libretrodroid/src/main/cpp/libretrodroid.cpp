@@ -245,11 +245,6 @@ void LibretroDroid::onSurfaceCreated() {
 
     video = std::unique_ptr<Video>(newVideo);
 
-    // Restore dual-screen config if it was active before the surface was recreated.
-    if (dualScreenCfg.enabled) {
-        video->setDualScreenConfig(dualScreenCfg);
-    }
-
     if (Environment::getInstance().getHwContextReset() != nullptr) {
         Environment::getInstance().getHwContextReset()();
     }
@@ -271,91 +266,11 @@ void LibretroDroid::onTouchEvent(float xAxis, float yAxis) {
     LOGD("Received touch event: %.2f, %.2f", xAxis, yAxis);
     if (!input) return;
 
-    if (dualScreenCfg.enabled) {
-        // Defensive fallback only. Dual-screen systems route touch through the
-        // Compose panel -> setSecondaryTouchDirect() pipeline; GLRetroView disables
-        // this Android View's onTouchEvent for dual-screen systems in createRetroView()
-        // precisely so this branch is not reached. It is kept — and kept correct, by
-        // reusing the exact same clamped/letterbox-aware mapping — as a safety net
-        // in case that guard is ever bypassed by a future change, rather than falling
-        // back to a cruder, inconsistent-with-the-renderer computation.
-        dispatchSecondaryTouch(xAxis, yAxis);
-        return;
-    }
-
     if (video) {
         auto [x, y] = video->getLayout().getRelativePosition(xAxis, yAxis);
         input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, x, y);
     }
 }
-
-void LibretroDroid::releaseSecondaryTouch() {
-    if (input) {
-        // -10 / -10 is outside any valid [0,1] range → POINTER_PRESSED = 0
-        input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, -10.0f, -10.0f);
-    }
-}
-
-void LibretroDroid::setSecondaryTouchDirect(float relX, float relY) {
-    if (!dualScreenCfg.enabled) return;
-
-    // Convert panel-relative [0,1] → full-screen NDC using the same secondaryVp*
-    // fractions that control the rendering. This keeps the coordinate space
-    // consistent regardless of system-bar insets or density differences.
-    const float ndcX = 2.0f * (dualScreenCfg.secondaryVpX + relX * dualScreenCfg.secondaryVpW) - 1.0f;
-    const float ndcY = 2.0f * (dualScreenCfg.secondaryVpY + relY * dualScreenCfg.secondaryVpH) - 1.0f;
-
-    LOGD(
-        "[dualtouch] panelRel=(%.3f,%.3f) secondaryVp=(x=%.3f,y=%.3f,w=%.3f,h=%.3f) -> ndc=(%.3f,%.3f)",
-        relX, relY,
-        dualScreenCfg.secondaryVpX, dualScreenCfg.secondaryVpY,
-        dualScreenCfg.secondaryVpW, dualScreenCfg.secondaryVpH,
-        ndcX, ndcY
-    );
-
-    dispatchSecondaryTouch(ndcX, ndcY);
-}
-
-void LibretroDroid::dispatchSecondaryTouch(float ndcX, float ndcY) {
-    if (!input || !video) return;
-
-    // Clamped mapping onto the secondary panel's actual rendered (foreground)
-    // content bounds, so:
-    //  • touches in the letterbox/pillarbox black-bar areas clamp to the nearest
-    //    NDS/3DS content edge instead of a dead zone — the full panel is touchable
-    //  • touches outside the panel entirely (e.g. the top screen) are rejected
-    // This is the single source of truth for dual-screen touch mapping, shared by
-    // onTouchEvent()'s fallback and setSecondaryTouchDirect() so the two can never
-    // disagree with each other or with what drawQuadPass() actually renders.
-    auto [localX, localY] = video->getSecondaryLayout().getRelativePositionClamped(ndcX, ndcY);
-
-    // localX/localY are [0,1] relative to the touch screen's OWN content — but the
-    // core renders both screens into one combined framebuffer and reports/reads
-    // RETRO_DEVICE_POINTER against that full combined canvas, not against just this
-    // sub-screen (confirmed via logcat: a touch-panel-correct localY of 0.572 was
-    // being sent as-is, which the core reads as 0.572 of the FULL top+bottom canvas —
-    // landing back up near the top screen's content instead of the touch screen's).
-    // secondaryUV{x,y}{Min,Max} already describe exactly where this screen sits
-    // within that combined canvas (e.g. NDS bottom half: y 0.5→1.0; 3DS bottom
-    // screen pillarboxed in a wider canvas: x 0.1→0.9) — reuse it for touch too,
-    // so rendering and touch agree on the same layout instead of each assuming
-    // their own.
-    const float x = dualScreenCfg.secondaryUVxMin +
-        localX * (dualScreenCfg.secondaryUVxMax - dualScreenCfg.secondaryUVxMin);
-    const float y = dualScreenCfg.secondaryUVyMin +
-        localY * (dualScreenCfg.secondaryUVyMax - dualScreenCfg.secondaryUVyMin);
-
-    LOGD(
-        "[dualtouch] local=(%.3f,%.3f) secondaryUV=[x:%.3f,%.3f y:%.3f,%.3f] -> canvas=(%.3f,%.3f)",
-        localX, localY,
-        dualScreenCfg.secondaryUVxMin, dualScreenCfg.secondaryUVxMax,
-        dualScreenCfg.secondaryUVyMin, dualScreenCfg.secondaryUVyMax,
-        x, y
-    );
-
-    input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, x, y);
-}
-
 
 void LibretroDroid::onKeyEvent(unsigned int port, int action, int keyCode) {
     LOGD("Received key event with action (%d) and keycode (%d)", action, keyCode);
@@ -584,7 +499,7 @@ void LibretroDroid::resume() {
 
     // fpsSync/audio are constructed in afterGameLoad(), well after video is (see the
     // matching guard already in refreshAspectRatio() below). resume() can still be
-    // queued ahead of that point for heavier cores — NDS/3DS most reliably — so both
+    // queued ahead of that point for heavier cores — so both
     // need the same null-guard as video, not just an assumption the race can't reach
     // them. Skipping is correct here: afterGameLoad()'s make_unique construction
     // already leaves fpsSync/audio in a valid started state, so there is nothing to
@@ -684,7 +599,7 @@ float LibretroDroid::getAspectRatio() {
 void LibretroDroid::refreshAspectRatio() {
     // video can legitimately be null here (e.g. resume() fires before onSurfaceCreated()
     // has run, or after destroy()). Match the null-guard already used by every other
-    // caller of video->... in this class (see setViewport/setDualScreenConfig) instead
+    // caller of video->... in this class (see setViewport) instead
     // of assuming the caller always checked.
     if (video != nullptr) {
         video->updateAspectRatio(getAspectRatio());
@@ -852,39 +767,6 @@ void LibretroDroid::setViewport(Rect viewportRect) {
 
     if (video != nullptr) {
         video->updateViewportSize(viewportRect);
-    }
-}
-
-void LibretroDroid::setDualScreenConfig(
-    bool   enabled,
-    float  primaryVpX, float primaryVpY, float primaryVpW, float primaryVpH,
-    float  secondaryVpX, float secondaryVpY, float secondaryVpW, float secondaryVpH,
-    float  primaryUVxMin, float primaryUVyMin, float primaryUVxMax, float primaryUVyMax,
-    float  secondaryUVxMin, float secondaryUVyMin, float secondaryUVxMax, float secondaryUVyMax
-) {
-    Video::DualScreenCfg cfg;
-    cfg.enabled         = enabled;
-    cfg.primaryVpX      = primaryVpX;
-    cfg.primaryVpY      = primaryVpY;
-    cfg.primaryVpW      = primaryVpW;
-    cfg.primaryVpH      = primaryVpH;
-    cfg.secondaryVpX    = secondaryVpX;
-    cfg.secondaryVpY    = secondaryVpY;
-    cfg.secondaryVpW    = secondaryVpW;
-    cfg.secondaryVpH    = secondaryVpH;
-    cfg.primaryUVxMin   = primaryUVxMin;
-    cfg.primaryUVyMin   = primaryUVyMin;
-    cfg.primaryUVxMax   = primaryUVxMax;
-    cfg.primaryUVyMax   = primaryUVyMax;
-    cfg.secondaryUVxMin = secondaryUVxMin;
-    cfg.secondaryUVyMin = secondaryUVyMin;
-    cfg.secondaryUVxMax = secondaryUVxMax;
-    cfg.secondaryUVyMax = secondaryUVyMax;
-
-    dualScreenCfg = cfg;
-
-    if (video != nullptr) {
-        video->setDualScreenConfig(cfg);
     }
 }
 

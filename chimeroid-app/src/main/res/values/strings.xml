@@ -112,9 +112,6 @@
     <string name="home_notification_message">Chimeroid uses notifications to let you know when a game or operation is running in background.</string>
     <string name="home_notification_action">Enable</string>
 
-    <string name="home_microphone_title">Enable microphone</string>
-    <string name="home_microphone_message">Nintendo DS games can use the microphone to provide some functionalities.</string>
-    <string name="home_microphone_action">Enable</string>
 
     <string name="home_empty_title">Select ROMs directory</string>
     <string name="home_empty_message">Chimeroid needs to scan a directory containing ROM files.\nThis might take up to a few minutes.</string>
@@ -297,8 +294,6 @@
     <string name="onboarding_all_files_desc">Allow Chimeroid to read game files directly so games can launch reliably on every device.</string>
     <string name="onboarding_notification_title">Allow notifications</string>
     <string name="onboarding_notification_desc">Receive alerts for downloads, updates, and background tasks.</string>
-    <string name="onboarding_microphone_title">Allow microphone</string>
-    <string name="onboarding_microphone_desc">Required for games that use the microphone as an input device.</string>
     <string name="onboarding_base_dir_title">Choose base directory</string>
     <string name="onboarding_base_dir_desc">Select the folder for saves, states, and other app data. Cores always stay in internal storage.</string>
     <string name="onboarding_roms_title">Choose ROMs folder</string>

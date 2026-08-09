@@ -2,11 +2,9 @@ package com.swordfish.chimeroid.app.shared.game
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.graphics.RectF
 import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -186,24 +184,6 @@ class BaseGameScreenViewModel(
 
     /** Returns the [GameSystem] for the currently running game. */
     fun getSystem(): GameSystem = system
-
-    /**
-     * Applies a dual-screen panel layout to the live retro view.
-     * [fullPos] = GL surface bounds in screen pixels (Android RectF).
-     * [topPanelPos] / [bottomPanelPos] = Compose layout bounds in screen pixels.
-     */
-    fun applyDualScreenLayout(
-        fullPos: RectF,
-        topPanelPos: Rect,
-        bottomPanelPos: Rect,
-    ) {
-        retroGameView.applyDualScreenLayout(fullPos, topPanelPos, bottomPanelPos, system)
-    }
-
-    /** Returns to single-screen rendering (call on orientation change / exit). */
-    fun clearDualScreenLayout() {
-        retroGameView.clearDualScreenLayout()
-    }
 
     fun getTiltConfiguration(): Flow<TiltConfiguration> = tilt.getTiltConfiguration()
 
@@ -408,11 +388,4 @@ class BaseGameScreenViewModel(
     fun sendKeyEvent(keyCode: Int, event: KeyEvent): Boolean = inputs.sendKeyEvent(keyCode, event)
 
     fun sendMotionEvent(event: MotionEvent): Boolean = inputs.sendMotionEvent(event)
-
-    /** Forwards a [0,1]-relative panel touch to the libretro core (dual-screen). */
-    fun sendRetroTouchPanelRelative(panelRelX: Float, panelRelY: Float) =
-        retroGameView.sendRetroTouchPanelRelative(panelRelX, panelRelY)
-
-    /** Releases the current dual-screen touch. */
-    fun sendRetroTouchRelease() = retroGameView.sendRetroTouchRelease()
 }

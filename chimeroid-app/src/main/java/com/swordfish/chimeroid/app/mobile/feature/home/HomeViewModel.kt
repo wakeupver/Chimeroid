@@ -13,24 +13,17 @@ import com.swordfish.chimeroid.app.shared.settings.StorageBaseDirPicker
 import com.swordfish.chimeroid.app.shared.settings.StorageFrameworkPickerLauncher
 import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.common.coroutines.combine
-import com.swordfish.chimeroid.lib.library.SystemID
 import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
 import com.swordfish.chimeroid.lib.library.db.entity.Game
 import com.swordfish.chimeroid.lib.storage.DirectoriesManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @OptIn(FlowPreview::class)
@@ -58,12 +51,10 @@ class HomeViewModel(
         val discoveryGames: List<Game> = emptyList(),
         val indexInProgress: Boolean = true,
         val showNoNotificationPermissionCard: Boolean = false,
-        val showNoMicrophonePermissionCard: Boolean = false,
         val showNoGamesCard: Boolean = false,
         val showStorageLocationCard: Boolean = false,
     )
 
-    private val microphonePermissionEnabledState = MutableStateFlow(true)
     private val notificationsPermissionEnabledState = MutableStateFlow(true)
     private val storageLocationSetState = MutableStateFlow(directoriesManager.isBaseDirSet())
     private val uiStates = MutableStateFlow(UIState())
@@ -79,7 +70,6 @@ class HomeViewModel(
 
     fun updatePermissions(context: Context) {
         notificationsPermissionEnabledState.value = isNotificationsPermissionGranted(context)
-        microphonePermissionEnabledState.value = isMicrophonePermissionGranted(context)
         storageLocationSetState.value = directoriesManager.isBaseDirSet()
     }
 
@@ -97,23 +87,12 @@ class HomeViewModel(
         return permissionResult == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun isMicrophonePermissionGranted(context: Context): Boolean {
-        val permissionResult =
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.RECORD_AUDIO,
-            )
-
-        return permissionResult == PackageManager.PERMISSION_GRANTED
-    }
-
     private fun buildViewState(
         favoritesGames: List<Game>,
         recentGames: List<Game>,
         discoveryGames: List<Game>,
         indexInProgress: Boolean,
         notificationsPermissionEnabled: Boolean,
-        showMicrophoneCard: Boolean,
         storageLocationSet: Boolean,
     ): UIState {
         val noGames = recentGames.isEmpty() && favoritesGames.isEmpty() && discoveryGames.isEmpty()
@@ -124,7 +103,6 @@ class HomeViewModel(
             discoveryGames = discoveryGames,
             indexInProgress = indexInProgress,
             showNoNotificationPermissionCard = !notificationsPermissionEnabled,
-            showNoMicrophonePermissionCard = showMicrophoneCard,
             showNoGamesCard = noGames,
             showStorageLocationCard = !storageLocationSet,
         )
@@ -139,7 +117,6 @@ class HomeViewModel(
                     discoveryGames(retrogradeDb),
                     indexingInProgress(appContext),
                     notificationsPermissionEnabledState,
-                    microphoneNotification(retrogradeDb),
                     storageLocationSetState,
                     ::buildViewState,
                 )
@@ -162,28 +139,4 @@ class HomeViewModel(
 
     private fun favoritesGames(retrogradeDb: RetrogradeDatabase) =
         retrogradeDb.gameDao().selectFirstFavorites(CAROUSEL_MAX_ITEMS)
-
-    private fun dsGamesCount(retrogradeDb: RetrogradeDatabase): Flow<Int> {
-        return retrogradeDb.gameDao().selectSystemsWithCount()
-            .map { systems ->
-                systems
-                    .firstOrNull { it.systemId == SystemID.NDS.dbname }
-                    ?.count
-                    ?: 0
-            }
-            .distinctUntilChanged()
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private fun microphoneNotification(db: RetrogradeDatabase): Flow<Boolean> {
-        return microphonePermissionEnabledState
-            .flatMapLatest { isMicrophoneEnabled ->
-                if (isMicrophoneEnabled) {
-                    flowOf(false)
-                } else {
-                    dsGamesCount(db).map { it > 0 }
-                }
-                    .distinctUntilChanged()
-            }
-    }
 }

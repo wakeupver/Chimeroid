@@ -48,17 +48,9 @@
     <string name="setting_ppsspp_texture_filtering">纹理过滤</string>
     <string name="setting_fbneo_frameskip">跳帧</string>
     <string name="setting_fbneo_cpu_speed_adjust">CPU 速度</string>
-    <string name="setting_melonds_screen_layout">屏幕布局</string>
-    <string name="setting_melonds_threaded_renderer">多线程渲染</string>
-    <string name="setting_melonds_jit_enable">动态重编译器</string>
-    <string name="setting_melonds_mic_input">麦克风模式</string>
     <string name="setting_wswan_rotate_display">屏幕方向</string>
     <string name="setting_wswan_mono_palette">着色</string>
     <string name="setting_handy_rot">显示旋转</string>
-    <string name="setting_citra_layout_option">屏幕布局</string>
-    <string name="setting_citra_resolution_factor">分辨率缩放</string>
-    <string name="setting_citra_use_acc_mul">精准的投影倍数</string>
-    <string name="setting_citra_use_acc_geo_shaders">精确的几何着色器</string>
     <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">停用</string>
     <string name="value_gambatte_mix_frames_mix">简单</string>
@@ -98,14 +90,6 @@
     <string name="value_mupen64plus_mupen64plus_pak1_none">玩家1无</string>
     <string name="value_mupen64plus_mupen64plus_pak2_none">玩家2无</string>
     <string name="value_mupen64plus_mupen64plus_pak2_rumble">玩家2振动</string>
-    <string name="value_melonds_screen_layout_topbottom">上 - 下</string>
-    <string name="value_melonds_screen_layout_leftright">左 - 右</string>
-    <string name="value_melonds_screen_layout_hybridtop">顶部混合</string>
-    <string name="value_melonds_screen_layout_hybridbottom">底部混合</string>
-    <string name="value_melonds_mic_input_microphone">外接麦克风</string>
-    <string name="value_melonds_mic_input_blow">模拟吹气声</string>
-    <string name="value_citra_layout_option_topbottom">上 - 下</string>
-    <string name="value_citra_layout_option_sidebyside">左 - 右</string>
     <string name="value_ppsspp_cpu_core_jit">JIT</string>
     <string name="value_ppsspp_cpu_core_irjit">IR JIT</string>
     <string name="value_ppsspp_cpu_core_interpreter">解释器</string>

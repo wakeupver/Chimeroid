@@ -52,7 +52,6 @@ import com.swordfish.chimeroid.lib.library.db.dao.GameSearchDao
 import com.swordfish.chimeroid.lib.library.db.dao.Migrations
 import com.swordfish.chimeroid.lib.library.db.dao.PatchCodeDao
 import com.swordfish.chimeroid.lib.library.metadata.GameMetadataProvider
-import com.swordfish.chimeroid.lib.migration.NdsSaveMigrationHandler
 import com.swordfish.chimeroid.lib.preferences.SharedPreferencesHelper
 import com.swordfish.chimeroid.lib.saves.SavesCoherencyEngine
 import com.swordfish.chimeroid.lib.saves.SavesManager
@@ -275,7 +274,6 @@ abstract class ChimeroidApplicationModule {
             savesCoherencyEngine: SavesCoherencyEngine,
             directoriesManager: DirectoriesManager,
             biosManager: BiosManager,
-            ndsSaveMigrationHandler: NdsSaveMigrationHandler,
         ) = GameLoader(
             chimeroidLibrary,
             statesManager,
@@ -285,7 +283,6 @@ abstract class ChimeroidApplicationModule {
             savesCoherencyEngine,
             directoriesManager,
             biosManager,
-            ndsSaveMigrationHandler,
         )
 
         @Provides
@@ -316,12 +313,6 @@ abstract class ChimeroidApplicationModule {
             context: Context,
             directoriesManager: DirectoriesManager,
         ) = SaveSyncManagerImpl(context, directoriesManager)
-
-        @Provides
-        @PerApp
-        @JvmStatic
-        fun ndsSaveMigrationHandler(directoriesManager: DirectoriesManager) =
-            NdsSaveMigrationHandler(directoriesManager)
 
         @Provides
         @PerApp

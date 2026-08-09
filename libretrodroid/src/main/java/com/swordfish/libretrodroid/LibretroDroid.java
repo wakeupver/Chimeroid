@@ -115,14 +115,6 @@ public class LibretroDroid {
     public static native void setShaderConfig(GLRetroShader shader);
     public static native void setViewport(float x, float y, float width, float height);
 
-    public static native void setDualScreenConfig(
-        boolean enabled,
-        float primaryVpX,    float primaryVpY,    float primaryVpW,    float primaryVpH,
-        float secondaryVpX,  float secondaryVpY,  float secondaryVpW,  float secondaryVpH,
-        float primaryUVxMin,    float primaryUVyMin,    float primaryUVxMax,    float primaryUVyMax,
-        float secondaryUVxMin,  float secondaryUVyMin,  float secondaryUVxMax,  float secondaryUVyMax
-    );
-
     public static native byte[] serializeState();
     public static native boolean unserializeState(byte[] state);
 
@@ -141,8 +133,6 @@ public class LibretroDroid {
 
     public static native void onMotionEvent(int port, int motionSource, float xAxis, float yAxis);
     public static native void onTouchEvent(float xAxis, float yAxis);
-    public static native void releaseSecondaryTouch();
-    public static native void setSecondaryTouchDirect(float relX, float relY);
 
     public static native void onKeyEvent(int port, int action, int keyCode);
 

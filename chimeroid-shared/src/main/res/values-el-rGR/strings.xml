@@ -48,17 +48,9 @@
     <string name="setting_ppsspp_texture_filtering">Φιλτράρισμα texture</string>
     <string name="setting_fbneo_frameskip">Frameskip</string>
     <string name="setting_fbneo_cpu_speed_adjust">Ταχύτητα CPU</string>
-    <string name="setting_melonds_screen_layout">Διάταξη οθόνης</string>
-    <string name="setting_melonds_threaded_renderer">Threaded renderer</string>
-    <string name="setting_melonds_jit_enable">Dynamic recompiler</string>
-    <string name="setting_melonds_mic_input">Λειτουργία μικροφώνου</string>
     <string name="setting_wswan_rotate_display">Προσανατολισμός</string>
     <string name="setting_wswan_mono_palette">Χρωματισμός</string>
     <string name="setting_handy_rot">Περιστροφή οθόνης</string>
-    <string name="setting_citra_layout_option">Διάταξη οθόνης</string>
-    <string name="setting_citra_resolution_factor">Κλίμακα Ανάλυσης</string>
-    <string name="setting_citra_use_acc_mul">Accurate shaders multiplication</string>
-    <string name="setting_citra_use_acc_geo_shaders">Accurate geometry shaders</string>
     <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Απενεργοποιημένο</string>
     <string name="value_gambatte_mix_frames_mix">Απλό</string>
@@ -98,14 +90,6 @@
     <string name="value_mupen64plus_mupen64plus_pak1_none">Κανένα</string>
     <string name="value_mupen64plus_mupen64plus_pak2_none">Κανένα</string>
     <string name="value_mupen64plus_mupen64plus_pak2_rumble">Δόνηση</string>
-    <string name="value_melonds_screen_layout_topbottom">Πάνω-κάτω</string>
-    <string name="value_melonds_screen_layout_leftright">Αριστερά - Δεξιά</string>
-    <string name="value_melonds_screen_layout_hybridtop">Υβριδικό Πάνω</string>
-    <string name="value_melonds_screen_layout_hybridbottom">Υβριδικό Κάτω</string>
-    <string name="value_melonds_mic_input_microphone">Πραγματικό μικρόφωνο</string>
-    <string name="value_melonds_mic_input_blow">Προσομοίωση ήχων πλήγματος</string>
-    <string name="value_citra_layout_option_topbottom">Πάνω-κάτω</string>
-    <string name="value_citra_layout_option_sidebyside">Αριστερά - Δεξιά</string>
     <string name="value_ppsspp_cpu_core_jit">JIT</string>
     <string name="value_ppsspp_cpu_core_irjit">IR JIT</string>
     <string name="value_ppsspp_cpu_core_interpreter">Διερμηνέας</string>

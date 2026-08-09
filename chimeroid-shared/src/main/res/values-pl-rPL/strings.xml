@@ -48,17 +48,9 @@
     <string name="setting_ppsspp_texture_filtering">Filtrowanie tekstur</string>
     <string name="setting_fbneo_frameskip">Frameskip</string>
     <string name="setting_fbneo_cpu_speed_adjust">Szybkość CPU</string>
-    <string name="setting_melonds_screen_layout">Układ ekranów</string>
-    <string name="setting_melonds_threaded_renderer">Renderowanie wielowątkowe</string>
-    <string name="setting_melonds_jit_enable">Dynamiczny rekompilator</string>
-    <string name="setting_melonds_mic_input">Tryb mikrofonu</string>
     <string name="setting_wswan_rotate_display">Orientacja</string>
     <string name="setting_wswan_mono_palette">Koloryzacja</string>
     <string name="setting_handy_rot">Obrót ekranu</string>
-    <string name="setting_citra_layout_option">Układ ekranu</string>
-    <string name="setting_citra_resolution_factor">Skalowanie rozdzielczości</string>
-    <string name="setting_citra_use_acc_mul">Dokładne mnożenie shaderów</string>
-    <string name="setting_citra_use_acc_geo_shaders">Dokładne shadery geometrii</string>
     <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Wyłączone</string>
     <string name="value_gambatte_mix_frames_mix">Proste</string>
@@ -98,14 +90,6 @@
     <string name="value_mupen64plus_mupen64plus_pak1_none">Brak</string>
     <string name="value_mupen64plus_mupen64plus_pak2_none">Brak</string>
     <string name="value_mupen64plus_mupen64plus_pak2_rumble">Wibracje</string>
-    <string name="value_melonds_screen_layout_topbottom">Góra - Dół</string>
-    <string name="value_melonds_screen_layout_leftright">Lewo - Prawo</string>
-    <string name="value_melonds_screen_layout_hybridtop">Hybrydowy górny</string>
-    <string name="value_melonds_screen_layout_hybridbottom">Hybrydowy dolny</string>
-    <string name="value_melonds_mic_input_microphone">Prawdziwy mikrofon</string>
-    <string name="value_melonds_mic_input_blow">Symuluj odgłosy dmuchania</string>
-    <string name="value_citra_layout_option_topbottom">Góra - Dół</string>
-    <string name="value_citra_layout_option_sidebyside">Lewo - Prawo</string>
     <string name="value_ppsspp_cpu_core_jit">JIT</string>
     <string name="value_ppsspp_cpu_core_irjit">IR JIT</string>
     <string name="value_ppsspp_cpu_core_interpreter">Interpreter</string>

@@ -66,11 +66,6 @@ enum class CoreID(
         "MAME2003 Plus",
         "libmame2003_plus_libretro_android.so",
     ),
-    MELONDS(
-        "melonds",
-        "MelonDS",
-        "libmelonds_libretro_android.so",
-    ),
     HANDY(
         "handy",
         "Handy",
@@ -95,11 +90,6 @@ enum class CoreID(
         "mednafen_wswan",
         "Beetle Cygne",
         "libmednafen_wswan_libretro_android.so",
-    ),
-    CITRA(
-        "citra",
-        "Citra",
-        "libcitra_libretro_android.so",
     ),
     DOSBOX_PURE(
         "dosbox_pure",

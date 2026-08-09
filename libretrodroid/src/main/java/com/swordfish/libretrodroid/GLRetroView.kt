@@ -110,51 +110,6 @@ class GLRetroView(
         LibretroDroid.setAspectRatioOverride(aspectRatioOverride)
     }
 
-    /**
-     * Enables split dual-screen rendering for NDS / 3DS games.
-     *
-     * [primaryViewport] / [secondaryViewport] are 0-1 fractions of the GL surface
-     * (left, top, right, bottom — Android RectF convention).
-     * UV crop fields define which portion of the combined game frame maps to
-     * each panel.  Set to `null` to return to normal single-screen rendering.
-     */
-    data class DualScreenConfig(
-        val primaryViewport: RectF,      // top screen panel position on GL surface
-        val secondaryViewport: RectF,    // bottom screen panel position
-        // UV crop for each panel (0-1 fractions of the combined game texture)
-        val primaryUVxMin: Float   = 0f,
-        val primaryUVyMin: Float   = 0f,
-        val primaryUVxMax: Float   = 1f,
-        val primaryUVyMax: Float   = 0.5f,
-        val secondaryUVxMin: Float = 0f,
-        val secondaryUVyMin: Float = 0.5f,
-        val secondaryUVxMax: Float = 1f,
-        val secondaryUVyMax: Float = 1f,
-    )
-
-    var dualScreenConfig: DualScreenConfig? by Delegates.observable(null) { _, old, value ->
-        if (old == value) return@observable
-        val enabled = value != null
-        val cfg = value ?: DISABLED_DUAL_SCREEN_CONFIG
-        // Posted, not blocking: see postToEmulationThread() kdoc. This is exactly the config
-        // push Compose fires right after its first layout pass for NDS/3DS games — blocking
-        // here stalls the main thread behind onSurfaceCreated()'s core/ROM load on the GL
-        // thread, which is what caused the multi-second freeze / ANR on opening a game.
-        postToEmulationThread {
-            LibretroDroid.setDualScreenConfig(
-                enabled,
-                cfg.primaryViewport.left,    cfg.primaryViewport.top,
-                cfg.primaryViewport.width(), cfg.primaryViewport.height(),
-                cfg.secondaryViewport.left,    cfg.secondaryViewport.top,
-                cfg.secondaryViewport.width(), cfg.secondaryViewport.height(),
-                cfg.primaryUVxMin,   cfg.primaryUVyMin,
-                cfg.primaryUVxMax,   cfg.primaryUVyMax,
-                cfg.secondaryUVxMin, cfg.secondaryUVyMin,
-                cfg.secondaryUVxMax, cfg.secondaryUVyMax,
-            )
-        }
-    }
-
     private val openGLESVersion: Int
 
     private var isGameLoaded = false
@@ -221,37 +176,6 @@ class GLRetroView(
         queueEvent { LibretroDroid.onMotionEvent(port, source, xAxis, yAxis) }
     }
 
-    /**
-     * Forwards a touch expressed as [0,1] fractions within the secondary (bottom) panel
-     * directly to the libretro core. C++ converts to NDC internally using the stored
-     * secondary-viewport config — no Kotlin-side screen coordinate calculation needed.
-     *
-     * Queued onto the GL thread (like [sendMotionEvent]) rather than called directly:
-     * the native side reads the secondary panel's viewport/foreground-vertex state,
-     * which [dualScreenConfig] mutates on the GL thread on every panel resize. Calling
-     * across threads without queuing raced that state — the touch could read a
-     * half-updated panel rect while dragging, or run before the very first
-     * [dualScreenConfig] push had been applied — which is what let a tap land somewhere
-     * other than where it visually landed.
-     *
-     * [panelRelX] 0 = left edge of panel, 1 = right edge.
-     * [panelRelY] 0 = top edge of panel, 1 = bottom edge.
-     */
-    fun sendTouchPanelRelative(panelRelX: Float, panelRelY: Float) {
-        queueEvent { LibretroDroid.setSecondaryTouchDirect(panelRelX, panelRelY) }
-    }
-
-    /**
-     * Releases the current dual-screen touch (call on ACTION_UP / pointer cancel).
-     *
-     * Also queued — a press queued via [sendTouchPanelRelative] followed by an
-     * unqueued release could reach the GL thread out of order and land the release
-     * before the press it was meant to end.
-     */
-    fun sendTouchRelease() {
-        queueEvent { LibretroDroid.releaseSecondaryTouch() }
-    }
-
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         val position = when (event?.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
@@ -309,7 +233,7 @@ class GLRetroView(
      * This is the batched equivalent of calling [resetCheat] followed by N [setCheat] calls:
      * doing that from a caller thread instead would mean N sequential blocking round-trips
      * (each via runOnEmulationThread's CountDownLatch), which is the exact ANR pattern
-     * [postToEmulationThread]'s kdoc documents for viewport/dualScreenConfig — here it also
+     * [postToEmulationThread]'s kdoc documents for viewport — here it also
      * scales with the cheat list size, so it matters even more for larger imported lists.
      * Resetting first (rather than only setting indices 0..codes.lastIndex) also avoids
      * leaving a stale/"ghost" cheat active at any index beyond the new list's size.
@@ -452,11 +376,11 @@ class GLRetroView(
         override fun onResume(owner: LifecycleOwner) = catchExceptions {
             // ON_RESUME fires on the lifecycle-owner (main) thread at the same moment the
             // GL thread enters onSurfaceCreated() to load the core/ROM — multiple seconds
-            // for heavier cores, longer still for NDS/3DS with their two-screen FBO/shader
+            // for heavier cores, longer still for GPU-accelerated cores with their FBO/shader
             // setup. runOnEmulationThread(true) blocked this thread on a CountDownLatch
-            // until that load finished: the multi-second freeze/ANR reported opening
-            // dual-screen games — same issue already fixed below for viewport/
-            // dualScreenConfig, just never migrated to this call site. Posting instead of
+            // until that load finished: the multi-second freeze/ANR reported opening some
+            // games — same issue already fixed below for viewport, just never migrated to
+            // this call site. Posting instead of
             // blocking removes the stall; isEmulationReady is flipped inside the posted
             // block so its write and the GL-thread read in Renderer.onDrawFrame() stay on
             // one thread. LibretroDroid.resume() is itself null-guarded natively against
@@ -578,18 +502,18 @@ class GLRetroView(
     /**
      * Posts [block] to the GL/emulation thread without blocking the caller.
      *
-     * For fire-and-forget config pushes (viewport, dual-screen layout) whose observable
+     * For fire-and-forget config pushes (viewport) whose observable
      * delegate callback returns Unit — nothing reads a result back, so there is nothing to
      * wait for. [runOnEmulationThread] blocks the caller until the GL thread drains its
      * event queue, which is correct when a return value is needed (state serialization,
      * cheats, disk changes) but wrong here: right after the view attaches, the GL thread is
-     * busy inside onSurfaceCreated() loading the core/ROM — which can take seconds, more so
-     * for NDS/3DS — so a caller blocked on that same queue stalls the whole UI thread until
-     * loading finishes. That was the multi-second freeze / ANR seen when opening a
-     * dual-screen game. The native setters this backs (setViewport/setDualScreenConfig) are
-     * already null-safe and buffer the latest value in a member field (see
-     * LibretroDroid::setViewport/setDualScreenConfig), so queuing without waiting is safe:
-     * the value is picked up the moment the emulation object exists, with no caller stall.
+     * busy inside onSurfaceCreated() loading the core/ROM — which can take seconds for
+     * heavier cores — so a caller blocked on that same queue stalls the whole UI thread
+     * until loading finishes. That was the multi-second freeze / ANR seen when opening a
+     * game. The native setter this backs (setViewport) is already null-safe and buffers
+     * the latest value in a member field (see LibretroDroid::setViewport), so queuing
+     * without waiting is safe: the value is picked up the moment the emulation object
+     * exists, with no caller stall.
      */
     private inline fun postToEmulationThread(crossinline block: () -> Unit) {
         if (Thread.currentThread().name.startsWith("GLThread")) {
@@ -719,16 +643,5 @@ class GLRetroView(
         const val ERROR_GENERIC = LibretroDroid.ERROR_GENERIC
 
         private val TOUCH_EVENT_OUTSIDE = PointF(-10f, 10f)
-
-        // Neutral top/bottom 50-50 split, sent natively when dualScreenConfig is set back to
-        // null. setDualScreenConfig's `enabled=false` flag is what actually turns off the
-        // split-screen path on the native side; this is just its inert UV/viewport payload,
-        // built once here instead of as a repeated argument list at every call site.
-        private val DISABLED_DUAL_SCREEN_CONFIG = DualScreenConfig(
-            primaryViewport = RectF(0f, 0f, 1f, 1f),
-            secondaryViewport = RectF(0f, 0f, 1f, 1f),
-            primaryUVxMin = 0f, primaryUVyMin = 0f, primaryUVxMax = 1f, primaryUVyMax = 0.5f,
-            secondaryUVxMin = 0f, secondaryUVyMin = 0.5f, secondaryUVxMax = 1f, secondaryUVyMax = 1f,
-        )
     }
 }
