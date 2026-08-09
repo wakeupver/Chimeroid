@@ -36,6 +36,8 @@ import com.swordfish.chimeroid.app.utils.android.settings.ChimeroidSettingsSwitc
 import com.swordfish.chimeroid.app.utils.android.settings.booleanPreferenceState
 import com.swordfish.chimeroid.app.utils.android.settings.indexPreferenceState
 import com.swordfish.chimeroid.lib.core.CoreVariablesManager
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @Composable
 fun GameMenuCoreOptionsScreen(

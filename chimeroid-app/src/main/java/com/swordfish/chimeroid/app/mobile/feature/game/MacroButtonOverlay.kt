@@ -43,6 +43,8 @@ import com.swordfish.touchinput.radial.settings.TouchControllerSettingsManager
 import com.swordfish.touchinput.radial.ui.ChimeroidButtonForeground
 import com.swordfish.touchinput.radial.ui.ChimeroidControlBackground
 import kotlin.math.roundToInt
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 private val BUTTON_SIZE    = 52.dp
 private val DELETE_BADGE   = 18.dp

@@ -52,6 +52,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.lib.library.db.entity.PatchCode
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @Composable
 fun GameMenuPatchCodesScreen(viewModel: GameMenuPatchCodesViewModel) {

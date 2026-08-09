@@ -14,6 +14,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.swordfish.chimeroid.app.shared.game.viewmodel.GameViewModelRetroGameView
 import kotlinx.coroutines.delay
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 private const val SPLASH_EXIT_MS = 220
 

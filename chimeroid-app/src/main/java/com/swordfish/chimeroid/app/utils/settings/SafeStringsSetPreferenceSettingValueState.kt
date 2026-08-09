@@ -8,6 +8,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.alorma.compose.settings.storage.base.SettingValueState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @Composable
 fun rememberSafePreferenceStringsSetSettingState(

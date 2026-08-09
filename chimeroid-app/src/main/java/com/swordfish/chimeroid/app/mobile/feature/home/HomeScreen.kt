@@ -72,6 +72,7 @@ import com.swordfish.chimeroid.app.utils.android.ComposableLifecycle
 import com.swordfish.chimeroid.app.utils.games.GameUtils
 import com.swordfish.chimeroid.common.displayDetailsSettingsScreen
 import com.swordfish.chimeroid.lib.library.db.entity.Game
+import androidx.compose.runtime.getValue
 
 @Composable
 fun HomeScreen(

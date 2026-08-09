@@ -29,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.R
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 private const val ICON_ANIM_MS = 420
 private const val TITLE_ANIM_MS = 380

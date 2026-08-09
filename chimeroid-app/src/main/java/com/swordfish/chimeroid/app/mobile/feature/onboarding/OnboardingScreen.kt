@@ -97,6 +97,8 @@ import com.swordfish.chimeroid.R
 import com.swordfish.chimeroid.app.shared.settings.StorageBaseDirPicker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 private val ReadyColor = Color(0xFF1B8A5A)
 

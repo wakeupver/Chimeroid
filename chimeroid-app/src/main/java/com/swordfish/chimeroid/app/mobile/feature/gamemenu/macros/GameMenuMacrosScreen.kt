@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.swordfish.chimeroid.app.shared.game.macro.MacroButton
 import com.swordfish.touchinput.controller.R
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @Composable
 fun GameMenuMacrosScreen(
