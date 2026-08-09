@@ -24,9 +24,6 @@ ImageRendererES2::ImageRendererES2() {
     glGenTextures(1, &currentTexture);
     glBindTexture(GL_TEXTURE_2D, currentTexture);
 
-    // Wrap mode is a fixed property of this renderer's texture object (never
-    // toggled after construction), so it only ever needs to be set once here
-    // instead of being reissued on every onNewFrame().
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
@@ -34,9 +31,6 @@ ImageRendererES2::ImageRendererES2() {
 void ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     glBindTexture(GL_TEXTURE_2D, currentTexture);
 
-    // Unpack alignment only depends on bytesPerPixel, which only changes in
-    // setPixelFormat(), so it's reissued on that same alignmentDirty flag
-    // instead of unconditionally on every frame.
     if (alignmentDirty) {
         glPixelStorei(GL_UNPACK_ALIGNMENT, bytesPerPixel);
         alignmentDirty = false;
@@ -48,8 +42,6 @@ void ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned hei
         Renderer::unpackRGB1555InPlace(const_cast<void*>(data), (pitch * height) / bytesPerPixel);
     }
 
-    // Min/mag filter is the one sampler param that can change at runtime (via
-    // setShaders()), so it's the only one reissued, and only when it changed.
     if (filterDirty) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
@@ -60,11 +52,10 @@ void ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned hei
         glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, nullptr);
     }
 
-    // If the given texture has the correct size we just upload it.
     if (bytesPerPixel * width == pitch) {
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, glFormat, glType, data);
     } else {
-        // Here we are forced to take the long and slow way to upload the padded texture.
+
         const auto* base = static_cast<const char*>(data);
         for (unsigned int i = 0; i < height; i++) {
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, i, width, 1, glFormat, glType, base + pitch * i);
@@ -77,11 +68,7 @@ void ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned hei
 }
 
 void ImageRendererES2::convertDataFromRGB8888(const void *data, size_t size) {
-    // Swap R/B in place, 4 bytes (one pixel) at a time: one 32-bit load, one
-    // store, versus the original's 2 byte-loads + 2 byte-stores per pixel.
-    // Iterating by whole pixels also fixes an off-by-one in the old `size - 4`
-    // bound, which silently skipped the final pixel, and avoids an unsigned
-    // underflow (huge loop / out-of-bounds writes) if size were ever < 4.
+
     auto *pixels = static_cast<uint32_t*>(const_cast<void*>(data));
     const size_t pixelCount = size / 4;
     for (size_t i = 0; i < pixelCount; ++i) {
@@ -95,7 +82,7 @@ uintptr_t ImageRendererES2::getTexture() {
 }
 
 uintptr_t ImageRendererES2::getFramebuffer() {
-    return 0; // ImageRender does not really expose a framebuffer.
+    return 0;
 }
 
 void ImageRendererES2::setPixelFormat(int pixelFormat) {
@@ -134,9 +121,8 @@ void ImageRendererES2::setShaders(ShaderManager::Chain shaders) {
     }
 }
 
-// ES2 Renderer doesn't currently support multiple passes.
 Renderer::PassData ImageRendererES2::getPassData(unsigned int layer) {
     return { };
 }
 
-} //namespace libretrodroid
+}

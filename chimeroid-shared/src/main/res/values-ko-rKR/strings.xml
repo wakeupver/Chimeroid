@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">자동</string>
     <string name="controller_dos_mouse_left">왼쪽 스틱으로 마우스 조작</string>
     <string name="controller_dos_mouse_right">오른쪽 스틱으로 마우스 조작</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">TV 효과</string>
     <string name="setting_stella_crop_hoverscan">가로 오버스캔 잘라내기</string>
     <string name="setting_fceumm_overscan_h">가로 오버스캔 잘라내기</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">방향</string>
     <string name="setting_wswan_mono_palette">색 입히기</string>
     <string name="setting_handy_rot">디스플레이 회전</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">사용 안 함</string>
     <string name="value_gambatte_mix_frames_mix">단순</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">LCD 고스팅 (정확하게)</string>

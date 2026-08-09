@@ -56,4 +56,4 @@ float SincResampler::sinc(float x) {
     return sinf(x * PI_F) / (x * PI_F);
 }
 
-} //namespace libretrodroid
+}

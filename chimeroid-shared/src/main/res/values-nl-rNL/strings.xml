@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Automatisch</string>
     <string name="controller_dos_mouse_left">Muis met linkerstick</string>
     <string name="controller_dos_mouse_right">Muis met rechterstick</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">TV effect</string>
     <string name="setting_stella_crop_hoverscan">Horizontale overscan bijsnijden</string>
     <string name="setting_fceumm_overscan_h">Horizontale overscan bijsnijden</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Oriëntatie</string>
     <string name="setting_wswan_mono_palette">Kleur</string>
     <string name="setting_handy_rot">Schermrotatie</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Uitgeschakeld</string>
     <string name="value_gambatte_mix_frames_mix">Simpel</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">LCD Ghosting (Accurate)</string>

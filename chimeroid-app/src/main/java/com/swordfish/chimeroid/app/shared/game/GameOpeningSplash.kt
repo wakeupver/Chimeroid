@@ -18,10 +18,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -42,27 +40,8 @@ private val ICON_SIZE = 64.dp
 private val SPINNER_SIZE = 28.dp
 private val SPINNER_STROKE = 2.5.dp
 
-/**
- * Total time [GameOpeningSplash]'s entrance needs to read as finished: title delay + title's own
- * fade/slide, plus a short hold so the fully-revealed title is actually readable for a beat.
- * [BaseGameScreen] uses this to hold the crossfade to gameplay until the splash has genuinely
- * finished playing, even if the core loads faster than that.
- */
 internal const val SPLASH_MIN_VISIBLE_MS = TITLE_DELAY_MS + TITLE_ANIM_MS + HOLD_AFTER_REVEAL_MS
 
-/**
- * Branded loading splash shown by [BaseGameScreen] while the core boots: the Chimeroid mark
- * scales/fades in, the [gameTitle] follows after a short stagger, and the existing spinner plus
- * [loadingMessage] fade in beneath it.
- *
- * A single [LaunchedEffect] keyed on [Unit] drives every stage from one `revealed` flag, so the
- * sequence runs exactly once per composition (game launch) and never restarts when
- * [loadingMessage] changes as the core walks through its own loading steps — only [revealed]
- * feeds the animations, so unrelated recompositions are free.
- *
- * Deliberately takes plain data rather than the view-model/state-machine directly: keeps this
- * reusable, trivially previewable, and free of any coupling to [GameViewModelRetroGameView].
- */
 @Composable
 fun GameOpeningSplash(
     gameTitle: String,
@@ -87,8 +66,6 @@ fun GameOpeningSplash(
         label = "splash_title_reveal",
     )
 
-    // Triggers the whole sequence exactly once: LaunchedEffect(Unit) survives recomposition and
-    // only reruns if GameOpeningSplash itself leaves and re-enters composition (a fresh launch).
     LaunchedEffect(Unit) { revealed = 1f }
 
     Box(

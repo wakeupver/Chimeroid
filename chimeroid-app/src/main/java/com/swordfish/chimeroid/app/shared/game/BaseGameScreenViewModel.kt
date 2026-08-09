@@ -153,22 +153,10 @@ class BaseGameScreenViewModel(
             sideEffects,
         )
 
-    /** True while any blocking operation (save/load/reset) is in progress. */
     val loadingState = MutableStateFlow(false)
 
-    /**
-     * Guards [requestFinish] so that only the first call runs the save+finish sequence.
-     * Subsequent calls (e.g. rapid back-button taps) are silently dropped.
-     */
     private val finishRequested = AtomicBoolean(false)
 
-    /**
-     * Suspending, exception-safe loading gate.
-     *
-     * Sets [loadingState] to `true`, runs [block], then always resets it to `false` —
-     * even if [block] throws.  Replaces the old non-suspend inline version that could
-     * leave the state stuck at `true` on early returns or exceptions.
-     */
     private suspend fun withLoading(block: suspend () -> Unit) {
         loadingState.value = true
         try {
@@ -182,7 +170,6 @@ class BaseGameScreenViewModel(
 
     fun getSideEffects(): Flow<GameViewModelSideEffects.UiEffect> = sideEffects.getUiEffects()
 
-    /** Returns the [GameSystem] for the currently running game. */
     fun getSystem(): GameSystem = system
 
     fun getTiltConfiguration(): Flow<TiltConfiguration> = tilt.getTiltConfiguration()
@@ -226,8 +213,6 @@ class BaseGameScreenViewModel(
 
     fun isEditControlShown(): Flow<Boolean> = touchControls.isEditControlsShown()
 
-    // ---- Macro buttons ----
-
     fun getMacroButtons() = macro.macroButtons
     fun getMacroEditMode() = macro.editMode
     fun addOrUpdateMacro(btn: MacroButton) = macro.addOrUpdateMacro(btn)
@@ -238,21 +223,13 @@ class BaseGameScreenViewModel(
     fun pressMacro(btn: MacroButton) = macro.pressMacro(btn)
     fun releaseMacro(btn: MacroButton) = macro.releaseMacro(btn)
 
-    /** Re-syncs the live macro list from storage; call after returning from the Game Menu. */
     fun reloadMacros() = macro.reloadMacros()
 
-    /**
-     * Puts macros into drag/edit mode so the user can reposition them freely on the
-     * game screen, and ensures the Edit Controls dialog is closed so touches reach the
-     * macro overlay. Reached either from the Game Menu's Macros screen (RESULT_POSITION_MACROS)
-     * or from within a live session — self-sufficient either way.
-     */
     fun enterMacroDragMode() {
         touchControls.showEditControls(false)
         macro.setEditMode(true)
     }
 
-    /** Exits macro drag mode without reopening the Edit Controls dialog. */
     fun exitMacroDragMode() {
         macro.setEditMode(false)
     }
@@ -317,13 +294,6 @@ class BaseGameScreenViewModel(
         }
     }
 
-    /**
-     * Initiates a clean game-session close: captures a save snapshot, writes it, then signals
-     * the Activity to finish.
-     *
-     * The [AtomicBoolean] guard ensures this sequence runs at most once per session, no matter
-     * how many times the back button is pressed or the menu's Quit action is tapped.
-     */
     fun requestFinish() {
         if (loadingState.value) return
         if (!finishRequested.compareAndSet(false, true)) {
@@ -343,17 +313,13 @@ class BaseGameScreenViewModel(
                     sideEffects.requestSuccessfulFinish()
                 } catch (e: Throwable) {
                     Timber.e(e, "requestFinish: error during save-on-quit")
-                    // Still finish — a failed save must never trap the user in the game.
+
                     sideEffects.requestSuccessfulFinish()
                 }
             }
         }
     }
 
-    /**
-     * Schedules a background save via [GameService] when the Activity goes to the background
-     * (onStop) without a deliberate close.  Null snapshots are logged but do not crash.
-     */
     fun requestBackgroundSave() {
         if (loadingState.value) return
         GameService.schedule {

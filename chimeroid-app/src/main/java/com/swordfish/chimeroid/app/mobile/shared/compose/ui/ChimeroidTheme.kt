@@ -129,9 +129,6 @@ fun AppTheme(
     val dynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val context = LocalContext.current
 
-    // dynamicDarkColorScheme/dynamicLightColorScheme extract a full palette from the system
-    // wallpaper on every call; remember() keyed on the only inputs that can change avoids
-    // redoing that work on every recomposition of AppTheme (which wraps entire screens).
     val colors =
         remember(darkTheme, dynamicColor, context) {
             when {

@@ -69,7 +69,7 @@ uintptr_t FramebufferRenderer::getFramebuffer() {
 }
 
 void FramebufferRenderer::setPixelFormat(int pixelFormat) {
-    // TODO... Here we should handle 32bit framebuffers.
+
 }
 
 void FramebufferRenderer::updateRenderedResolution(unsigned int width, unsigned int height) {
@@ -85,10 +85,7 @@ bool FramebufferRenderer::rendersInVideoCallback() {
 }
 
 void FramebufferRenderer::forceReinitialize() {
-    // Called when the host needs the FBO to match a new geometry immediately
-    // (e.g. after SET_SYSTEM_AV_INFO from a HW-accelerated core like PPSSPP).
-    // Without this, get_current_framebuffer() would return the old-sized FBO
-    // and the core would crash trying to render the new resolution into it.
+
     if (isDirty) {
         LOGD("FramebufferRenderer::forceReinitialize – rebuilding buffers (%dx%d)", width, height);
         initializeBuffers();
@@ -106,9 +103,6 @@ void FramebufferRenderer::setShaders(ShaderManager::Chain shaders) {
 Renderer::PassData FramebufferRenderer::getPassData(unsigned int layer) {
     PassData result;
 
-    // Bounds are already proven by the guards below, so operator[] (unchecked)
-    // is used instead of .at() (which would redo the same range check plus an
-    // exception-path branch) in this per-pass, per-frame hot path.
     if (layer < framebuffers->size()) {
         const auto& fb = (*framebuffers)[layer];
         result.framebuffer = fb->framebuffer;
@@ -123,4 +117,4 @@ Renderer::PassData FramebufferRenderer::getPassData(unsigned int layer) {
     return result;
 }
 
-} //namespace libretrodroid
+}

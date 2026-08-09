@@ -252,8 +252,6 @@ class InputDeviceManager(
 
         private fun getSharedPreferencesId(inputDevice: InputDevice) = inputDevice.descriptor
 
-        // This is a last resort, but sadly there are some devices which present keys and the
-        // SOURCE_GAMEPAD, so we basically black list them.
         private val BLACKLISTED_DEVICES =
             setOf(
                 "virtual-search",

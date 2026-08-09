@@ -18,7 +18,6 @@
     <string name="controller_dos_mouse_left">Mouse with Left Stick</string>
     <string name="controller_dos_mouse_right">Mouse with Right Stick</string>
 
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">TV effect</string>
     <string name="setting_stella_crop_hoverscan">Crop horizontal overscan</string>
     <string name="setting_fceumm_overscan_h">Crop horizontal overscan</string>
@@ -57,7 +56,6 @@
     <string name="setting_wswan_mono_palette">Colorization</string>
     <string name="setting_handy_rot">Display rotation</string>
 
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Disabled</string>
     <string name="value_gambatte_mix_frames_mix">Simple</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">LCD Ghosting (Accurate)</string>
@@ -106,9 +104,6 @@
 
     <string name="value_mupen64plus_mupen64plus_pak2_none">None</string>
     <string name="value_mupen64plus_mupen64plus_pak2_rumble">Rumble</string>
-
-
-
 
     <string name="value_ppsspp_cpu_core_jit">JIT</string>
     <string name="value_ppsspp_cpu_core_irjit">IR JIT</string>

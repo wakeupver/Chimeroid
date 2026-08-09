@@ -2,10 +2,8 @@ package com.swordfish.chimeroid.app.utils.settings
 
 import android.content.SharedPreferences
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
@@ -39,8 +37,7 @@ class SafeIndexPreferenceSettingValueState(
         get() = values.indexOf(_value)
 
     override fun reset() {
-        // indexOf returns -1 when defaultValue is not in the list (e.g. stale prefs).
-        // Guard with maxOf so we never pass a negative index into the setter.
+
         val idx = values.indexOf(defaultValue)
         value = if (idx >= 0) idx else 0
     }

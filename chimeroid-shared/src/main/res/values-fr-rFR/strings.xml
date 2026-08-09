@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Auto</string>
     <string name="controller_dos_mouse_left">Souris avec stick gauche</string>
     <string name="controller_dos_mouse_right">Souris avec Stick droit</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">Effet TV</string>
     <string name="setting_stella_crop_hoverscan">Rogner la surbande horizontale</string>
     <string name="setting_fceumm_overscan_h">Rogner la surbande horizontale</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Orientation</string>
     <string name="setting_wswan_mono_palette">Colorisation</string>
     <string name="setting_handy_rot">Rotation d\'écran</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Desactivé</string>
     <string name="value_gambatte_mix_frames_mix">Basique</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">Résistance du LCD (Réaliste)</string>

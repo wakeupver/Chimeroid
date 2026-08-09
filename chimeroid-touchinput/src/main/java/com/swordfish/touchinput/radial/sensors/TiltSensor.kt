@@ -96,7 +96,7 @@ class TiltSensor(context: Context) : SensorEventListener {
         sensor: Sensor?,
         accuracy: Int,
     ) {
-        // Do nothing here
+
     }
 
     override fun onSensorChanged(event: SensorEvent) {

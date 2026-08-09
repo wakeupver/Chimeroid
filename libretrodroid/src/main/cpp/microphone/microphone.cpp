@@ -96,4 +96,4 @@ int Microphone::sampleRate() const {
     return mSampleRate;
 }
 
-} // libretrodroid
+} 

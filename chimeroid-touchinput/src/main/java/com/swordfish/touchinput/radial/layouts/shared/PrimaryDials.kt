@@ -11,7 +11,6 @@ import gg.padkit.ids.Id
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 
-/** Standard A/B/Y/X face buttons with letter labels (SNES, DOS, DS emulators, etc.). */
 @Composable
 fun PadKitScope.ABYXFaceButtons() {
     ChimeroidControlFaceButtons(
@@ -32,7 +31,6 @@ fun PadKitScope.ABYXFaceButtons() {
     )
 }
 
-/** PlayStation face buttons with circle/cross/square/triangle icons (PSX, PSP). */
 @Composable
 fun PadKitScope.PSXFaceButtons() {
     ChimeroidControlFaceButtons(

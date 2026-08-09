@@ -108,7 +108,6 @@ class GameMenuActivity : RetrogradeComponentActivity() {
 
         enableEdgeToEdgeForTheme()
 
-        // Sembunyikan status bar saat game menu terbuka
         WindowInsetsControllerCompat(window, window.decorView).let { controller ->
             controller.hide(WindowInsetsCompat.Type.statusBars())
             controller.systemBarsBehavior =
@@ -309,7 +308,7 @@ class GameMenuActivity : RetrogradeComponentActivity() {
         BoxWithConstraints(
             modifier = Modifier.fillMaxSize(),
         ) {
-            // Area transparan: tap di luar panel untuk dismiss
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()

@@ -68,4 +68,4 @@ private:
 
 }
 
-#endif //LIBRETRODROID_IMAGERENDERERES3_H
+#endif

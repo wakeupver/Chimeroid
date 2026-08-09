@@ -133,7 +133,7 @@ object GameScreenLayout {
                 absoluteLeft.linkTo(parent.absoluteLeft)
                 top.linkTo(parent.top)
                 bottom.linkTo(parent.bottom)
-                width = Dimension.wrapContent // Takes as much space as needed
+                width = Dimension.wrapContent
             }
 
             constrain(gameView) {
@@ -143,14 +143,14 @@ object GameScreenLayout {
                 absoluteRight.linkTo(rightPad.absoluteLeft)
                 top.linkTo(parent.top)
                 bottom.linkTo(parent.bottom)
-                width = Dimension.fillToConstraints // Expands between leftPad and rightPad
+                width = Dimension.fillToConstraints
             }
 
             constrain(rightPad) {
                 absoluteRight.linkTo(parent.absoluteRight)
                 top.linkTo(parent.top)
                 bottom.linkTo(parent.bottom)
-                width = Dimension.wrapContent // Takes as much space as needed
+                width = Dimension.wrapContent
             }
 
             constrain(gameContainer) {

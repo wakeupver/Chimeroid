@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">自動</string>
     <string name="controller_dos_mouse_left">マウスの左スティックあり</string>
     <string name="controller_dos_mouse_right">右スティック付きマウス</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">テレビ効果</string>
     <string name="setting_stella_crop_hoverscan">水平方向のオーバースキャンをトリミングする</string>
     <string name="setting_fceumm_overscan_h">水平方向のオーバースキャンをトリミングする</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">方向</string>
     <string name="setting_wswan_mono_palette">色付け</string>
     <string name="setting_handy_rot">ディスプレイの回転</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">無効</string>
     <string name="value_gambatte_mix_frames_mix">単純な</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">LCDゴースト（精度）</string>

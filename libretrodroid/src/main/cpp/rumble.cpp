@@ -49,4 +49,4 @@ void Rumble::handleRumbleUpdates(const std::function<void(int, float, float)>& h
     }
 }
 
-} //namespace libretrodroid
+}

@@ -28,18 +28,6 @@ suspend fun <T> Flow<T>.safeCollect(
 
 fun <T> Flow<T>.batchWithTime(maxMillis: Int) = batchWithSizeAndTime(Int.MAX_VALUE, maxMillis)
 
-/**
- * Batches upstream values by count OR time — whichever threshold is hit first.
- *
- * The original implementation used a plain [flow] which means the upstream and
- * downstream ran on the same coroutine: the upstream could not produce new items
- * while a batch was being processed downstream (back-pressure serialisation).
- *
- * The new implementation uses [channelFlow] with a dedicated timer coroutine so:
- *  - The upstream keeps producing without being blocked by downstream processing.
- *  - Time-based flushes are accurate even when the upstream is slow.
- *  - Size-based flushes still work correctly.
- */
 fun <T> Flow<T>.batchWithSizeAndTime(
     maxSize: Int,
     maxMillis: Int,
@@ -48,7 +36,6 @@ fun <T> Flow<T>.batchWithSizeAndTime(
         val batch = mutableListOf<T>()
         val mutex = kotlinx.coroutines.sync.Mutex()
 
-        // Timer coroutine: flush current batch every maxMillis ms regardless of size.
         val timerJob = launch {
             while (true) {
                 delay(maxMillis.toLong())
@@ -79,7 +66,7 @@ fun <T> Flow<T>.batchWithSizeAndTime(
             }
         } finally {
             timerJob.cancel()
-            // Flush whatever is left.
+
             if (batch.isNotEmpty()) send(batch.toList())
         }
     }

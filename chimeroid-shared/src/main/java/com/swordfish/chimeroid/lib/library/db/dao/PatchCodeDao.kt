@@ -11,11 +11,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PatchCodeDao {
 
-    /** Observe all codes for a game (live, ordered by insertion id). */
     @Query("SELECT * FROM patch_codes WHERE gameId = :gameId ORDER BY id ASC")
     fun getCodesForGame(gameId: Int): Flow<List<PatchCode>>
 
-    /** One-shot fetch used when applying codes at game start. */
     @Query("SELECT * FROM patch_codes WHERE gameId = :gameId ORDER BY id ASC")
     suspend fun getCodesForGameOnce(gameId: Int): List<PatchCode>
 
@@ -25,7 +23,6 @@ interface PatchCodeDao {
     @Delete
     suspend fun delete(code: PatchCode)
 
-    /** Toggle enabled flag without loading the full object. */
     @Query("UPDATE patch_codes SET enabled = :enabled WHERE id = :id")
     suspend fun setEnabled(id: Int, enabled: Boolean)
 }

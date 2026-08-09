@@ -37,4 +37,4 @@ private:
 
 }
 
-#endif //LIBRETRODROID_RUMBLE_H
+#endif

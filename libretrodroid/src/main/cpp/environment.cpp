@@ -68,10 +68,6 @@ void Environment::deinitialize() {
 
     rumbleStates.fill(libretrodroid::RumbleState {});
 
-    // Environment is a process-lifetime singleton reused across game/core
-    // reloads. Without this, a previous core's variables/controllers persist
-    // and are served alongside (or instead of) the newly loaded core's own
-    // data on the next session.
     {
         std::lock_guard<std::mutex> lock(variablesMutex);
         variables.clear();
@@ -88,15 +84,14 @@ void Environment::updateVariable(const std::string& key, const std::string& valu
 
     auto it = variables.find(key);
     if (it != variables.end()) {
-        // Key was registered by SET_VARIABLES — update value only if changed.
+
         if (it->second.value != value) {
             it->second.value = value;
             dirtyVariables = true;
         }
         return;
     }
-    // Key not yet registered — insert a placeholder so GET_VARIABLE can serve it.
-    // (Can happen when Kotlin pushes stored prefs before the core fires SET_VARIABLES.)
+
     Variable v;
     v.key   = key;
     v.value = value;
@@ -109,32 +104,30 @@ bool Environment::environment_handle_set_variables(const struct retro_variable* 
 
     for (unsigned i = 0; received[i].key != nullptr; ++i) {
         const char* rawKey  = received[i].key;
-        const char* rawDesc = received[i].value;   // "Human name; val1|val2|val3"
+        const char* rawDesc = received[i].value;
 
         LOGD("Received variable %s: %s", rawKey, rawDesc);
 
         std::string key(rawKey);
         std::string description(rawDesc);
 
-        // Extract the first option value as the default.
-        // Format: "Human name; val1|val2|…"  — semicolon + space separate name from values.
         std::string defaultValue;
         const char* semi = (rawDesc != nullptr) ? std::strchr(rawDesc, ';') : nullptr;
         if (semi != nullptr) {
             const char* valueStart = semi + 1;
-            // Skip the single space after the semicolon if present.
+
             if (*valueStart == ' ') ++valueStart;
-            // Default value ends at the first '|' or end-of-string.
+
             const char* pipe = std::strchr(valueStart, '|');
             defaultValue = (pipe != nullptr)
                 ? std::string(valueStart, static_cast<size_t>(pipe - valueStart))
                 : std::string(valueStart);
         }
 
-        auto& var = variables[key];   // insert default-constructed entry if absent
+        auto& var = variables[key];
         var.key         = key;
         var.description = std::move(description);
-        // Preserve a user-set value (written by updateVariable before SET_VARIABLES fired).
+
         if (var.value.empty()) {
             var.value = std::move(defaultValue);
         }
@@ -238,7 +231,7 @@ void Environment::callback_retro_log(enum retro_log_level level, const char *fmt
             __android_log_vprint(ANDROID_LOG_ERROR, MODULE_NAME_CORE, fmt, argptr);
             break;
         default:
-            // Log nothing in here.
+
             break;
     }
 }
@@ -343,12 +336,8 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             LOGD("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
             return false;
 
-            // TODO... RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO can also change frame-rate
         case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO: {
-            // CRITICAL: this is called from WITHIN retro_run(). PPSSPP (and other HW cores)
-            // will call get_current_framebuffer() immediately after this returns.  We MUST
-            // resize the FBO and call hw_context_reset right here, before we return, so the
-            // next get_current_framebuffer() sees the correctly-sized FBO.
+
             struct retro_system_av_info *avInfo = static_cast<struct retro_system_av_info *>(data);
             gameGeometryHeight     = avInfo->geometry.base_height;
             gameGeometryWidth      = avInfo->geometry.base_width;
@@ -367,14 +356,13 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
         }
 
         case RETRO_ENVIRONMENT_SET_GEOMETRY: {
-            // Geometry-only change (aspect ratio / base size). Does NOT require a GL context
-            // reset – step() will pick this up after retro_run() returns and update the layout.
+
             struct retro_game_geometry *geometry = static_cast<struct retro_game_geometry *>(data);
             gameGeometryHeight     = geometry->base_height;
             gameGeometryWidth      = geometry->base_width;
             gameGeometryAspectRatio = geometry->aspect_ratio;
             gameGeometryUpdated    = true;
-            // avInfoFullUpdate intentionally NOT set here
+
             LOGD("SET_GEOMETRY: new geometry %dx%d", gameGeometryWidth, gameGeometryHeight);
             return true;
         }

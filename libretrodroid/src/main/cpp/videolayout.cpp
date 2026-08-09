@@ -57,14 +57,6 @@ void VideoLayout::updateForegroundVertices() {
     float scaleX = viewportRect.getWidth();
     float scaleY = viewportRect.getHeight();
 
-    // screenW/screenH are 0 until the first updateScreenSize() call (screenWidth/
-    // screenHeight default-construct to 0, and this function also runs once from the
-    // constructor itself). A 0/0 division here produces NaN, and NaN silently defeats
-    // every bounds check in getRelativePosition() (NaN
-    // comparisons are always false), so a touch arriving in that window would pass the
-    // "outside panel" rejection instead of failing it. Skip the fit and keep scaleX/
-    // scaleY at the full viewport size (no letterbox) until we have real dimensions;
-    // the next updateScreenSize()/updateAspectRatio() call recomputes this correctly.
     if (screenW > 0.0f && screenH > 0.0f && contentAspect > 0.0f) {
         float screenAspect = screenW / screenH;
         if (contentAspect > screenAspect) {

@@ -44,7 +44,6 @@ internal object GamepadsManager {
             KeyEvent.KEYCODE_BUTTON_THUMBR
     )
 
-    /** The Android gamepad layout is different from RetroPad since X/Y and A/B buttons are inverted. */
     fun getGamepadKeyEvent(keyCode: Int): Int {
         return when (keyCode) {
             KeyEvent.KEYCODE_BUTTON_B -> KeyEvent.KEYCODE_BUTTON_A

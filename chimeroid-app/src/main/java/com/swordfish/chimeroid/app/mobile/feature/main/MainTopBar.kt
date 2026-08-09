@@ -48,10 +48,6 @@ import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidTopBarChrom
 import com.swordfish.chimeroid.app.mobile.shared.compose.ui.ChimeroidTopBarDefaults
 import com.swordfish.chimeroid.app.shared.savesync.SaveSyncWork
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Public entry-point — wrapped in a Surface so it carries the same
-// background + drop-shadow as HomeCollapsingHeader.
-// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun MainTopBar(
     currentRoute: MainRoute,
@@ -60,7 +56,7 @@ fun MainTopBar(
     onUpdateQueryString: (String) -> Unit,
     mainUIState: MainViewModel.UiState,
 ) {
-    // Surface provides background color + drop-shadow — matching HomeCollapsingHeader
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.background,
@@ -85,13 +81,6 @@ fun MainTopBar(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TopAppBar styled to match HomeCollapsingHeader (collapsed state):
-//   • Same colorScheme.background surface (Surface above is transparent here)
-//   • Sub-routes   → back arrow
-//   • Title        → titleLarge + FontWeight.Bold
-//   • Actions      → Info | CloudSync? | Settings?
-// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun ChimeroidTopAppBar(
     route: MainRoute,
@@ -102,11 +91,6 @@ fun ChimeroidTopAppBar(
 ) {
     val context = LocalContext.current
 
-    // Built on the same ChimeroidTopBarChrome HomeScreen pins inside its
-    // collapsing header, so height/insets can never drift from HomeScreen again.
-    // Wrapped in AnimatedContent so nav-icon/title/actions crossfade together on
-    // route change instead of popping instantly while NavHost's content is still
-    // mid-transition — that pop was the top-bar flicker.
     AnimatedContent(
         targetState = route,
         transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(150)) },
@@ -114,7 +98,7 @@ fun ChimeroidTopAppBar(
         label = "topBarChrome",
     ) { targetRoute ->
         ChimeroidTopBarChrome(
-            // ── Nav icon: back arrow for sub-routes only ─────────────────────
+
             navigationIcon = if (targetRoute.parent != null) {
                 {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -128,7 +112,6 @@ fun ChimeroidTopAppBar(
                 null
             },
 
-            // ── Title: search view or bold page name ─────────────────────────
             title = {
                 if (targetRoute == MainRoute.SEARCH) {
                     ChimeroidSearchView(
@@ -146,7 +129,6 @@ fun ChimeroidTopAppBar(
                 }
             },
 
-            // ── Actions: same shared composable HomeScreen uses ───────────────
             actions = {
                 ChimeroidTopBarActions(
                     onHelpPressed = onHelpPressed,
@@ -161,9 +143,6 @@ fun ChimeroidTopAppBar(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Inline search field (Search route only)
-// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun ChimeroidSearchView(
     mainUIState: MainViewModel.UiState,

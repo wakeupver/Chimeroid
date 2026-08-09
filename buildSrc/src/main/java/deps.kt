@@ -1,4 +1,4 @@
-/* ktlint-disable no-multi-spaces max-line-length */
+
 object deps {
     object android {
         const val targetSdkVersion  = 35
@@ -27,8 +27,6 @@ object deps {
         const val kotlinExtension = "1.4.6"
         const val padkit          = "1.0.0-beta1"
 
-        // Make sure this is compatible with current bom versions:
-        // https://developer.android.com/jetpack/compose/bom/bom-mapping
         const val accompanist     = "0.34.0"
     }
 
@@ -161,7 +159,7 @@ object deps {
         const val collectionsImmutable     = "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8"
         const val padkit                   = "io.github.swordfish90:padkit:${versions.padkit}"
         const val libretrodroid            = "com.github.Swordfish90:LibretroDroid:${versions.libretrodroid}"
-//        const val libretrodroid            = "com.swordfish:libretrodroid:unspecified"
+
     }
 
     object plugins {

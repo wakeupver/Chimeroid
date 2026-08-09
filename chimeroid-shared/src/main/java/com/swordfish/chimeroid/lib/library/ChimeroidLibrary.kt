@@ -95,7 +95,7 @@ class ChimeroidLibrary(
         startedAtMs: Long,
         gameMetadata: GameMetadataProvider,
     ) = flow<Unit> {
-        // ── Optimisation 1: single batch DB query instead of N individual queries ──
+
         val uris = batch.map { it.primaryFile.uri.toString() }
         val existingGamesByUri =
             retrogradedb.gameDao()
@@ -107,7 +107,6 @@ class ChimeroidLibrary(
         val existingEntries = entries.filterIsInstance<ScanEntry.GameFile>()
         handleExistingEntries(existingEntries, startedAtMs)
 
-        // ── Optimisation 2: build metadata for new entries in parallel ──
         val newEntries =
             coroutineScope {
                 entries.filterIsInstance<ScanEntry.File>()
@@ -247,10 +246,7 @@ class ChimeroidLibrary(
         metadataProvider: GameMetadataProvider,
         startedAtMs: Long,
     ): ScanEntry {
-        // ── Quick pre-check (zero I/O) ─────────────────────────────────────────────
-        // If the primary file has a unique extension (e.g. .gba, .nes, .sfc)
-        // we can build a lightweight StorageFile and ask the metadata provider right
-        // away. Only if that fails do we open the file for CRC / serial scanning.
+
         val primaryFile = groupedStorageFile.primaryFile
         val quickStorageFile = quickStorageFileOrNull(primaryFile)
         if (quickStorageFile != null) {
@@ -261,7 +257,6 @@ class ChimeroidLibrary(
             }
         }
 
-        // ── Full scan (opens file for CRC / serial if needed) ─────────────────────
         val game =
             sortedFilesForScanning(groupedStorageFile).asFlow()
                 .mapNotNull { safeStorageFile(provider, it) }
@@ -274,11 +269,6 @@ class ChimeroidLibrary(
         return buildScanEntry(groupedStorageFile, game)
     }
 
-    /**
-     * Returns a lightweight [StorageFile] built purely from the file name and
-     * size — no stream is opened. Returns null when the extension is not unique
-     * (i.e. can't be reliably identified without reading the file).
-     */
     private fun quickStorageFileOrNull(baseStorageFile: BaseStorageFile): StorageFile? {
         val system = GameSystem.findByFileName(baseStorageFile.name)
             ?: return null
@@ -337,7 +327,6 @@ class ChimeroidLibrary(
 
         val primaryFile = groupedStorageFile.primaryFile
 
-        // If the databased matched a data file (as with bin/cue) we force link the primary filename
         val fileName =
             if (groupedStorageFile.dataFiles.isNotEmpty()) {
                 primaryFile.name
@@ -387,15 +376,10 @@ class ChimeroidLibrary(
         const val MAX_BUFFER_SIZE = 200
         const val MAX_TIME = 1000
 
-        // Number of directory groups scanned in parallel.
-        // Keeps all CPU cores busy during the I/O-bound metadata retrieval phase
-        // without overwhelming the ContentResolver.
         const val SCAN_CONCURRENCY = 4
 
-        // How many batches can be processed concurrently (I/O bound, so > CPU count is fine)
         const val BATCH_CONCURRENCY = 4
 
-        // Parallel provider indexing (usually only 1-2 providers exist)
         const val PROVIDER_CONCURRENCY = 2
     }
 }

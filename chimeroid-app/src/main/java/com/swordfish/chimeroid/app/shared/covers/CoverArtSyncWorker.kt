@@ -17,13 +17,6 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 
-/**
- * Downloads cover art for every game that is missing a local JPEG, then
- * re-packs all covers into a single [CoverArtRepository.packFile] ZIP.
- *
- * Scheduled by [com.swordfish.chimeroid.app.shared.library.LibraryIndexScheduler]
- * after each library scan completes.
- */
 class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
     CoroutineWorker(context, params) {
 
@@ -39,8 +32,6 @@ class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
         val repository = CoverArtRepository(applicationContext)
         val httpClient = CoverArtFetcher.Factory(applicationContext).httpClient
 
-        // One-time cache wipe so pre-fix squished covers get re-downloaded below
-        // through CoverArtRepository.saveCover's corrected aspect-ratio-preserving path.
         repository.invalidateSquishedCoversIfNeeded()
 
         val games = try {
@@ -50,12 +41,9 @@ class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
             return Result.failure()
         }
 
-        // Prune orphaned covers (games deleted from library)
         val validIds = games.map { it.id }.toSet()
         repository.pruneCovers(validIds)
 
-        // Download/persist missing covers (remote HTTP(S) thumbnails — see
-        // CoverArtRepository.persistCover for the shared logic).
         var downloaded = 0
         var failed = 0
         games.forEach { game ->
@@ -74,7 +62,6 @@ class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
 
         Timber.i("CoverArtSyncWorker: downloaded=$downloaded failed=$failed total=${games.size}")
 
-        // Repack only when something changed
         if (downloaded > 0 || repository.packFile.exists().not()) {
             try {
                 repository.packCovers()
@@ -98,8 +85,6 @@ class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
                 )
         }
     }
-
-    // ── Dagger wiring (mirrors LibraryIndexWork pattern) ────────────────────
 
     @dagger.Module(subcomponents = [Subcomponent::class])
     abstract class Module {

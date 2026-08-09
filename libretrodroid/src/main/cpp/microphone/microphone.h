@@ -58,4 +58,4 @@ private:
 
 }
 
-#endif //LIBRETRODROID_MICROPHONE_H
+#endif

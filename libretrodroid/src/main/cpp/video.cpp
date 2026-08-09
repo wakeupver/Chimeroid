@@ -104,10 +104,7 @@ Video::~Video() {
         glDeleteBuffers(1, &quadVbo);
         quadVbo = 0;
     }
-    // renderer is a unique_ptr: cleaned up automatically, including on the
-    // exception path if construction fails partway (e.g. shader compilation
-    // failure in initializeRenderer()), which the previous raw-pointer +
-    // manual `delete` here could not guarantee.
+
 }
 
 void Video::compileShaderChain(const ShaderManager::Chain& shaders) {
@@ -150,13 +147,6 @@ void Video::renderFrame() {
     if (skipDuplicateFrames && !isDirty) return;
     isDirty = false;
 
-    // ── GL state reset ────────────────────────────────────────────────────────
-    // HW-accelerated cores (PPSSPP, SwanStation, ...) render through this same
-    // GL context and can leave blend/cull/stencil/scissor enabled with
-    // arbitrary funcs. Our own quad passes never intend to use any of these,
-    // so they're force-disabled every frame rather than assumed off; leaving
-    // any one enabled can silently turn the composited frame transparent,
-    // clipped, or culled away entirely.
     if (useES3) {
         glBindVertexArray(0);
     }
@@ -186,10 +176,6 @@ void Video::renderFrame() {
 
     updateProgram();
 
-    // Loop-invariant across every pass of this frame: the source texture's
-    // size and screen density don't change pass-to-pass, and the UV
-    // coordinate array is the same reference every time. Resolving them once
-    // avoids repeating the same trivial work once per shader pass.
     const float textureWidth = getTextureWidth();
     const float textureHeight = getTextureHeight();
     const float screenDensity = getScreenDensity();
@@ -250,8 +236,7 @@ void Video::uploadAndDraw(
     GLint posHandle,
     GLint coordHandle
 ) {
-    // Positions and UVs are both 12 floats (6 xy/st pairs), so one constant
-    // describes both halves of the interleaved buffer below.
+
     constexpr GLsizeiptr kQuadBytes = 12 * sizeof(float);
 
     glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
@@ -277,9 +262,7 @@ void Video::uploadAndDraw(
 float Video::getScreenDensity() {
     float textureWidth = getTextureWidth();
     float textureHeight = getTextureHeight();
-    // Texture size is 0 until the first frame is decoded; without this guard the
-    // division below produces Inf, which then feeds into the shader's screenDensity
-    // uniform (used by CRT/LCD/sharpen passes for scanline/pixel-grid math).
+
     if (textureWidth <= 0.0f || textureHeight <= 0.0f) {
         return 1.0f;
     }
@@ -351,13 +334,8 @@ Video::Video(
 
     glUseProgram(0);
 
-    // Store ES version so renderFrame() can issue the VAO reset guard.
     useES3 = renderingOptions.openglESVersion >= 3;
 
-    // Allocate the persistent quad VBO used in renderFrame().
-    // This ensures glVertexAttribPointer() always references VBO offsets,
-    // which is the only valid usage in GLES 3.0 and avoids corruption when
-    // a HW core leaves a foreign VBO bound after its retro_run() call.
     glGenBuffers(1, &quadVbo);
 
     initializeRenderer(renderingOptions);
@@ -368,10 +346,7 @@ void Video::updateShaderType(ShaderManager::Config shaderConfig) {
 }
 
 void Video::initializeRenderer(RenderingOptions renderingOptions) {
-    // Resolved once and reused below for both renderer construction (which,
-    // for the HW-accelerated path, needs the Chain to size its FBOs) and the
-    // initial GL program compilation, instead of calling
-    // ShaderManager::getShader() a second time for the same config.
+
     auto shaders = ShaderManager::getShader(requestedShaderConfig);
 
     if (renderingOptions.hardwareAccelerated) {
@@ -400,4 +375,4 @@ void Video::updateAspectRatio(float aspectRatio) {
     videoLayout.updateAspectRatio(aspectRatio);
 }
 
-} //namespace libretrodroid
+}

@@ -186,8 +186,7 @@ object GameMenuHelper {
                 true
             }
             "pref_game_section_patch_codes" -> {
-                // For TV: we cannot push a full compose navigation from here.
-                // Signal the host activity so it can launch a separate screen or dialog.
+
                 val resultIntent =
                     Intent().apply {
                         putExtra(GameMenuContract.RESULT_OPEN_PATCH_CODES, true)

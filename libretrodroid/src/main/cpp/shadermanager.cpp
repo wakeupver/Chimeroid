@@ -1294,7 +1294,6 @@ const std::string ShaderManager::cut3UpscalePass1Fragment =
     "  );\n"
     "}";
 
-
 const std::string ShaderManager::cut3UpscalePass2Vertex =
     "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
     "#define HIGHP highp\n"
@@ -1631,4 +1630,4 @@ bool ShaderManager::Pass::operator==(const ShaderManager::Pass &other) const {
     return this->linear == other.linear && this->scale == other.scale &&
            this->vertex == other.vertex && this->fragment == other.fragment;
 }
-} //namespace libretrodroid
+}

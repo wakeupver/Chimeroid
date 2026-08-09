@@ -18,20 +18,6 @@ import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
-/**
- * Transparent Activity for selecting the app-wide base storage directory.
- *
- * Cores always remain in internal storage (/data/data/<pkg>/files/cores).
- *
- * Flow (SAF-first, per Android storage standards):
- *  1. Launch the SAF tree picker directly — this step needs no dangerous permission.
- *  2. Persist a read/write grant for the chosen tree, scoped to this feature only.
- *  3. Validate the grant the Android-standard way (via DocumentFile) and reject
- *     providers that can't be mapped to a real path.
- *  4. Save the tree URI itself (not a derived path) as the base dir.
- *  5. Optionally, non-blockingly, offer MANAGE_EXTERNAL_STORAGE so the raw
- *     File-based I/O every consumer uses can reach the folder on API 30+.
- */
 class StorageBaseDirPicker : RetrogradeActivity() {
 
     @Inject
@@ -85,10 +71,6 @@ class StorageBaseDirPicker : RetrogradeActivity() {
         commitUri(uri)
     }
 
-    // -------------------------------------------------------------------------
-    // Commit
-    // -------------------------------------------------------------------------
-
     private fun commitUri(uri: Uri) {
         val realPath = SafUriHelper.treeUriToPath(uri)
         if (realPath == null) {
@@ -116,13 +98,6 @@ class StorageBaseDirPicker : RetrogradeActivity() {
         finish()
     }
 
-    /**
-     * The SAF grant above already suffices for DocumentFile-based access. Raw
-     * java.io.File I/O — used by every downstream consumer (saves, states,
-     * BIOS…) for performance — additionally needs MANAGE_EXTERNAL_STORAGE on
-     * Android 11+. Offered as a non-blocking follow-up rather than a gate, since
-     * the picker itself never needs a permission SAF doesn't require.
-     */
     private fun offerElevatedAccessIfNeeded(realPath: String) {
         if (SafUriHelper.hasExternalStorageAccess() || File(realPath).canWrite()) return
 
@@ -141,10 +116,6 @@ class StorageBaseDirPicker : RetrogradeActivity() {
                 .onFailure { Timber.w(it, "StorageBaseDirPicker: cannot open MANAGE_EXTERNAL_STORAGE settings") }
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private fun handleCancel() {
         if (mandatory) launchPicker() else finishWithCancel()

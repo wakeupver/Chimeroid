@@ -51,10 +51,9 @@ fun ChimeroidGameCard(
                     onLongClick = onLongClick,
                 ),
         ) {
-            // Cover art — fills width, 1:1 ratio enforced inside ChimeroidGameImage
+
             ChimeroidGameImage(game = game)
 
-            // Gradient scrim over bottom ~50% for text legibility
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -70,7 +69,6 @@ fun ChimeroidGameCard(
                     ),
             )
 
-            // Text overlay at bottom
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)

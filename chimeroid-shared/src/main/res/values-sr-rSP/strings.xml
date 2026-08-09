@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Аутоматско</string>
     <string name="controller_dos_mouse_left">Миш са левим штапом</string>
     <string name="controller_dos_mouse_right">Миш са десним штапом</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">Телевизијски ефекат</string>
     <string name="setting_stella_crop_hoverscan">Одсеци хоризонтални превелики скен</string>
     <string name="setting_fceumm_overscan_h">Одсеци хоризонтални превелики скен</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Оријентација</string>
     <string name="setting_wswan_mono_palette">Колоризација</string>
     <string name="setting_handy_rot">Ротација дисплеја</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Онемогућено</string>
     <string name="value_gambatte_mix_frames_mix">Једноставно</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">LCD духови (прецизно)</string>

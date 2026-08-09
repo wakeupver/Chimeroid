@@ -48,11 +48,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -144,9 +142,6 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
             val fullScreenPosition = remember { mutableStateOf<Rect?>(null) }
             val viewportPosition = remember { mutableStateOf<Rect?>(null) }
 
-            // Master visibility flag shared by the virtual gamepad so it never
-            // pops in ahead of controllerConfigState/touchControlsVisibleState
-            // still emitting their initial values.
             val isVisible =
                 touchControllerSettings != null &&
                     currentControllerConfig != null &&
@@ -165,7 +160,6 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
             val fullPos = fullScreenPosition.value
             val viewPos = viewportPosition.value
 
-            // Single-viewport mapping: GL surface bounds -> Compose viewport bounds
             LaunchedEffect(fullPos, viewPos) {
                 val gameView = viewModel.retroGameView.retroGameViewFlow()
                 if (fullPos == null || viewPos == null) return@LaunchedEffect
@@ -231,11 +225,8 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
                 }
             }
 
-        } // end PadKit
+        }
 
-        // ── OUTSIDE PadKit – macro overlay handles its own touch events ──
-        // PadKit swallows all raw input; placing the overlay here ensures
-        // detectDragGestures / detectTapGestures receive unfiltered events.
         val macroEditMode by viewModel.getMacroEditMode().collectAsState(false)
         val editDialogShown by viewModel.isEditControlShown().collectAsState(false)
 
@@ -261,10 +252,6 @@ fun MobileGameScreen(viewModel: BaseGameScreenViewModel) {
         }
     }
 }
-
-// ────────────────────────────────────────────────────────────────────────────
-// Drag-mode banner
-// ────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun MacroDragModeBanner(onDone: () -> Unit) {
@@ -308,10 +295,6 @@ private fun MacroDragModeBanner(onDone: () -> Unit) {
     }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Pad container background
-// ────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun PadContainer(modifier: Modifier = Modifier) {
     val theme = LocalChimeroidPadTheme.current
@@ -323,10 +306,6 @@ private fun PadContainer(modifier: Modifier = Modifier) {
         shadowWidth = theme.level0ShadowWidth,
     )
 }
-
-// ────────────────────────────────────────────────────────────────────────────
-// Central menu area (menu button + Edit Controls dialog)
-// ────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun GameScreenRunningCentralMenu(
@@ -349,12 +328,6 @@ private fun GameScreenRunningCentralMenu(
     }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Edit Controls dialog (sliders + macro management)
-// ────────────────────────────────────────────────────────────────────────────
-
-// Backs the data-driven loop below — avoids repeating the same
-// MenuEditTouchControlRow + Slider wiring once per settable dimension.
 private data class SliderRowSpec(
     val icon: ImageVector,
     val label: String,
@@ -383,7 +356,7 @@ private fun MenuEditTouchControls(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
-                // ── Dialog header ──────────────────────────────────────
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -419,7 +392,6 @@ private fun MenuEditTouchControls(
                 }
                 HorizontalDivider()
 
-                // ── Scrollable body ────────────────────────────────────
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -427,7 +399,6 @@ private fun MenuEditTouchControls(
                         .verticalScroll(rememberScrollState()),
                 ) {
 
-                // ── Layout section ─────────────────────────────────────
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -501,9 +472,8 @@ private fun MenuEditTouchControls(
                     }
                 }
 
-                } // end scrollable body
+                }
 
-                // ── Sticky footer: Reset / Done ────────────────────────
                 HorizontalDivider()
                 Row(
                     modifier = Modifier
@@ -523,10 +493,6 @@ private fun MenuEditTouchControls(
         }
     }
 }
-
-// ────────────────────────────────────────────────────────────────────────────
-// Slider row helper
-// ────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun MenuEditTouchControlRow(

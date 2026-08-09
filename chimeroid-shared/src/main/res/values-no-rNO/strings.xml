@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Automatisk</string>
     <string name="controller_dos_mouse_left">Mus med venstre spak</string>
     <string name="controller_dos_mouse_right">Mus med høyre spak</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">TV effekt</string>
     <string name="setting_stella_crop_hoverscan">Beskjær horisontalt overskann</string>
     <string name="setting_fceumm_overscan_h">Beskjær horisontalt overskann</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Retning</string>
     <string name="setting_wswan_mono_palette">Fargelegging</string>
     <string name="setting_handy_rot">Skjermrotasjon</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Deaktivert</string>
     <string name="value_gambatte_mix_frames_mix">Enkel</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">LCD Ghosting (Nøyaktig)</string>

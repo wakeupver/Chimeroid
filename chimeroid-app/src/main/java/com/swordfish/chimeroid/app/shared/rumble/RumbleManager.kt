@@ -37,8 +37,6 @@ class RumbleManager(
             applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
 
-    // limitedParallelism(1) gives single-threaded ordering without leaking a permanent OS thread
-    // the way newSingleThreadContext("Rumble") did.
     private val rumbleContext = kotlinx.coroutines.Dispatchers.Default.limitedParallelism(1)
 
     suspend fun collectAndProcessRumbleEvents(
@@ -48,9 +46,6 @@ class RumbleManager(
         val enableRumble = settingsManager.enableRumble()
         val rumbleSupported = systemCoreConfig.rumbleSupported
 
-        // Skip the pipeline if the user disabled rumble OR the core does not support it.
-        // Previously this used && (AND) which would still run the pipeline when rumble is
-        // disabled for a core that doesn't support it at all — pure wasted work.
         if (!enableRumble || !rumbleSupported) {
             return
         }

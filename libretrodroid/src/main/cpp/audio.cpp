@@ -57,9 +57,6 @@ bool Audio::initializeStream() {
         temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[audioBufferSize]);
         latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
 
-        // Reset PI controller state and resampler on every (re-)init so stale
-        // errorIntegral / framesToSubmit values from a previous stream session
-        // don't cause speed overshoot or underrun spikes on the new stream.
         errorIntegral = 0.0;
         framesToSubmit = 0.0;
         resampler.reset();
@@ -106,11 +103,7 @@ void Audio::stop() {
 }
 
 void Audio::write(const int16_t *data, size_t frames) {
-    // fifoBuffer stays null if initializeStream() failed to open a stream (e.g.
-    // no audio device / permission denied): the Audio object itself still
-    // constructs successfully, so this is reached on every audio-producing
-    // retro_run() rather than just once. Without this guard that's a null
-    // deref on every such frame instead of a silently-muted session.
+
     if (fifoBuffer) {
         fifoBuffer->write(data, frames * 2);
     }
@@ -121,33 +114,18 @@ void Audio::setPlaybackSpeed(const double newPlaybackSpeed) {
 }
 
 oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
-    // Fix: dt must be the real callback period in seconds.
-    // The original code used "0.001 * numFrames" which assumed a 1 kHz stream
-    // rate; the actual period is numFrames / sampleRate (~48 kHz), so the
-    // integral was accumulating ~48x too fast.  ki has been scaled up in
-    // audio.h to maintain the same convergence speed with the correct dt.
+
     double dt = static_cast<double>(numFrames) / oboeStream->getSampleRate();
     double dynamicBufferFactor = computeDynamicBufferConversionFactor(dt);
     double finalConversionFactor = baseConversionFactor * dynamicBufferFactor * playbackSpeed;
 
-    // Accumulate fractional frames to avoid rounding error at low numFrames
-    // (common with low-latency AAudio streams where numFrames ≈ 100).
     framesToSubmit += numFrames * finalConversionFactor;
     int32_t currentFramesToSubmit = std::round(framesToSubmit);
     framesToSubmit -= currentFramesToSubmit;
 
-    // Safety clamp: temporaryAudioBuffer holds audioBufferSize int16 values,
-    // i.e. audioBufferSize/2 stereo frames.  The FIFO is sized the same way
-    // (bytesPerFrame=2, capacity=audioBufferSize), so capacity/2 is the hard
-    // upper bound for a single read.
     int32_t maxSafeFrames = static_cast<int32_t>(fifoBuffer->getBufferCapacityInFrames()) / 2;
     currentFramesToSubmit = std::clamp(currentFramesToSubmit, 1, maxSafeFrames);
 
-    // Underrun guard: when the FIFO has less data than we need, output silence
-    // and reset the resampler's cross-callback state.  This avoids two crackle
-    // sources that readNow() zero-fill creates:
-    //   1. A hard 0-sample block fed into the resampler (waveform discontinuity)
-    //   2. Stale lastL/lastR being interpolated against real audio on recovery
     int64_t framesAvailable = fifoBuffer->getFullFramesAvailable();
     if (framesAvailable < static_cast<int64_t>(currentFramesToSubmit) * 2) {
         std::memset(audioData, 0, numFrames * 2 * sizeof(int16_t));
@@ -166,23 +144,16 @@ oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void
     return oboe::DataCallbackResult::Continue;
 }
 
-// To prevent audio buffer overruns or underruns we set up a PI controller. The idea is to run the
-// audio slower when the buffer is empty and faster when it's full.
 double Audio::computeDynamicBufferConversionFactor(double dt) {
     double framesCapacityInBuffer = fifoBuffer->getBufferCapacityInFrames();
     double framesAvailableInBuffer = fifoBuffer->getFullFramesAvailable();
 
-    // Error is represented by normalized distance to half buffer utilization. Range [-1.0, 1.0]
     double errorMeasure = (framesCapacityInBuffer - 2.0f * framesAvailableInBuffer) / framesCapacityInBuffer;
 
     errorIntegral += errorMeasure * dt;
 
-    // Wikipedia states that human ear resolution is around 3.6 Hz within the octave of 1000–2000 Hz.
-    // This changes continuously, so we should try to keep it a very low value.
     double proportionalAdjustment = std::clamp(kp * errorMeasure, -maxp, maxp);
 
-    // Ki is a lot lower, so it's safe if it exceeds the ear threshold. Hopefully convergence will
-    // be slow enough to be not perceptible. We need to battle test this value.
     double integralAdjustment = std::clamp(ki * errorIntegral, -maxi, maxi);
 
     double finalAdjustment = proportionalAdjustment + integralAdjustment;
@@ -209,4 +180,4 @@ void Audio::onErrorAfterClose(oboe::AudioStream* oldStream, oboe::Result result)
     }
 }
 
-} //namespace libretrodroid
+}

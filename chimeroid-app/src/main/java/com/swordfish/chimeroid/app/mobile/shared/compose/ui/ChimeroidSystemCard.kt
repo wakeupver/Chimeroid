@@ -49,11 +49,10 @@ fun ChimeroidSystemCard(
         onClick = onClick,
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Image area with count badge overlay
+
             Box(modifier = Modifier.fillMaxWidth()) {
                 ChimeroidSystemImage(system)
 
-                // Game count badge — top-right corner
                 Surface(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -71,7 +70,6 @@ fun ChimeroidSystemCard(
                 }
             }
 
-            // Title + subtitle row
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

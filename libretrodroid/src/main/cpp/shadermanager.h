@@ -100,4 +100,4 @@ public:
 
 }
 
-#endif //LIBRETRODROID_SHADERMANAGER_H
+#endif

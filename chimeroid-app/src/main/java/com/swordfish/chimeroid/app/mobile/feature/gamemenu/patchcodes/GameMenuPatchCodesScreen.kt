@@ -39,10 +39,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -64,7 +62,6 @@ fun GameMenuPatchCodesScreen(viewModel: GameMenuPatchCodesViewModel) {
     var showAddDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // File picker for .cht files
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri: Uri? ->
@@ -73,7 +70,6 @@ fun GameMenuPatchCodesScreen(viewModel: GameMenuPatchCodesViewModel) {
         }
     }
 
-    // Observe import results and show snackbar
     LaunchedEffect(Unit) {
         viewModel.importResult.collect { result ->
             val message = when (result) {
@@ -90,12 +86,11 @@ fun GameMenuPatchCodesScreen(viewModel: GameMenuPatchCodesViewModel) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             Column(horizontalAlignment = Alignment.End) {
-                // Import .cht file FAB (small, above main FAB)
+
                 SmallFloatingActionButton(
                     onClick = {
                         filePicker.launch(
-                            // Accept .cht and any text-based file since some file managers
-                            // don't recognise the .cht MIME type
+
                             arrayOf("*/*"),
                         )
                     },
@@ -107,7 +102,7 @@ fun GameMenuPatchCodesScreen(viewModel: GameMenuPatchCodesViewModel) {
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                // Add manually FAB
+
                 FloatingActionButton(onClick = { showAddDialog = true }) {
                     Icon(
                         imageVector = Icons.Default.Add,

@@ -18,28 +18,10 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
     companion object {
         private val THUMB_REPLACE = Regex("[&*/:`<>?\\\\|]")
 
-        /** libretro-thumbnails subfolder for front box art (as opposed to Named_Snaps / Named_Titles). */
         private const val IMAGE_TYPE = "Named_Boxarts"
 
-        /**
-         * Matches "Title (FirstTag)" — No-Intro/Redump/TOSEC dumps always put the release
-         * region as the first parenthetical group right after the title. Used to strip
-         * trailing language/version/demo tags before guessing a thumbnail filename, since
-         * libretro-thumbnails catalogues releases under that first group in the vast majority
-         * of cases (see [stripSecondaryTags]).
-         */
         private val FIRST_TAG_ONLY = Regex("""^.+? \([^()]*\)""")
 
-        /**
-         * LRU cache for filename → LibretroRom lookups.
-         *
-         * findByFilename / findByPathAndFilename both call [LibretroDatabase.gameDao().findByFileName].
-         * During a library scan the same filename can be queried multiple times (once per lookup
-         * strategy). A small cache avoids redundant SQLite round-trips which, on a read-only
-         * asset-backed database, will always return the same result for the same input.
-         *
-         * 2 000 entries × ~500 B per LibretroRom ≈ ~1 MB peak — safe for all devices.
-         */
         private const val FILENAME_CACHE_SIZE = 2_000
     }
 
@@ -61,17 +43,12 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         val metadata =
             runCatching {
                 val db = ovgdbManager.getDatabase()
-                // ── DB-based lookups (thumbnail from the matched libretro-DB name) ─────
-                // Must be tried before the extension/system fast-paths below. Previously
-                // findByUniqueExtension ran first and short-circuited everything, so
-                // coverFrontUrl was always null for unique-extension files (.sfc, .gba, .nes, .gb, …).
+
                 findByFilename(db, storageFile)
                     ?: findByPathAndFilename(db, storageFile)
                     ?: findBySerial(storageFile, db)
                     ?: findByCRC(storageFile, db)
-                    // ── Fallbacks: no libretro-DB record — thumbnail is now fetched by
-                    // guessing from the ROM's own filename instead of being left blank
-                    // (see buildFallbackMetadata) ───────────────────────────────────────
+
                     ?: findByUniqueExtension(storageFile)
                     ?: findByKnownSystem(storageFile)
                     ?: findByPathAndSupportedExtension(storageFile)
@@ -97,15 +74,13 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         )
     }
 
-    /** Returns a cached DB lookup by filename, populating the cache on a miss. */
     private suspend fun cachedFindByFileName(
         db: LibretroDatabase,
         name: String,
     ): LibretroRom? {
-        // Fast path: in cache (hit or deliberate null sentinel)
+
         synchronized(filenameCache) { if (filenameCache.containsKey(name)) return filenameCache[name] }
 
-        // Slow path: DB query, then cache result (including null so we don't query again)
         val result = db.gameDao().findByFileName(name)
         synchronized(filenameCache) { filenameCache[name] = result }
         return result
@@ -124,7 +99,7 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         db: LibretroDatabase,
         file: StorageFile,
     ): GameMetadata? {
-        // Re-uses the cache — no extra DB hit even when called right after findByFilename.
+
         return cachedFindByFileName(db, file.name)
             .filterNullable { extractGameSystemOrNull(it)?.scanOptions?.scanByPathAndFilename == true }
             .filterNullable { rom ->
@@ -157,9 +132,9 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         file: StorageFile,
         db: LibretroDatabase,
     ): GameMetadata? {
-        // Capture to local var — Kotlin cannot smart-cast cross-module public val properties.
+
         val crc = file.crc?.takeIf { it != "0" } ?: return null
-        // Libretro DB stores CRC as 8-char uppercase hex — normalise before querying.
+
         return db.gameDao().findByCRC(crc.uppercase(Locale.US))
             ?.let { convertToGameMetadata(it) }
     }
@@ -175,9 +150,7 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
 
     private fun findByKnownSystem(file: StorageFile): GameMetadata? {
         val systemID = file.systemID ?: return null
-        // Best-effort thumbnail guess by filename. A missing GameSystem entry (shouldn't
-        // happen — every SystemID has one, verified 1:1 in GameSystem.SYSTEMS) just
-        // degrades to no thumbnail instead of ever crashing or dropping the game.
+
         val system = GameSystem.findByIdOrNull(systemID.dbname)
 
         return GameMetadata(
@@ -199,21 +172,9 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
         return buildFallbackMetadata(file, system)
     }
 
-    /**
-     * Returns the [GameSystem] for the given [rom], or null if [LibretroRom.system] is null or
-     * refers to a system not known to this build (e.g. a future DB addition).
-     */
     private fun extractGameSystemOrNull(rom: LibretroRom): GameSystem? =
         rom.system?.let { GameSystem.findByIdOrNull(it) }
 
-    /**
-     * Builds [GameMetadata] for a system-only match with no libretro-DB record for this ROM
-     * (see [findByPathAndSupportedExtension], [findByUniqueExtension]). [thumbnail] is still
-     * attempted — via [computeCoverUrl] — by guessing the libretro-thumbnails filename from the
-     * ROM's own name: No-Intro/Redump/TOSEC-style dump names frequently already match the
-     * thumbnail server's naming convention even without a DB hit, so cover art is fetched by
-     * filename instead of being left permanently blank for every unrecognised ROM.
-     */
     private fun buildFallbackMetadata(
         file: StorageFile,
         system: GameSystem,
@@ -226,28 +187,17 @@ class LibretroDBMetadataProvider(private val ovgdbManager: LibretroDBManager) :
             developer = null,
         )
 
-    /**
-     * Drops every parenthetical tag after the first (see [FIRST_TAG_ONLY]) — e.g.
-     * "Title (USA) (En,Fr,De) (v1.01)" → "Title (USA)". A no-op when [name] has zero or
-     * one tag, so it never changes an already-matching guess.
-     */
     private fun stripSecondaryTags(name: String): String = FIRST_TAG_ONLY.find(name)?.value ?: name
 
-    /** Builds a `thumbnails.libretro.com` Named_Boxarts URL guess for [name], or null if [name] is null. */
     private fun computeCoverUrl(
         system: GameSystem,
         name: String?,
     ): String? {
         name ?: return null
 
-        // Specific MAME version has no thumbnails under its own name in the Libretro database.
         val systemName = if (system.id == SystemID.MAME2003PLUS) "MAME" else system.libretroFullName
         val thumbGameName = name.replace(THUMB_REPLACE, "_")
 
-        // Uri.encode() percent-encodes spaces and other illegal URL characters while
-        // leaving unreserved chars (A-Z a-z 0-9 _ - ! . ~ ' ( )) intact.
-        // Without this, system names like "Nintendo - Super Nintendo Entertainment System"
-        // produce invalid URLs that OkHttp rejects, silently breaking all cover downloads.
         val encodedSystem = Uri.encode(systemName)
         val encodedThumb = Uri.encode(thumbGameName)
 

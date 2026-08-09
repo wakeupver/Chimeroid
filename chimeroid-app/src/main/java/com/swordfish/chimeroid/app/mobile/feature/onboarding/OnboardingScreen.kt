@@ -71,11 +71,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -102,8 +100,6 @@ import kotlinx.coroutines.launch
 
 private val ReadyColor = Color(0xFF1B8A5A)
 
-// Single source of truth for a setup item's (label, color) pair — replaces what was
-// previously a hand-computed ternary/when pair duplicated at every SetupCard call site.
 private enum class SetupItemStatus { READY, REQUIRED, OPTIONAL, INVALID }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -127,7 +123,6 @@ fun OnboardingScreen(
 
     val pagerState = rememberPagerState(pageCount = { uiState.totalPages })
 
-    // Sync pager ↔ viewModel
     LaunchedEffect(pagerState.currentPage) {
         if (pagerState.currentPage != uiState.currentPage) viewModel.setCurrentPage(pagerState.currentPage)
     }
@@ -135,27 +130,22 @@ fun OnboardingScreen(
         if (pagerState.currentPage != uiState.currentPage) pagerState.animateScrollToPage(uiState.currentPage)
     }
 
-    // ROMs folder picker (SAF)
     val romsFolderPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
     ) { uri: Uri? -> uri?.let(viewModel::setRomsDirectory) }
 
-    // Base directory picker (StorageBaseDirPicker activity)
     val baseDirLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
     ) { viewModel.refreshBaseDirectory() }
 
-    // All-files access launcher
     val allFilesLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
     ) { viewModel.refreshAllFilesAccess() }
 
-    // Notification permission launcher
     val notificationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
     ) { viewModel.refreshNotificationPermission() }
 
-    // Refresh on every ON_RESUME (returning from settings)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -168,7 +158,6 @@ fun OnboardingScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Action lambdas
     val launchAllFilesAccess: () -> Unit = {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             viewModel.refreshAllFilesAccess()
@@ -216,7 +205,6 @@ fun OnboardingScreen(
         }
     }
 
-    // Fade-out during completion
     val contentAlpha by animateFloatAsState(
         targetValue = if (isCompleting) 0.3f else 1f,
         animationSpec = tween(280),
@@ -228,7 +216,6 @@ fun OnboardingScreen(
         label = "onboarding-offset",
     )
 
-    // Background orb animation
     val bgMotion = rememberInfiniteTransition(label = "bg")
     val orb1X by bgMotion.animateFloat(-18f, 42f, infiniteRepeatable(tween(5200), RepeatMode.Reverse), label = "o1x")
     val orb1Y by bgMotion.animateFloat(-12f, 34f, infiniteRepeatable(tween(6100), RepeatMode.Reverse), label = "o1y")
@@ -248,7 +235,7 @@ fun OnboardingScreen(
                 ),
             ),
     ) {
-        // Decorative orbs
+
         Box(
             modifier = Modifier
                 .padding(start = 28.dp)
@@ -267,7 +254,6 @@ fun OnboardingScreen(
                 .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.10f)),
         )
 
-        // Main content
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -301,7 +287,6 @@ fun OnboardingScreen(
             }
         }
 
-        // Completing overlay
         AnimatedVisibility(
             visible = isCompleting,
             modifier = Modifier.align(Alignment.Center),
@@ -329,10 +314,6 @@ fun OnboardingScreen(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Bundled navigation + permission-request callbacks shared by both orientations
-// ─────────────────────────────────────────────────────────────────────────────
-
 private class OnboardingActions(
     val onNext: () -> Unit,
     val onPrevious: () -> Unit,
@@ -342,10 +323,6 @@ private class OnboardingActions(
     val onPickBaseDir: () -> Unit,
     val onPickRomsFolder: () -> Unit,
 )
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Portrait layout
-// ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -386,7 +363,6 @@ private fun PortraitContent(
             }
         }
 
-        // Fixed bottom: indicator + nav
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -412,10 +388,6 @@ private fun PortraitContent(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Landscape layout
-// ─────────────────────────────────────────────────────────────────────────────
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LandscapeContent(
@@ -427,7 +399,7 @@ private fun LandscapeContent(
     Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
             Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-            // Left pane: hero
+
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -442,7 +414,7 @@ private fun LandscapeContent(
                     3 -> OnboardingHeroSetup(showSubtitle = false)
                 }
             }
-            // Right pane: content / subtitle
+
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -486,7 +458,6 @@ private fun LandscapeContent(
         }
     }
 
-    // Bottom nav
     Column(
         modifier = Modifier
             .align(Alignment.BottomEnd)
@@ -508,12 +479,8 @@ private fun LandscapeContent(
             onGetStarted = actions.onGetStarted,
         )
     }
-    } // close Box
+    }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Hero sections
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun OnboardingHero(
@@ -585,10 +552,6 @@ private fun OnboardingHeroSetup(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Page indicator
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun OnboardingPageIndicator(currentPage: Int, totalPages: Int, modifier: Modifier = Modifier) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -609,10 +572,6 @@ private fun OnboardingPageIndicator(currentPage: Int, totalPages: Int, modifier:
         }
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Navigation row
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun OnboardingNavigation(
@@ -684,10 +643,6 @@ private fun OnboardingNavigation(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Setup content — 3 cards: grant access, base dir, ROMs folder
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun OnboardingSetupContent(
     uiState: OnboardingUiState,
@@ -701,7 +656,6 @@ private fun OnboardingSetupContent(
 
     Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
 
-        // 1. Grant full file access — Required
         SetupCard(
             icon = Icons.Rounded.Lock,
             title = stringResource(R.string.onboarding_all_files_title),
@@ -712,7 +666,6 @@ private fun OnboardingSetupContent(
 
         Spacer(Modifier.height(8.dp))
 
-        // 2. Allow notifications — Optional
         SetupCard(
             icon = Icons.Rounded.Notifications,
             title = stringResource(R.string.onboarding_notification_title),
@@ -723,7 +676,6 @@ private fun OnboardingSetupContent(
 
         Spacer(Modifier.height(8.dp))
 
-        // 3. Choose base directory — Optional
         SetupCard(
             icon = Icons.Rounded.FolderOpen,
             title = stringResource(R.string.onboarding_base_dir_title),
@@ -735,7 +687,6 @@ private fun OnboardingSetupContent(
 
         Spacer(Modifier.height(8.dp))
 
-        // 4. Choose ROMs folder — Required
         SetupCard(
             icon = Icons.Rounded.FolderOpen,
             title = stringResource(R.string.onboarding_roms_title),
@@ -752,7 +703,6 @@ private fun OnboardingSetupContent(
 
         Spacer(Modifier.height(10.dp))
 
-        // Summary card
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
@@ -778,10 +728,6 @@ private fun OnboardingSetupContent(
         }
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Setup card
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun SetupCard(

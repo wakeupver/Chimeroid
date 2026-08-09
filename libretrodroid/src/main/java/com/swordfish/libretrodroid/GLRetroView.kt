@@ -63,41 +63,19 @@ class GLRetroView(
         LibretroDroid.setShaderConfig(buildShader(value))
     }
 
-    // Latest known GL surface size in pixels, set from onSurfaceChanged() (GL thread).
-    // Needed by refreshStretchToFillOverride() to compute the *effective* viewport's
-    // pixel aspect ratio - see its kdoc for why the raw surface size alone is wrong.
     private var surfaceWidth: Int = 0
     private var surfaceHeight: Int = 0
 
     var viewport: RectF by Delegates.observable(RectF(0f, 0f, 1f, 1f)) { _, old, value ->
         if (old == value) return@observable
-        // Posted, not blocking: see postToEmulationThread() kdoc. Blocking here would stall
-        // Compose's layout thread behind whatever the GL thread is doing — often core/ROM
-        // loading right after the view attaches — which is what produced multi-second
-        // freezes/ANRs when opening a game.
+
         postToEmulationThread {
             LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())
-            // Viewport can change independently of the surface (e.g. on-screen controls
-            // being shown/hidden/resized). Without this, "Fill" silently reverts to
-            // letterboxing until some unrelated onSurfaceChanged() happens to fire.
+
             refreshStretchToFillOverride()
         }
     }
 
-    /**
-     * "Stretch to fill" is implemented as an aspect-ratio override equal to the
-     * *effective* viewport's pixel aspect ratio - not the raw surface's. The native
-     * contain-fit in VideoLayout compares this override against screenWidth/Height *
-     * viewportRect, so using the raw surface aspect ratio only produces zero
-     * letterboxing when viewport happens to cover the full surface. The moment
-     * viewport is a sub-rect (on-screen controls reserving space - the common case
-     * on phones without a controller), the two aspect ratios diverge and "Fill" still
-     * shows bars, defeating the entire point of the mode.
-     *
-     * Must be recomputed whenever either the surface size or the viewport rect
-     * changes, so this is called from both onSurfaceChanged() and the viewport
-     * setter above rather than only from one of the two triggers.
-     */
     private fun refreshStretchToFillOverride() {
         val viewportWidthPx = surfaceWidth * viewport.width()
         val viewportHeightPx = surfaceHeight * viewport.height()
@@ -216,28 +194,14 @@ class GLRetroView(
         }
     }
 
-    /** Clears every previously applied cheat (native retro_cheat_reset()). */
     fun resetCheat(useEmulationThread: Boolean = true) {
         runOnEmulationThread(useEmulationThread) {
             LibretroDroid.resetCheat()
         }
     }
 
-    /** One cheat slot: `enabled` flag plus its raw libretro code string. */
     data class CheatCode(val enabled: Boolean, val code: String)
 
-    /**
-     * Resets all previously applied cheats and applies [codes] by list position, in a single
-     * non-blocking post to the GL/emulation thread.
-     *
-     * This is the batched equivalent of calling [resetCheat] followed by N [setCheat] calls:
-     * doing that from a caller thread instead would mean N sequential blocking round-trips
-     * (each via runOnEmulationThread's CountDownLatch), which is the exact ANR pattern
-     * [postToEmulationThread]'s kdoc documents for viewport — here it also
-     * scales with the cheat list size, so it matters even more for larger imported lists.
-     * Resetting first (rather than only setting indices 0..codes.lastIndex) also avoids
-     * leaving a stale/"ghost" cheat active at any index beyond the new list's size.
-     */
     fun resetAndApplyCheats(codes: List<CheatCode>) {
         postToEmulationThread {
             LibretroDroid.resetCheat()
@@ -371,20 +335,9 @@ class GLRetroView(
         return super.onGenericMotionEvent(event)
     }
 
-    // These functions are called only after the GLSurfaceView has been created.
     private inner class RenderLifecycleObserver : DefaultLifecycleObserver {
         override fun onResume(owner: LifecycleOwner) = catchExceptions {
-            // ON_RESUME fires on the lifecycle-owner (main) thread at the same moment the
-            // GL thread enters onSurfaceCreated() to load the core/ROM — multiple seconds
-            // for heavier cores, longer still for GPU-accelerated cores with their FBO/shader
-            // setup. runOnEmulationThread(true) blocked this thread on a CountDownLatch
-            // until that load finished: the multi-second freeze/ANR reported opening some
-            // games — same issue already fixed below for viewport, just never migrated to
-            // this call site. Posting instead of
-            // blocking removes the stall; isEmulationReady is flipped inside the posted
-            // block so its write and the GL-thread read in Renderer.onDrawFrame() stay on
-            // one thread. LibretroDroid.resume() is itself null-guarded natively against
-            // running before onSurfaceCreated() finishes (see its fpsSync/audio checks).
+
             postToEmulationThread {
                 LibretroDroid.resume()
                 isEmulationReady = true
@@ -403,9 +356,7 @@ class GLRetroView(
         override fun onDrawFrame(gl: GL10) = catchExceptions {
             if (isEmulationReady) {
                 LibretroDroid.step(this@GLRetroView)
-                // tryEmit avoids allocating a new coroutine on every single frame
-                // (this runs at up to 60fps on the GL thread); it's non-suspending
-                // and safe to call directly here, unlike emit().
+
                 retroGLEventsSubject.tryEmit(GLRetroEvents.FrameRendered)
             }
         }
@@ -418,7 +369,6 @@ class GLRetroView(
             refreshStretchToFillOverride()
         }
 
-
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) = catchExceptions {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             initializeCore()
@@ -428,7 +378,6 @@ class GLRetroView(
         }
     }
 
-    // These functions are called from the GL thread.
     private fun initializeCore() = catchExceptions {
         if (isGameLoaded) return@catchExceptions
         when {
@@ -449,10 +398,7 @@ class GLRetroView(
     }
 
     private fun loadGameFromVirtualFiles(virtualFiles: List<VirtualFile>) {
-        // We do NOT call detachFd() here. Native code (FDWrapper) dup()s the raw fd to obtain
-        // an untagged copy, so the original ParcelFileDescriptor retains ownership and is closed
-        // normally by Java when the VirtualFile list goes out of scope. This prevents the fdsan
-        // SIGABRT that occurs when close() is called on a fd still tagged by a unique_fd.
+
         val detachedVirtualFiles = virtualFiles
             .map { DetachedVirtualFile(it.virtualPath, it.fileDescriptor.fd) }
         LibretroDroid.loadGameFromVirtualFiles(detachedVirtualFiles)
@@ -499,22 +445,6 @@ class GLRetroView(
         return result!!
     }
 
-    /**
-     * Posts [block] to the GL/emulation thread without blocking the caller.
-     *
-     * For fire-and-forget config pushes (viewport) whose observable
-     * delegate callback returns Unit — nothing reads a result back, so there is nothing to
-     * wait for. [runOnEmulationThread] blocks the caller until the GL thread drains its
-     * event queue, which is correct when a return value is needed (state serialization,
-     * cheats, disk changes) but wrong here: right after the view attaches, the GL thread is
-     * busy inside onSurfaceCreated() loading the core/ROM — which can take seconds for
-     * heavier cores — so a caller blocked on that same queue stalls the whole UI thread
-     * until loading finishes. That was the multi-second freeze / ANR seen when opening a
-     * game. The native setter this backs (setViewport) is already null-safe and buffers
-     * the latest value in a member field (see LibretroDroid::setViewport), so queuing
-     * without waiting is safe: the value is picked up the moment the emulation object
-     * exists, with no caller stall.
-     */
     private inline fun postToEmulationThread(crossinline block: () -> Unit) {
         if (Thread.currentThread().name.startsWith("GLThread")) {
             block()
@@ -601,21 +531,12 @@ class GLRetroView(
             .associate { (key, value) -> key to value!! }
     }
 
-    /** This function gets called from the jni side.*/
     private fun sendRumbleEvent(port: Int, strengthWeak: Float, strengthStrong: Float) {
         lifecycle?.coroutineScope?.launch {
             rumbleEventsSubject.emit(RumbleEvent(port, strengthWeak, strengthStrong))
         }
     }
 
-    /**
-     * This function gets called from the jni side, from the GL thread, inside step(), whenever
-     * requiresVideoRefresh() is true. Looked up by name via JNI reflection
-     * (GetMethodID(cls, "refreshAspectRatio", "()V")) rather than any Kotlin call site, so it
-     * must not be removed as dead code: doing so leaves the native lookup resolving to a null
-     * jmethodID, which aborts the process on the next CallVoidMethod (JNI DETECTED ERROR:
-     * mid == null).
-     */
     private fun refreshAspectRatio() {
         runOnEmulationThread(true) {
             LibretroDroid.refreshAspectRatio()

@@ -20,11 +20,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.swordfish.chimeroid.R
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Single source of truth for top-bar geometry. HomeScreen's collapsing header
-// and the shared top bar (every other route) both read these values so their
-// sizing/insets can never silently drift apart again.
-// ─────────────────────────────────────────────────────────────────────────────
 object ChimeroidTopBarDefaults {
     val Height: Dp = 56.dp
     val HomeExpandedHeight: Dp = 156.dp
@@ -33,12 +28,6 @@ object ChimeroidTopBarDefaults {
     val ShadowElevation: Dp = 4.dp
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared top-bar row: optional leading nav icon, a flexible title slot, and a
-// trailing actions slot — pinned to ChimeroidTopBarDefaults.Height. Used as-is
-// on non-Home routes, and pinned at the top of HomeScreen's animated header so
-// both stay pixel-identical once fully collapsed.
-// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun ChimeroidTopBarChrome(
     modifier: Modifier = Modifier,
@@ -62,10 +51,6 @@ fun ChimeroidTopBarChrome(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Info | Save-sync (optional) | Settings (optional) — the app's standard
-// top-bar actions, shared verbatim between HomeScreen and every other route.
-// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun ChimeroidTopBarActions(
     onHelpPressed: () -> Unit,

@@ -20,7 +20,7 @@ import com.swordfish.chimeroid.app.shared.systems.MetaSystemInfo
 @Composable
 fun ChimeroidSystemImage(system: MetaSystemInfo) {
     val baseColor = Color(system.metaSystem.color())
-    // Radial gradient: bright at centre, darker at edges → gives a lit-from-above feel
+
     Box(
         modifier = Modifier
             .fillMaxWidth()

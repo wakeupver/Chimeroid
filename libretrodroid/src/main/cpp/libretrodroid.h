@@ -136,7 +136,6 @@ public:
 
     void resetGlobalVariables();
 
-    // Handle callbacks
     void handleVideoRefresh(const void *data, unsigned width, unsigned height, size_t pitch);
     size_t handleAudioCallback(const int16_t* data, size_t frames);
     int16_t handleSetInputState(unsigned port, unsigned device, unsigned index, unsigned id);
@@ -186,6 +185,6 @@ private:
     std::unique_ptr<Rumble> rumble;
 };
 
-} //namespace libretrodroid
+}
 
-#endif //LIBRETRODROID_LIBRETRODROID_H
+#endif

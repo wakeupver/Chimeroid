@@ -184,7 +184,7 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
 
             Scaffold(
                 topBar = {
-                    // HOME manages its own collapsing header — hide shared TopBar there
+
                     if (currentRoute != MainRoute.HOME) {
                         MainTopBar(
                             currentRoute = currentRoute,
@@ -205,11 +205,7 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                     composable(MainRoute.HOME) {
                         val layoutDirection = LocalLayoutDirection.current
                         HomeScreen(
-                            // top intentionally excluded: HomeCollapsingHeader
-                            // self-handles the status-bar inset directly, decoupled
-                            // from Scaffold's shared `padding` (see MainTopBar's
-                            // empty-topBar-for-HOME comment above) so Home's layout
-                            // can't jump when another route's topBar mounts/unmounts.
+
                             modifier = Modifier.padding(
                                 start = padding.calculateStartPadding(layoutDirection),
                                 end = padding.calculateEndPadding(layoutDirection),
@@ -419,8 +415,7 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                 }
             }
             com.swordfish.chimeroid.app.shared.settings.StorageBaseDirPicker.REQUEST_CODE_PICK_DIR -> {
-                // Result already processed inside StorageBaseDirPicker itself.
-                // Nothing extra needed here.
+
             }
         }
     }

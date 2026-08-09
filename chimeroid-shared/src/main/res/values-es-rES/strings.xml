@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Automático</string>
     <string name="controller_dos_mouse_left">Ratón con análogo izquierdo</string>
     <string name="controller_dos_mouse_right">Ratón con análogo derecho</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">Efecto de TV</string>
     <string name="setting_stella_crop_hoverscan">Recortar excedente horizontal</string>
     <string name="setting_fceumm_overscan_h">Recortar excedente horizontal</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Orientación</string>
     <string name="setting_wswan_mono_palette">Colorización</string>
     <string name="setting_handy_rot">Rotación de pantalla</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Desactivado</string>
     <string name="value_gambatte_mix_frames_mix">Simple</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">Ghosting LCD (Preciso)</string>

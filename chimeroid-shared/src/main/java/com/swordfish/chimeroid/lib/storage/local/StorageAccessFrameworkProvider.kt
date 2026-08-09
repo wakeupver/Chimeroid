@@ -53,9 +53,6 @@ class StorageAccessFrameworkProvider(private val context: Context) : StorageProv
         return preferenceManager.getString(prefString, null)
     }
 
-    /**
-     * Traverses directories in parallel using channelFlow + recursive coroutine launches.
-     */
     private fun traverseDirectoryEntries(rootUri: Uri): Flow<List<BaseStorageFile>> =
         channelFlow {
             val rootDocumentId = DocumentsContract.getTreeDocumentId(rootUri) ?: return@channelFlow
@@ -132,19 +129,12 @@ class StorageAccessFrameworkProvider(private val context: Context) : StorageProv
 
         val isZipped = originalDocument.isZipped() && originalDocument.name != game.fileName
 
-        // allowVirtualFiles mirrors the user's "Allow Direct Game Load" setting. When it is
-        // off we must never fall back to fd-detach + /proc/self/fd — that path exists
-        // specifically as an opt-in for providers that don't expose a real filesystem path,
-        // and some devices/cores handle it worse than a plain cached copy. Honoring the flag
-        // here (instead of always taking the fd path) is what makes the setting meaningful.
         return when {
             isZipped -> getGameRomFilesZipped(game, originalDocument)
             allowVirtualFiles -> getGameRomFilesDirect(game, dataFiles)
             else -> getGameRomFilesCached(game, dataFiles)
         }
     }
-
-    // ── ZIP path ────────────────────────────────────────────────────────────────
 
     private fun getGameRomFilesZipped(
         game: Game,
@@ -158,45 +148,17 @@ class StorageAccessFrameworkProvider(private val context: Context) : StorageProv
         return RomFiles(files = listOf(cacheFile))
     }
 
-    // ── Direct (no-copy) path ────────────────────────────────────────────────
-
-    /**
-     * Loads all ROM files without copying a single byte to the cache.
-     *
-     * Mirrors the technique used by PPSSPP in ContentUri.java → openContentUri():
-     *
-     *   pfd = contentResolver.openFileDescriptor(uri, "r")
-     *   fd  = pfd.detachFd()   ← "Take ownership of the fd" (PPSSPP comment)
-     *
-     * After [android.os.ParcelFileDescriptor.detachFd] the Java PFD wrapper is invalidated,
-     * but the underlying kernel file-descriptor remains open and owned by our process.
-     * There is no GC risk — the int fd is just a number; nothing will close it until we
-     * explicitly adopt + close it via [closeDetachedFds] in onCleared().
-     *
-     * The path "/proc/self/fd/{fd}" is a stable symlink the kernel maintains for every
-     * open fd in the process. libretrodroid opens this path exactly like a real file.
-     *
-     * For URIs that resolve to a real filesystem path (primary storage, SD card) we skip
-     * the fd entirely — zero overhead, purest possible load.
-     *
-     * If resolving any file in the set fails partway through, every fd already detached in
-     * this call is closed before the exception propagates — otherwise a failed multi-disc
-     * load would leak one kernel fd per file that succeeded before the failure, and repeated
-     * failed attempts would eventually exhaust the process's fd limit.
-     */
     private fun getGameRomFilesDirect(game: Game, dataFiles: List<DataFile>): RomFiles {
         val detachedFds = mutableListOf<Int>()
 
         fun resolveUri(uri: Uri): File {
-            // Fast path: real filesystem path — no fd needed at all.
+
             resolveRealFilePath(uri)?.let { return it }
 
-            // PPSSPP path: detachFd() → /proc/self/fd/N.
-            // pfd is invalidated immediately after detachFd(); the kernel fd lives on.
             val pfd =
                 context.contentResolver.openFileDescriptor(uri, "r")
                     ?: error("$TAG: cannot open file descriptor for $uri")
-            val rawFd = pfd.detachFd() // ← "Take ownership of the fd" — identical to PPSSPP
+            val rawFd = pfd.detachFd()
             detachedFds += rawFd
             Timber.d("$TAG: detached fd=$rawFd for $uri -> /proc/self/fd/$rawFd")
             return File("/proc/self/fd/$rawFd")
@@ -212,14 +174,6 @@ class StorageAccessFrameworkProvider(private val context: Context) : StorageProv
         }
     }
 
-    // ── Cached fallback (direct-load disabled) ────────────────────────────────
-
-    /**
-     * Safe fallback for when "Allow Direct Game Load" is off: real filesystem paths are
-     * still used as-is (zero overhead), but any URI that would otherwise require the fd
-     * trick is instead copied once into the cache. No fd is ever opened here, so there is
-     * nothing to detach, track, or leak — trading a one-time copy for maximum compatibility.
-     */
     private fun getGameRomFilesCached(game: Game, dataFiles: List<DataFile>): RomFiles {
         fun resolveOrCache(uri: Uri, cacheFile: File): File {
             resolveRealFilePath(uri)?.let { return it }
@@ -245,13 +199,6 @@ class StorageAccessFrameworkProvider(private val context: Context) : StorageProv
         return RomFiles(files = listOf(gameFile) + dataFileItems)
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
-
-    /**
-     * Resolves a SAF content URI to a real [File] path without opening the file.
-     * Handles the primary volume and removable SD cards.
-     * Returns null when the real path cannot be determined (caller should fall back).
-     */
     private fun resolveRealFilePath(uri: Uri): File? {
         return try {
             if (uri.scheme == "file") return File(uri.path ?: return null)

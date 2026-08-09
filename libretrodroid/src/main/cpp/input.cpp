@@ -103,7 +103,7 @@ int16_t Input::getInputState(unsigned port, unsigned device, unsigned index, uns
         }
 
         case RETRO_DEVICE_POINTER: {
-            // TODO... Here we should hanlde multitouch...
+
             if (index > 0) {
                 return 0;
             }
@@ -224,4 +224,4 @@ bool Input::anyPressed(unsigned int port, unsigned int id) const {
     return pads[port].pressedKeys.count(id) > 0;
 }
 
-} //namespace libretrodroid
+}

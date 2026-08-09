@@ -38,9 +38,7 @@ Utils::ReadResult Utils::readFileAsBytes(const std::string &filePath) {
 }
 
 Utils::ReadResult Utils::readFileAsBytes(const int fileDescriptor) {
-    // dup() the fd so that fdopen/fclose operate on our own copy and do NOT take ownership
-    // of the caller's fd.  Without this, the FDWrapper that holds fileDescriptor would
-    // call close() on an fd already closed by fclose() → fdsan SIGABRT on Android 11+.
+
     int workFd = ::dup(fileDescriptor);
     if (workFd < 0) {
         LOGE("readFileAsBytes: dup() failed for fd=%d (errno=%d)", fileDescriptor, errno);
@@ -57,7 +55,7 @@ Utils::ReadResult Utils::readFileAsBytes(const int fileDescriptor) {
     size_t size = getFileSize(file);
     char* bytes = new char[size];
     fread(bytes, sizeof(char), size, file);
-    fclose(file);  // closes workFd — the original fileDescriptor is untouched
+    fclose(file);
     return ReadResult { size, bytes };
 }
 
@@ -75,4 +73,4 @@ const char* Utils::cloneToCString(const std::string &input) {
     return result;
 }
 
-} //namespace libretrodroid
+} 

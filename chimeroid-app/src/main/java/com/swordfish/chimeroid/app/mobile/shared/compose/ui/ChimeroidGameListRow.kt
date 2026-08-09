@@ -43,7 +43,7 @@ fun ChimeroidGameListRow(
                 .padding(start = 16.dp, top = 10.dp, bottom = 10.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Rounded cover art thumbnail
+
             ChimeroidSmallGameImage(
                 modifier = Modifier
                     .size(50.dp)
@@ -51,7 +51,6 @@ fun ChimeroidGameListRow(
                 game = game,
             )
 
-            // Title + subtitle
             ChimeroidGameTexts(
                 modifier = Modifier
                     .weight(1f)
@@ -59,7 +58,6 @@ fun ChimeroidGameListRow(
                 game = game,
             )
 
-            // Favourite toggle
             Box(
                 modifier = Modifier.size(44.dp),
                 contentAlignment = Alignment.Center,

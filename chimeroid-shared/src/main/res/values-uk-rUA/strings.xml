@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Авто</string>
     <string name="controller_dos_mouse_left">Миша з лівим стіком</string>
     <string name="controller_dos_mouse_right">Миша з правим стіком</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">Ефект ТБ</string>
     <string name="setting_stella_crop_hoverscan">Обрізати горизонтальну розгортку</string>
     <string name="setting_fceumm_overscan_h">Обрізати горизонтальну розгортку</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Орієнтація</string>
     <string name="setting_wswan_mono_palette">Колоризація</string>
     <string name="setting_handy_rot">Поворот екрана</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Вимкнено</string>
     <string name="value_gambatte_mix_frames_mix">Простий</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">Ghosting LCD (Точний)</string>

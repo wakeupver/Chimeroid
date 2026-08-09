@@ -94,7 +94,7 @@ int64_t VFS::truncate(struct retro_vfs_file_handle* stream, int64_t length) {
 
 retro_vfs_interface * VFS::getInterface() {
     return new retro_vfs_interface {
-        /* Introduced in VFS API v1 */
+
         &VFS::path,
         &VFS::open,
         &VFS::close,
@@ -107,7 +107,6 @@ retro_vfs_interface * VFS::getInterface() {
         &VFS::remove,
         &VFS::rename,
 
-        /* Introduced in VFS API v2 */
         &VFS::truncate
     };
 }
@@ -172,4 +171,4 @@ VFSFile* VFS::findVirtualFile(const char *path) {
     return nullptr;
 }
 
-} // namespace libretrodroid
+} 

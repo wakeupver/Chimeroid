@@ -6,16 +6,10 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 
-/**
- * Persists [MacroButton] lists to [SharedPreferences], keyed by controller-ID string.
- *
- * Format: JSON array stored under key `macro_buttons_<controllerID>`.
- */
 class MacroButtonsManager(private val sharedPreferences: SharedPreferences) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    /** Returns the saved macros for the given controller, or an empty list on error/miss. */
     fun getMacroButtons(controllerID: String): List<MacroButton> {
         val key = buildKey(controllerID)
         val raw = sharedPreferences.getString(key, null) ?: return emptyList()
@@ -27,7 +21,6 @@ class MacroButtonsManager(private val sharedPreferences: SharedPreferences) {
         }
     }
 
-    /** Persists [macros] for the given controller. */
     fun saveMacroButtons(controllerID: String, macros: List<MacroButton>) {
         val key = buildKey(controllerID)
         try {
@@ -38,7 +31,6 @@ class MacroButtonsManager(private val sharedPreferences: SharedPreferences) {
         }
     }
 
-    /** Removes all macros for the given controller. */
     fun clearMacroButtons(controllerID: String) {
         sharedPreferences.edit { remove(buildKey(controllerID)) }
     }

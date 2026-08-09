@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 3.13.2)
 
-# now build app's shared lib
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
 
 add_definitions("-DVFS_FRONTEND -DHAVE_STRL")
 
-# Let's include oboe
 set (OBOE_DIR oboe)
 add_subdirectory (${OBOE_DIR} oboe)
 include_directories (${OBOE_DIR}/include)
@@ -89,10 +87,8 @@ add_library(libretrodroid SHARED
         ${LIBRETRO_COMMON}
 )
 
-# Support 16k pages for Android 15
 target_link_options(libretrodroid PRIVATE "-Wl,-z,max-page-size=16384")
 
-# add lib dependencies
 target_link_libraries(libretrodroid
                       android
                       log 

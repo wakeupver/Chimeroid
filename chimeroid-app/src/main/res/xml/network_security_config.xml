@@ -1,6 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    All cover art now fetched over HTTPS — no cleartext exceptions needed.
-    thumbnails.libretro.com supports TLS; cleartext was a legacy workaround.
--->
 <network-security-config />

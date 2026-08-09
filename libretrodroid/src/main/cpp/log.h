@@ -86,4 +86,4 @@ static void MessageCallback(
 
 #endif
 
-#endif //LIBRETRODROID_LOG_H
+#endif

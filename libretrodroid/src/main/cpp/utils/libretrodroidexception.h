@@ -31,6 +31,6 @@ private:
     int errorCode;
 };
 
-} // namespace libretrodroid
+}
 
-#endif //LIBRETRODROID_LIBRETRODROIDEXCEPTION_H
+#endif

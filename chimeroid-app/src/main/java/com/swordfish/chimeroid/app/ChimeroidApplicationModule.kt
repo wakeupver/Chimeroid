@@ -50,7 +50,6 @@ import com.swordfish.chimeroid.lib.library.ChimeroidLibrary
 import com.swordfish.chimeroid.lib.library.db.RetrogradeDatabase
 import com.swordfish.chimeroid.lib.library.db.dao.GameSearchDao
 import com.swordfish.chimeroid.lib.library.db.dao.Migrations
-import com.swordfish.chimeroid.lib.library.db.dao.PatchCodeDao
 import com.swordfish.chimeroid.lib.library.metadata.GameMetadataProvider
 import com.swordfish.chimeroid.lib.preferences.SharedPreferencesHelper
 import com.swordfish.chimeroid.lib.saves.SavesCoherencyEngine
@@ -142,8 +141,7 @@ abstract class ChimeroidApplicationModule {
                     Migrations.VERSION_10_11,
                 )
                 .fallbackToDestructiveMigration()
-                // WAL mode allows concurrent reads without blocking writers,
-                // which is essential now that scan batches run in parallel.
+
                 .setJournalMode(androidx.room.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
                 .build()
 

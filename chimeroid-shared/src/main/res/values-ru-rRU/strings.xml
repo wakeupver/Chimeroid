@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Автоматически</string>
     <string name="controller_dos_mouse_left">Мышь с левым стиком</string>
     <string name="controller_dos_mouse_right">Мышь с правым стиком</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">ТВ-эффект</string>
     <string name="setting_stella_crop_hoverscan">Кадрировать горизонт. вылеты развёртки</string>
     <string name="setting_fceumm_overscan_h">Кадрировать горизонт. вылеты развёртки</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Ориентация</string>
     <string name="setting_wswan_mono_palette">Колоризация</string>
     <string name="setting_handy_rot">Поворот экрана</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Отключено</string>
     <string name="value_gambatte_mix_frames_mix">Простой</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">ЖК-двоение (Точно)</string>

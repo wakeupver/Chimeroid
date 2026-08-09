@@ -5,11 +5,9 @@
     <string name="controller_dualshock">DualShock</string>
     <string name="controller_standard">Estàndard</string>
     <string name="controller_dos_auto">Automàtic</string>
-    <!-- Core settings titles -->
     <string name="setting_genesis_plus_gx_overscan">Vores</string>
     <string name="setting_mgba_color_correction">Correcció de color</string>
     <string name="setting_ppsspp_internal_resolution">Resolució</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Deshabilitat</string>
     <string name="value_gambatte_mix_frames_mix">Simple</string>
     <string name="value_stella_filter_rgb">RGB</string>

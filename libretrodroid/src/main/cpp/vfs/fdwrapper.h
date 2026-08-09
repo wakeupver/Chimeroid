@@ -25,7 +25,7 @@ namespace libretrodroid {
 
 class FDWrapper {
 public:
-    // Delete copy and move to make sure the close function is never called.
+
     FDWrapper(const FDWrapper& other) = delete;
     FDWrapper(FDWrapper&& other) = delete;
     FDWrapper& operator=(const FDWrapper&) = delete;
@@ -42,4 +42,4 @@ private:
 
 }
 
-#endif //LIBRETRODROID_FDWRAPPER_H
+#endif

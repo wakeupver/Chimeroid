@@ -110,7 +110,6 @@ void ImmersiveMode::initializeFramebuffers() {
         );
     }
 
-    // Last framebuffer needs GL_MIRROR_REPEAT
     blurFramebuffers.push_back(
         ES3Utils::createFramebuffer(
             downscaledWidth, downscaledHeight, true, true, false, false
@@ -220,7 +219,6 @@ void ImmersiveMode::renderBackground(
         renderToFramebuffer(texture, framebufferVertices);
     }
 
-    // Let's update the blurred texture every other frame.
     blendFramebufferCurrent = (blendFramebufferCurrent + 1) % blurSkipUpdate;
 
     renderToFinalOutput(screenWidth, screenHeight, backgroundVertices, foregroundBounds);
@@ -283,4 +281,4 @@ std::string ImmersiveMode::generateBlurShader() {
     return result.str();
 }
 
-} // namespace libretrodroid
+}

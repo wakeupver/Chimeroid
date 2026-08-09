@@ -36,11 +36,6 @@ fun Activity.displayToast(
     Toast.makeText(this, stringId, length).show()
 }
 
-/**
- * Fade transition compat shim. Uses the non-deprecated API 34+ [Activity.overrideActivityTransition]
- * when available, falling back to [Activity.overridePendingTransition] otherwise.
- * @param open true when this Activity is being launched/opened, false when it is finishing/closing.
- */
 fun Activity.overrideFadeTransition(open: Boolean) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
         val type = if (open) Activity.OVERRIDE_TRANSITION_OPEN else Activity.OVERRIDE_TRANSITION_CLOSE

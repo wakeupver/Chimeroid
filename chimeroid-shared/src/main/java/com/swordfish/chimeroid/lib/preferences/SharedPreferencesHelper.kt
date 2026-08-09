@@ -16,15 +16,6 @@ object SharedPreferencesHelper {
         return SharedPreferencesDataStore(getSharedPreferences(context))
     }
 
-    /**
-     * Default shared preferences does not work with multi-process. It's intentionally used only
-     * for the stored directory preference, which is only ever read in the main process. Do not
-     * use this for anything that needs multi-process consistency - use [getSharedPreferences].
-     *
-     * Not marked [Deprecated]: its underlying file ("<package>_preferences") differs from
-     * Harmony's ("harmony_options" - see R.string.pref_file_harmony_options), so switching
-     * existing call sites over would silently orphan users' already-stored preference values.
-     */
     fun getLegacySharedPreferences(context: Context): SharedPreferences {
         return PreferenceManager.getDefaultSharedPreferences(context)
     }

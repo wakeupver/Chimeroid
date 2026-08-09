@@ -195,6 +195,6 @@ private:
     int blendFramebufferCurrent = 0;
 };
 
-} // libretrodroid
+}
 
-#endif //LIBRETRODROID_IMMERSIVEMODE_H
+#endif

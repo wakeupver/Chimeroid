@@ -42,7 +42,7 @@ private suspend fun GLSurfaceView.takeScreenshot(maxResolution: Int): Bitmap? =
 
                 val onCompleted = { result: Int ->
                     if (result == PixelCopy.SUCCESS) {
-                        // This rescaling limits the artifacts introduced by shaders.
+
                         val outputBitmap =
                             Bitmap.createScaledBitmap(
                                 inputBitmap,

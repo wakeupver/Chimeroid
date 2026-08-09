@@ -37,4 +37,4 @@ public:
 
 }
 
-#endif //LIBRETRODROID_UTILS_H
+#endif

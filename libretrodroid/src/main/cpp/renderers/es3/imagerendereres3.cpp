@@ -85,7 +85,7 @@ uintptr_t ImageRendererES3::getTexture() {
 }
 
 uintptr_t ImageRendererES3::getFramebuffer() {
-    return 0; // ImageRender does not really expose a framebuffer.
+    return 0;
 }
 
 void ImageRendererES3::setPixelFormat(int pixelFormat) {
@@ -129,9 +129,6 @@ void ImageRendererES3::setShaders(ShaderManager::Chain newShaders) {
 Renderer::PassData ImageRendererES3::getPassData(unsigned int layer) {
     PassData result;
 
-    // Bounds are already proven by the guards below, so operator[] (unchecked)
-    // is used instead of .at() (which would redo the same range check plus an
-    // exception-path branch) in this per-pass, per-frame hot path.
     if (layer < framebuffers->size()) {
         const auto& fb = (*framebuffers)[layer];
         result.framebuffer = fb->framebuffer;
@@ -146,4 +143,4 @@ Renderer::PassData ImageRendererES3::getPassData(unsigned int layer) {
     return result;
 }
 
-} //namespace libretrodroid
+}

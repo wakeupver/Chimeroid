@@ -17,13 +17,6 @@ fun Bitmap.cropToSquare(): Bitmap {
     return Bitmap.createBitmap(this, cropW, cropH, newWidth, newHeight)
 }
 
-/**
- * Returns a bitmap whose longer side is at most [maxDimensionPx], scaling both
- * dimensions by the same factor so the original aspect ratio is preserved.
- *
- * Returns `this` (same instance) when already within bounds, so callers can safely
- * decide whether to recycle the source by checking referential equality on the result.
- */
 fun Bitmap.downscaledToFit(maxDimensionPx: Int): Bitmap {
     val longerSide = maxOf(width, height)
     if (longerSide <= maxDimensionPx) return this

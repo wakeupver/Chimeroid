@@ -104,10 +104,6 @@ std::unique_ptr<ES3Utils::Framebuffers> ES3Utils::buildShaderPasses(
     auto result = std::make_unique<Framebuffers>();
     const auto& passes = shaders.passes;
 
-    // Intermediate passes only: the last pass renders straight to the screen
-    // and needs no framebuffer of its own, hence `+ 1 < size()` rather than
-    // `< size() - 1` (the latter underflows to a huge unsigned loop bound if
-    // passes were ever empty).
     for (size_t i = 0; i + 1 < passes.size(); ++i) {
         const auto& pass = passes[i];
         result->push_back(ES3Utils::createFramebuffer(
@@ -123,4 +119,4 @@ std::unique_ptr<ES3Utils::Framebuffers> ES3Utils::buildShaderPasses(
     return result;
 }
 
-} //namespace libretrodroid
+} 

@@ -30,7 +30,7 @@ namespace libretrodroid {
 
 class JavaUtils {
 public:
-    // Conversion from LibretroDroid types
+
     static Variable variableFromJava(JNIEnv* env, jobject obj);
     static ShaderManager::Config shaderFromJava(JNIEnv* env, jobject obj);
 
@@ -41,4 +41,4 @@ public:
 
 }
 
-#endif //LIBRETRODROID_JAVAUTILS_H
+#endif

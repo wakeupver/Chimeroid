@@ -85,8 +85,6 @@ class LocalStorageProvider(
             }
         }
 
-    // There is no need to handle anything. Data file have to be in the same directory for detection we expect them
-    // to still be there.
     private fun getDataFile(dataFile: DataFile): File {
         val dataFilePath = Uri.parse(dataFile.fileUri).path
         return File(requireNotNull(dataFilePath) { "Data file URI has no path: ${dataFile.fileUri}" })

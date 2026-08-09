@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Automaattinen</string>
     <string name="controller_dos_mouse_left">Hiiri vasen kiinnikkeellä</string>
     <string name="controller_dos_mouse_right">Hiiri oikealla kiinnikkeellä</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">TV efekti</string>
     <string name="setting_stella_crop_hoverscan">Rajaa vaakasuuntainen yliviivaus</string>
     <string name="setting_fceumm_overscan_h">Rajaa vaakasuuntainen yliviivaus</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Suunta</string>
     <string name="setting_wswan_mono_palette">Väritys</string>
     <string name="setting_handy_rot">Näytön kierto</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Pois Käytöstä</string>
     <string name="value_gambatte_mix_frames_mix">Yksinkertainen</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">Lcd-Ghosting (Tarkka)</string>

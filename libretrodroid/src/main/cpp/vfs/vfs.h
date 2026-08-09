@@ -74,6 +74,6 @@ private:
 
 };
 
-} // namespace libretrodroid
+}
 
-#endif //LIBRETRODROID_VFS_H
+#endif

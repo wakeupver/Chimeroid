@@ -18,10 +18,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -55,14 +53,6 @@ fun GameMenuCoreOptionsScreen(
     }
 }
 
-// ── Shared item composable ────────────────────────────────────────────────────
-
-/**
- * Renders a single [ChimeroidCoreOption] as either a switch (boolean) or a
- * drop-down list, based on its allowed values.
- * Extracted to eliminate the identical block that used to appear in both
- * [CoreOptions] and [AutoDetectedCoreOptions].
- */
 @Composable
 private fun CoreOptionItem(
     systemID: String,
@@ -89,8 +79,6 @@ private fun CoreOptionItem(
     }
 }
 
-// ── Section composables ───────────────────────────────────────────────────────
-
 @Composable
 private fun CoreOptions(
     systemID: String,
@@ -103,10 +91,6 @@ private fun CoreOptions(
     }
 }
 
-/**
- * Renders auto-detected core variables (not declared in [GameSystem]) inside a
- * collapsible "All Core Options" section to avoid cluttering the main list.
- */
 @Composable
 private fun AutoDetectedCoreOptions(
     systemID: String,

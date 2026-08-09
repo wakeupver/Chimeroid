@@ -28,11 +28,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * This activity is used as an entry point when launching games from external shortcuts. This activity
- * still runs in the main process so it can peek into background job status and wait for them to
- * complete.
- */
 @OptIn(FlowPreview::class)
 class ExternalGameLauncherActivity : ImmersiveActivity() {
     @Inject

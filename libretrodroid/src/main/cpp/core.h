@@ -62,6 +62,4 @@ private:
 
 }
 
-
-
-#endif //LIBRETRODROID_CORE_H
+#endif

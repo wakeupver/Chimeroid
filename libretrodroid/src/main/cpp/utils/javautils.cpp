@@ -102,4 +102,4 @@ ShaderManager::Config JavaUtils::shaderFromJava(JNIEnv *env, jobject obj) {
     return ShaderManager::Config { ShaderManager::Type(type), params };
 }
 
-} //namespace libretrodroid
+}

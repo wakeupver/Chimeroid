@@ -70,4 +70,4 @@ private:
 
 }
 
-#endif //LIBRETRODROID_INPUT_H
+#endif

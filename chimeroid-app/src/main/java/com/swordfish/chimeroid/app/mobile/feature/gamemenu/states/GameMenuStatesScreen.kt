@@ -39,7 +39,7 @@ fun GameMenuStatesScreen(
     val state = viewModel.uiStates.collectAsState(initial = GameMenuStatesViewModel.State())
 
     if (state.value.entries.isEmpty()) {
-        // Loading skeleton while slots are being fetched
+
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
@@ -82,7 +82,7 @@ private fun SaveStateCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Thumbnail (72 dp with rounded corners)
+
             Box(
                 modifier = Modifier
                     .size(72.dp)
@@ -113,7 +113,6 @@ private fun SaveStateCard(
                 }
             }
 
-            // Slot info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = entry.title,

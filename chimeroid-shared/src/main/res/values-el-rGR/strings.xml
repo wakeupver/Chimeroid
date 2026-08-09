@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Αυτόματο</string>
     <string name="controller_dos_mouse_left">Ποντίκι με αριστερό stick</string>
     <string name="controller_dos_mouse_right">Ποντίκι με αριστερό stick</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">Εφέ τηλεόρασης</string>
     <string name="setting_stella_crop_hoverscan">Περικοπή οριζόντιου overscan</string>
     <string name="setting_fceumm_overscan_h">Περικοπή οριζόντιου overscan</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Προσανατολισμός</string>
     <string name="setting_wswan_mono_palette">Χρωματισμός</string>
     <string name="setting_handy_rot">Περιστροφή οθόνης</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Απενεργοποιημένο</string>
     <string name="value_gambatte_mix_frames_mix">Απλό</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">LCD Ghosting (Ακριβής)</string>

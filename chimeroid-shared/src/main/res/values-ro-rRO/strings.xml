@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Automat</string>
     <string name="controller_dos_mouse_left">Șoricel cu Stânga</string>
     <string name="controller_dos_mouse_right">Șoricel cu fixare la dreapta</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">Efect TV</string>
     <string name="setting_stella_crop_hoverscan">Decupează overscan orizontal</string>
     <string name="setting_fceumm_overscan_h">Decupează overscan orizontal</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Orientare</string>
     <string name="setting_wswan_mono_palette">Colorare</string>
     <string name="setting_handy_rot">Rotirea ecranului</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Dezactivat</string>
     <string name="value_gambatte_mix_frames_mix">Simplu</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">Ghosting LCD (acurata)</string>

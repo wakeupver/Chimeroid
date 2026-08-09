@@ -27,4 +27,4 @@ namespace libretrodroid {
     int ERROR_GENERIC = -1;
 }
 
-#endif //LIBRETRODROID_ERRORCODES_H
+#endif

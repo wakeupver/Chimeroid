@@ -43,6 +43,6 @@ public:
     libretroReadMicrophone(retro_microphone_t* microphone, int16_t* samples, size_t num_samples);
 };
 
-} // libretrodroid
+}
 
-#endif //LIBRETRODROID_MICROPHONEINTERFACE_H
+#endif

@@ -40,7 +40,7 @@ data class GameSystem(
     val fastForwardSupport: Boolean = true,
 ) {
     companion object {
-        // ── Shared settings reused across SMS / GENESIS / SEGACD ─────────────
+
         private val GENESIS_NTSC_FILTER_SETTING = ExposedSetting.Registered(
             "genesis_plus_gx_blargg_ntsc_filter",
             R.string.setting_genesis_plus_gx_blargg_ntsc_filter,
@@ -74,7 +74,7 @@ data class GameSystem(
             2 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
             3 to arrayListOf(ControllerConfigs.GENESIS_3, ControllerConfigs.GENESIS_6),
         )
-        // ─────────────────────────────────────────────────────────────────────
+
         private val SYSTEMS =
             listOf(
                 GameSystem(
@@ -1006,7 +1006,6 @@ data class GameSystem(
 
         fun findById(id: String): GameSystem = byIdCache.getValue(id)
 
-        /** Returns null instead of throwing when [id] is not a known system. */
         fun findByIdOrNull(id: String): GameSystem? = byIdCache[id]
 
         fun all() = SYSTEMS
@@ -1022,7 +1021,6 @@ data class GameSystem(
         fun findByUniqueFileExtension(fileExtension: String): GameSystem? =
             byExtensionCache[fileExtension.lowercase(Locale.US)]
 
-        /** Resolves [name] to a [GameSystem] by its file extension. */
         fun findByFileName(name: String): GameSystem? =
             findByUniqueFileExtension(FileUtils.extractExtension(name))
 

@@ -69,7 +69,7 @@ class GameLoader(
     ): Flow<LoadingState> =
         flow {
             try {
-                // Enforce a hard deadline so a hung core/rom never freezes the UI.
+
                 withTimeout(LOAD_TIMEOUT_MS) {
                     emit(LoadingState.LoadingCore)
 
@@ -95,12 +95,11 @@ class GameLoader(
                         runCatching {
                             val dataFiles =
                                 retrogradeDatabase.dataFileDao().selectDataFilesForGame(game.id)
-                            // Use virtual file-descriptors (VFS) so the emulator can open files
-                            // that live inside a SAF content URI without copying them to disk first.
+
                             val useVFS = directLoad
                             chimeroidLibrary.getGameFiles(game, dataFiles, useVFS)
                         }.getOrElse {
-                            // Re-wrap any unexpected exception so callers always receive a typed error.
+
                             throw if (it is GameLoaderException) it
                             else GameLoaderException(GameLoaderError.LoadGame)
                         }
@@ -167,15 +166,12 @@ class GameLoader(
     ): File? {
         val targetName = coreID.libretroFileName
 
-        // nativeLibraryDir is always a single flat directory — listFiles() is O(N) instead of a
-        // full recursive walk, which avoids redundant stat() calls on a directory with no sub-dirs.
         val nativeMatch =
             File(context.applicationInfo.nativeLibraryDir)
                 .listFiles()
                 ?.firstOrNull { it.name == targetName }
         if (nativeMatch != null) return nativeMatch
 
-        // filesDir may contain downloaded cores in sub-directories, so we keep walkBottomUp here.
         return context.filesDir.walkBottomUp().firstOrNull { it.name == targetName }
     }
 
@@ -192,7 +188,7 @@ class GameLoader(
     )
 
     companion object {
-        /** Maximum time allowed for the full load pipeline before a Generic error is thrown. */
+
         private const val LOAD_TIMEOUT_MS = 60_000L
     }
 }

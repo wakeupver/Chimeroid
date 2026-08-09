@@ -7,7 +7,7 @@ import com.swordfish.chimeroid.lib.storage.GroupedStorageFiles
 import com.swordfish.chimeroid.lib.storage.StorageProvider
 
 object StorageFilesMerger {
-    /** Merge files which belong to the same game. This includes bin/cue files and m3u playlists.*/
+
     fun mergeDataFiles(
         storageProvider: StorageProvider,
         files: List<BaseStorageFile>,
@@ -90,9 +90,6 @@ object StorageFilesMerger {
                 val requestedFileNames = extractBinFiles(storageProvider, it.uri).toSet()
                 val givenFileNames = allFiles[it]?.map { it.name }?.toSet() ?: setOf()
 
-                // Use subset check instead of exact equality: the directory may have extra
-                // files unrelated to this CUE (covers, README, etc.), so we only require
-                // that every BIN referenced by the CUE is present.
                 if (!givenFileNames.containsAll(requestedFileNames)) toBeRemoved.add(it)
             }
 
@@ -132,18 +129,12 @@ object StorageFilesMerger {
         return runCatching {
             storageProvider.getInputStream(uri)?.readLines()
                 ?.mapNotNull { line ->
-                    // Handles all common CUE FILE variants:
-                    //   FILE "Track01.bin" BINARY         ← double-quoted
-                    //   FILE 'Track01.bin' BINARY         ← single-quoted
-                    //   FILE ./subdir/Track01.bin BINARY  ← unquoted, relative path
-                    //   FILE Track01.bin BINARY           ← unquoted, bare name
-                    // Regex: optional quote, capture filename (non-quote, non-newline), optional quote, whitespace, word
+
                     val match = Regex(
                         "^\\s*FILE\\s+[\"']?(.+?)[\"']?\\s+\\w",
                         RegexOption.IGNORE_CASE,
                     ).find(line.trim()) ?: return@mapNotNull null
 
-                    // Strip path prefix (./subdir/ etc.) — compare by basename only.
                     java.io.File(match.groupValues[1]).name
                 }
                 ?: listOf()

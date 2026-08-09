@@ -81,4 +81,4 @@ int MicrophoneInterface::libretroReadMicrophone(
     return microphone->read(samples, (int) num_samples);
 }
 
-} // libretrodroid
+} 

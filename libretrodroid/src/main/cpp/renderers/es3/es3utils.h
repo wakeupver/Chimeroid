@@ -62,4 +62,4 @@ public:
 
 }
 
-#endif //LIBRETRODROID_ES3UTILS_H
+#endif

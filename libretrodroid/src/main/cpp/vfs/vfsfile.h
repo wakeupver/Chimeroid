@@ -31,7 +31,6 @@ public:
     VFSFile(VFSFile&& other) = default;
     VFSFile& operator=(VFSFile&&) = default;
 
-    // Delete copy constructor. File ownership has to be preserved.
     VFSFile(const VFSFile& other) = delete;
     VFSFile& operator=(const VFSFile&) = delete;
 
@@ -45,4 +44,4 @@ private:
 
 }
 
-#endif //LIBRETRODROID_VFSFILE_H
+#endif

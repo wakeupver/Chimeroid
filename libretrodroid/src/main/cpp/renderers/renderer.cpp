@@ -37,4 +37,4 @@ void Renderer::unpackRGB1555InPlace(void *data, size_t pixelCount) {
     }
 }
 
-} //namespace libretrodroid
+}

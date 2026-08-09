@@ -22,15 +22,6 @@ package com.swordfish.chimeroid.common.kotlin
 import android.os.ParcelFileDescriptor
 import timber.log.Timber
 
-/**
- * Closes every raw Linux file-descriptor in this list that was previously detached via
- * [ParcelFileDescriptor.detachFd] (the PPSSPP-style direct-load / `/proc/self/fd/N` path).
- *
- * Each fd is adopted back into a [ParcelFileDescriptor] and closed independently: one
- * failure never prevents the rest from being released, so a single bad fd can't leak the
- * others. Safe to call on an empty list. Not idempotent by itself — callers own clearing
- * their backing list after this returns so the same fd is never closed twice.
- */
 fun List<Int>.closeDetachedFds(tag: String) {
     forEach { rawFd ->
         runCatching {

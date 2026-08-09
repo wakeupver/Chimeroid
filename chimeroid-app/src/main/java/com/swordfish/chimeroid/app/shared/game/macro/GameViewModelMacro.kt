@@ -24,10 +24,6 @@ class GameViewModelMacro(
     private val _editMode = MutableStateFlow(false)
     val editMode: StateFlow<Boolean> = _editMode.asStateFlow()
 
-    // ------------------------------------------------------------------
-    // Controller key wiring
-    // ------------------------------------------------------------------
-
     fun setControllerKey(key: String) {
         if (key == controllerKey) return
         controllerKey = key
@@ -35,33 +31,14 @@ class GameViewModelMacro(
         Timber.d("MacroButtons: loaded ${_macroButtons.value.size} macros for $key")
     }
 
-    /**
-     * Forces a re-read of the current controller's macros from persisted storage.
-     *
-     * [setControllerKey] intentionally no-ops when the key is unchanged — it only exists to
-     * react to controller *switches*. The Game Menu's macro manager runs as a separate screen
-     * with its own in-memory list over the same [MacroButtonsManager]-backed store, so edits
-     * made there (add/delete/reposition) never reach this live copy on their own; without this,
-     * newly added macros persist correctly but never render on the live game overlay until the
-     * controller key happens to change or the session restarts. Call this whenever control
-     * returns from a place that could have mutated macros for [controllerKey].
-     */
     fun reloadMacros() {
         _macroButtons.value = macroButtonsManager.getMacroButtons(controllerKey)
         Timber.d("MacroButtons: reloaded ${_macroButtons.value.size} macros for $controllerKey")
     }
 
-    // ------------------------------------------------------------------
-    // Edit-mode toggle
-    // ------------------------------------------------------------------
-
     fun setEditMode(enabled: Boolean) {
         _editMode.value = enabled
     }
-
-    // ------------------------------------------------------------------
-    // CRUD
-    // ------------------------------------------------------------------
 
     fun addOrUpdateMacro(macro: MacroButton) {
         val current = _macroButtons.value.toMutableList()
@@ -103,15 +80,6 @@ class GameViewModelMacro(
         macroButtonsManager.saveMacroButtons(controllerKey, buttons)
     }
 
-    // ------------------------------------------------------------------
-    // Key firing — press/release split for hold support
-    // ------------------------------------------------------------------
-
-    /**
-     * Called when the user's finger touches the macro button: sends ACTION_DOWN for every
-     * key immediately, via the same [InputEvent.Button] dispatch real touch controls use.
-     * Keys stay held until [releaseMacro] is called on finger-up.
-     */
     fun pressMacro(macro: MacroButton) {
         if (macro.keyCodes.isEmpty()) return
         scope.launch {
@@ -125,10 +93,6 @@ class GameViewModelMacro(
         }
     }
 
-    /**
-     * Called when the user's finger lifts off the macro button: sends ACTION_UP for every
-     * held key (reversed order), via the same [InputEvent.Button] dispatch real touch controls use.
-     */
     fun releaseMacro(macro: MacroButton) {
         if (macro.keyCodes.isEmpty()) return
         scope.launch {

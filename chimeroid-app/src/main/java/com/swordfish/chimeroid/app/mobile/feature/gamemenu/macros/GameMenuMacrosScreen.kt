@@ -32,11 +32,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -45,12 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.swordfish.chimeroid.app.shared.game.macro.MacroButton
 import com.swordfish.touchinput.controller.R
-
-// ────────────────────────────────────────────────────────────────────────────
-// Screen — list / add / delete. Dragging a button to a new position happens
-// live on the game screen (see MacroButtonOverlay); [onPositionOnScreen]
-// hands off to that flow instead of duplicating it here.
-// ────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun GameMenuMacrosScreen(
@@ -109,7 +101,7 @@ fun GameMenuMacrosScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Spacer(Modifier.height(140.dp)) // clears the stacked FAB group when scrolled to the end
+                Spacer(Modifier.height(140.dp))
             }
         }
     }
@@ -141,10 +133,6 @@ private fun EmptyMacrosPlaceholder() {
         )
     }
 }
-
-// ────────────────────────────────────────────────────────────────────────────
-// Macro list item
-// ────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun MacroButtonListItem(
@@ -190,10 +178,6 @@ private fun MacroButtonListItem(
     }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Add Macro dialog
-// ────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun AddMacroDialog(
     existingButtons: List<MacroButton>,
@@ -203,7 +187,6 @@ private fun AddMacroDialog(
     var label by remember { mutableStateOf("") }
     var selectedKeys by remember { mutableStateOf(emptySet<Int>()) }
 
-    // Auto-generate label from selected keys when label is blank
     val autoLabel = remember(selectedKeys) {
         if (selectedKeys.isEmpty()) "" else MacroButton.autoLabel(selectedKeys.toList())
     }
@@ -223,7 +206,6 @@ private fun AddMacroDialog(
                     style = MaterialTheme.typography.titleMedium,
                 )
 
-                // Label input
                 OutlinedTextField(
                     value = label,
                     onValueChange = { if (it.length <= 6) label = it },
@@ -233,7 +215,6 @@ private fun AddMacroDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                // Key selection
                 Text(
                     text = stringResource(R.string.macro_keys_label),
                     style = MaterialTheme.typography.labelMedium,
@@ -249,7 +230,6 @@ private fun AddMacroDialog(
                     },
                 )
 
-                // Cancel / OK
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
@@ -283,18 +263,12 @@ private fun AddMacroDialog(
     }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Key selection grid
-// ────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun MacroKeyGrid(
     selectedKeys: Set<Int>,
     onToggle: (Int) -> Unit,
 ) {
-    // ALL_KEYS is a fixed 10-entry companion list — chunking it is invariant,
-    // so it's cached once per composition instead of re-sliced on every
-    // key-toggle recomposition.
+
     val rows = remember { MacroButton.ALL_KEYS.chunked(5) }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         rows.forEach { row ->

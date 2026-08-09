@@ -24,7 +24,6 @@ import com.swordfish.chimeroid.lib.game.GameLoaderException
 import com.swordfish.chimeroid.lib.library.GameSystem
 import com.swordfish.chimeroid.lib.library.SystemCoreConfig
 import com.swordfish.chimeroid.lib.library.db.entity.Game
-import com.swordfish.chimeroid.lib.storage.RomFiles
 import com.swordfish.libretrodroid.GLRetroView
 import com.swordfish.libretrodroid.GLRetroViewData
 import com.swordfish.libretrodroid.ImmersiveMode
@@ -59,75 +58,37 @@ class GameViewModelRetroGameView(
 ) : DefaultLifecycleObserver {
 
     sealed interface GameState {
-        /** Initial state — no load has been requested yet. */
+
         data object Uninitialized : GameState
 
-        /** A human-readable [message] describes the current loading step. */
         data class Loading(val message: String) : GameState
 
-        /**
-         * Core + ROM data are ready; the [GLRetroView] has not been created yet.
-         * This state is transient — [createRetroView] moves it to [Ready] immediately.
-         */
         data class Loaded(
             val gameData: GameLoader.GameData,
             val retroViewData: GLRetroViewData,
         ) : GameState
 
-        /** The [GLRetroView] is running and the session is fully active. */
         data object Ready : GameState
 
-        /** A terminal error occurred; [message] is user-displayable. */
         data class Error(val message: String) : GameState
     }
 
     private val gameState: MutableStateFlow<GameState> = MutableStateFlow(GameState.Uninitialized)
 
-    /** Guards [initialize] so concurrent or repeated calls are no-ops after the first. */
     private val initMutex = Mutex()
 
     private val retroGameViewFlow = MutableStateFlow<GLRetroView?>(null)
     var retroGameView: GLRetroView? by MutableStateProperty(retroGameViewFlow)
 
-    /**
-     * Raw Linux file-descriptor integers detached via
-     * [android.os.ParcelFileDescriptor.detachFd] for the PPSSPP-style direct-load path.
-     *
-     * Stored *outside* [gameState] so [closeOpenFds] can reach them regardless of which
-     * state the machine is in when [BaseGameScreenViewModel.onCleared] fires.
-     * By the time onCleared() runs the state is [GameState.Ready], not [GameState.Loaded],
-     * so reading from gameState for this purpose would always return an empty list.
-     */
     private var detachedFds: List<Int> = emptyList()
 
-    /**
-     * Returns the game state stream.
-     *
-     * No debounce is applied here — callers observe raw transitions and can apply their own
-     * debounce policy if needed.  The previous 200 ms debounce was hiding rapid Loading→Loaded
-     * transitions, causing the UI to briefly show stale states.
-     */
     fun getGameState(): Flow<GameState> = gameState
 
-    /**
-     * Closes raw Linux file-descriptor integers that were detached via
-     * [android.os.ParcelFileDescriptor.detachFd] during the PPSSPP-style direct load.
-     *
-     * Call this from [BaseGameScreenViewModel.onCleared] when the game session ends.
-     *
-     * NOTE: We read from [detachedFds] — a dedicated field — not from [gameState].
-     * By the time onCleared() fires the state machine is in [GameState.Ready], not
-     * [GameState.Loaded], so casting gameState would always yield null here.
-     */
     fun closeOpenFds() {
         detachedFds.closeDetachedFds(TAG)
         detachedFds = emptyList()
     }
 
-    /**
-     * Begins the load pipeline.  Safe to call from any coroutine; concurrent/re-entrant calls
-     * after the first are silently ignored thanks to [initMutex].
-     */
     suspend fun initialize(
         applicationContext: Context,
         game: Game,
@@ -135,11 +96,9 @@ class GameViewModelRetroGameView(
         gameLoader: GameLoader,
         requestLoadSave: Boolean,
     ) {
-        // Fast-path: if we've already started, do nothing.
+
         if (gameState.value != GameState.Uninitialized) return
 
-        // Serialize access so concurrent callers can't both pass the check above and
-        // both kick off a duplicate load.
         initMutex.withLock {
             if (gameState.value != GameState.Uninitialized) return
 
@@ -176,8 +135,7 @@ class GameViewModelRetroGameView(
                         else appContext.getString(R.string.game_loader_error_generic)
 
                     Timber.e(throwable, "GameLoader pipeline failed")
-                    // Publish the error both to the state machine (for structured observation)
-                    // and via side-effects (for the Activity to act on).
+
                     gameState.value = GameState.Error(errorMsg)
                     sideEffects.requestFailureFinish(errorMsg)
                 }
@@ -186,9 +144,7 @@ class GameViewModelRetroGameView(
                         when (loadingState) {
                             is GameLoader.LoadingState.Ready -> {
                                 Timber.i("GameLoader: data ready, building RetroViewData")
-                                // Capture detached fds now, before state transitions to Ready.
-                                // closeOpenFds() fires in onCleared() when state == Ready,
-                                // so reading detachedFds from gameState there would always miss.
+
                                 detachedFds = loadingState.gameData.gameFiles.detachedFds
                                 val retroViewData =
                                     buildRetroViewData(
@@ -231,9 +187,6 @@ class GameViewModelRetroGameView(
                     isFocusableInTouchMode = false
                 }
 
-        // PadKit's Compose overlay owns all touch input; the raw GLRetroView.onTouchEvent
-        // listener is always disabled so it never fires in parallel and fights the
-        // Compose-side virtual-pad/gesture handling for the same pointer.
         result.disableTouchEvents()
 
         lifecycle.lifecycle.addObserver(result)
@@ -243,7 +196,7 @@ class GameViewModelRetroGameView(
         }
 
         retroGameViewFlow.value = result
-        // Advance state before returning so observers see Ready immediately.
+
         gameState.value = GameState.Ready
 
         return currentState.gameData to result
@@ -320,7 +273,7 @@ class GameViewModelRetroGameView(
 
     private fun printRetroVariables(retroGameView: GLRetroView) {
         scope.launch {
-            // Some cores do not immediately call SET_VARIABLES so we might need to wait a little.
+
             delay(1.seconds)
             retroGameView.getVariables().forEach {
                 Timber.i("Libretro variable: $it")

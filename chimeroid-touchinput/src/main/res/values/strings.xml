@@ -11,7 +11,6 @@
     <string name="touch_customize_margin_v">Vertical Offset</string>
     <string name="touch_customize_rotate">Rotation</string>
 
-    <!-- Macro buttons -->
     <string name="macro_section_title">Macro Buttons</string>
     <string name="macro_add_button">Add Macro</string>
     <string name="macro_position_button">Position Macros</string>

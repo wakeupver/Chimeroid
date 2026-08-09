@@ -77,4 +77,4 @@ Core::~Core() {
     close();
 }
 
-} //namespace libretrodroid
+}

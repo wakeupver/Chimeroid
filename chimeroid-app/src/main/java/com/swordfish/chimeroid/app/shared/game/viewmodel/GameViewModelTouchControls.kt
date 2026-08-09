@@ -58,7 +58,7 @@ class GameViewModelTouchControls(
         owner.launchOnState(Lifecycle.State.CREATED) {
             getTouchControllerConfig().safeCollect {
                 touchControlId.value = it.touchControllerID
-                // Keep macro VM in sync with the active controller
+
                 macro.setControllerKey(it.touchControllerID.name)
             }
         }

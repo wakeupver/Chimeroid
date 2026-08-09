@@ -64,7 +64,6 @@
     <string name="settings_gamepad_title_reset_bindings">Reset bindings</string>
     <string name="settings_gamepad_title_game_menu">Menu</string>
 
-
     <string name="settings_title_display_bios_info">BIOS</string>
     <string name="settings_description_display_bios_info">Display detected and supported BIOS files</string>
     <string name="settings_bios_category_detected">Detected</string>
@@ -112,11 +111,9 @@
     <string name="home_notification_message">Chimeroid uses notifications to let you know when a game or operation is running in background.</string>
     <string name="home_notification_action">Enable</string>
 
-
     <string name="home_empty_title">Select ROMs directory</string>
     <string name="home_empty_message">Chimeroid needs to scan a directory containing ROM files.\nThis might take up to a few minutes.</string>
     <string name="home_empty_action">Select Directory</string>
-
 
     <string name="game_menu_save">Save</string>
     <string name="game_menu_load">Load</string>
@@ -133,7 +130,6 @@
     <string name="game_menu_tilt_sensor">Tilt Sensor</string>
     <string name="game_menu_patch_codes">Patch Codes</string>
 
-    <!-- Patch Codes screen -->
     <string name="patch_codes_add">Add patch code</string>
     <string name="patch_codes_delete">Delete patch code</string>
     <string name="patch_codes_empty_title">No patch codes yet</string>
@@ -263,19 +259,16 @@
     <string name="tilt_configuration_buttons_l1_r1">L1 - R1</string>
     <string name="tilt_configuration_buttons_l2_r2">L2 - R2</string>
 
-    <!-- Storage base dir picker -->
     <string name="settings_category_storage_paths">Storage</string>
     <string name="settings_title_storage_location">Storage location</string>
     <string name="storage_picker_unsupported_location">This location is not supported. Please pick a folder on internal or SD card storage.</string>
     <string name="storage_picker_not_writable">The selected folder is not writable. Please choose a different location.</string>
     <string name="storage_picker_need_manage_permission">This app needs full storage access to use this folder on Android 11+. Please grant the permission in the next screen.</string>
 
-    <!-- Home screen storage location suggestion card -->
     <string name="home_storage_location_title">Select base directory</string>
     <string name="home_storage_location_message">Choose a custom folder for saves, states, and ROMs. Cores always stay in internal storage.</string>
     <string name="home_storage_location_action">Select Directory</string>
 
-    <!-- Onboarding -->
     <string name="onboarding_page_1_title">Welcome to Chimeroid</string>
     <string name="onboarding_page_1_subtitle">Your multi-system game library designed for quick setup, clean navigation, and a streamlined handheld-friendly experience.</string>
     <string name="onboarding_page_2_title">Powerful Emulation</string>

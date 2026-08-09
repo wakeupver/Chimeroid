@@ -2,10 +2,6 @@
     <color name="main_color">#00c64e</color>
     <color name="main_color_light">#9de3aa</color>
 
-    <!-- Generated using material color builder. Kept byte-for-byte identical to
-         Color.kt (the Compose source of truth): these two files had drifted by
-         a few hex digits per role, which is exactly the kind of duplicated,
-         silently-diverging source of truth the XML/Views layer must not have. -->
     <color name="md_theme_light_primary">#006E28</color>
     <color name="md_theme_light_onPrimary">#FFFFFF</color>
     <color name="md_theme_light_primaryContainer">#6BFF84</color>

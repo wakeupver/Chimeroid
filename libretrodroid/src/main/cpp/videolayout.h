@@ -57,9 +57,6 @@ private:
 
     void updateRelativeForegroundBounds();
 
-    // Shared by getRelativePosition: the NDC
-    // bounding box of foregroundVertices (x as-is, y sign-flipped so "down"
-    // is positive), used to normalize a touch point to [0,1] game space.
     struct Bounds { float xMin, xMax, yMin, yMax; };
     Bounds computeForegroundBounds() const;
 
@@ -160,6 +157,6 @@ private:
     unsigned screenHeight = 0;
 };
 
-} // namespace libretrodroid
+}
 
-#endif //LIBRETRODROID_VIDEOLAYOUT_H
+#endif

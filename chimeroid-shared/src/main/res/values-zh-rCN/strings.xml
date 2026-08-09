@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">自动</string>
     <string name="controller_dos_mouse_left">带左摇杆的鼠标</string>
     <string name="controller_dos_mouse_right">带右摇杆的鼠标</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">电视效果</string>
     <string name="setting_stella_crop_hoverscan">裁剪水平过扫描</string>
     <string name="setting_fceumm_overscan_h">裁剪水平过扫描</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">屏幕方向</string>
     <string name="setting_wswan_mono_palette">着色</string>
     <string name="setting_handy_rot">显示旋转</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">停用</string>
     <string name="value_gambatte_mix_frames_mix">简单</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">LCD 重影（精准）</string>

@@ -46,28 +46,17 @@ public:
     virtual void setShaders(ShaderManager::Chain shaders) = 0;
     virtual PassData getPassData(unsigned int layer) = 0;
 
-    // Force immediate FBO/buffer recreation if a resize is pending.
-    // Called when a HW-accelerated core signals SET_SYSTEM_AV_INFO so the new
-    // framebuffer is ready before the next get_current_framebuffer() call.
     virtual void forceReinitialize() {}
 
     virtual ~Renderer() = default;
 
-    // Shared by software-path image renderers (ES2/ES3) to re-pack a decoded
-    // 0RGB1555 buffer in place so it can be uploaded as GL_UNSIGNED_SHORT_5_6_5.
-    // Blue stays put; the 5-bit green/red fields are shifted one bit into the
-    // wider 565 layout. In place, O(pixelCount), zero allocations. No-op on
-    // null data so callers don't need their own guard.
     static void unpackRGB1555InPlace(void *data, size_t pixelCount);
 
 public:
-    // Unsigned to match the width/height parameters it's always derived from
-    // and compared against (onNewFrame, updateRenderedResolution); avoids
-    // signed/unsigned comparison warnings at every call site.
+
     std::pair<unsigned int, unsigned int> lastFrameSize;
 };
 
 }
 
-
-#endif //LIBRETRODROID_RENDERER_H
+#endif

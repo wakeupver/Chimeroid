@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Otomatik</string>
     <string name="controller_dos_mouse_left">Sol Çubuklu Fare</string>
     <string name="controller_dos_mouse_right">Sağ Çubuklu Fare</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">TV Efekti</string>
     <string name="setting_stella_crop_hoverscan">Yatay taramayı bırak</string>
     <string name="setting_fceumm_overscan_h">Yatay taramayı bırak</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Döndürme</string>
     <string name="setting_wswan_mono_palette">Renklendirme</string>
     <string name="setting_handy_rot">Ekran Yönü</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Kapalı</string>
     <string name="value_gambatte_mix_frames_mix">Basit</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">LCD Gölgelenme (hassas)</string>

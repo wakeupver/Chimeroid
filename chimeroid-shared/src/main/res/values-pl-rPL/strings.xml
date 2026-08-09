@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Automatyczne</string>
     <string name="controller_dos_mouse_left">Mysz z lewą gałką</string>
     <string name="controller_dos_mouse_right">Mysz z prawą gałką</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">Efekt TV</string>
     <string name="setting_stella_crop_hoverscan">Przytnij poziomy overscan</string>
     <string name="setting_fceumm_overscan_h">Przytnij poziomy overscan</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Orientacja</string>
     <string name="setting_wswan_mono_palette">Koloryzacja</string>
     <string name="setting_handy_rot">Obrót ekranu</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Wyłączone</string>
     <string name="value_gambatte_mix_frames_mix">Proste</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">Smużenie LCD (dokładne)</string>

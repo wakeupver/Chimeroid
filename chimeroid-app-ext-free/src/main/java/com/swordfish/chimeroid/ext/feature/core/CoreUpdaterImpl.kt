@@ -42,7 +42,7 @@ class CoreUpdaterImpl(
     private val directoriesManager: DirectoriesManager,
     retrofit: Retrofit,
 ) : CoreUpdater {
-    // This is the last tagged versions of cores.
+
     companion object {
         private const val CORES_VERSION = "1.18.0"
     }

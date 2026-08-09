@@ -2,7 +2,6 @@
     <color name="main_color">#f44336</color>
     <color name="main_color_light">#ef9a9a</color>
 
-    <!-- Generated using material color builder -->
     <color name="md_theme_light_primary">#BB1614</color>
     <color name="md_theme_light_onPrimary">#FFFFFF</color>
     <color name="md_theme_light_primaryContainer">#FFDAD5</color>

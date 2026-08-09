@@ -38,5 +38,4 @@ private:
     const char* nativeString;
 };
 
-
-#endif //LIBRETRODROID_JNISTRING_H
+#endif

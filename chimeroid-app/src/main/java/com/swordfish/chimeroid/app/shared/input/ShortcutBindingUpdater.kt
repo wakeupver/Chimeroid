@@ -41,11 +41,11 @@ class ShortcutBindingUpdater(private val inputDeviceManager: InputDeviceManager,
 
         if (firstKeyCodeInCombo == null) {
             firstKeyCodeInCombo = event.keyCode
-            return false // wait for second key
+            return false
         } else {
-            if (firstKeyCodeInCombo == event.keyCode) return false // ignore same key press
+            if (firstKeyCodeInCombo == event.keyCode) return false
             val combo = Pair(InputKey(firstKeyCodeInCombo!!), InputKey(event.keyCode))
-            // TODO runBlocking here should go away.
+
             runBlocking {
                 inputDeviceManager.updateShortcutBinding(event.device, extras.shortcutType, combo)
             }

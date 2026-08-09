@@ -29,6 +29,6 @@ struct RumbleState {
     bool operator==(const RumbleState& other) const;
 };
 
-} // namespace libretrodroid
+}
 
-#endif //LIBRETRODROID_RUMBLESTATE_H
+#endif

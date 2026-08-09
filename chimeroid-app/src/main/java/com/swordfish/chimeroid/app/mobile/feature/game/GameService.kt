@@ -32,7 +32,7 @@ class GameService : DaggerService() {
             withContext(Dispatchers.Main) {
                 ServiceCompat.stopForeground(this@GameService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                 stopSelf()
-                // Reset the static state before exiting so a future session starts clean.
+
                 resetState()
                 exitProcess(0)
             }
@@ -76,17 +76,8 @@ class GameService : DaggerService() {
             val terminate: Boolean = false,
         )
 
-        /**
-         * Buffered channel that absorbs bursts of background-save tasks while keeping ordering
-         * guarantees.  Capacity of 32 prevents [trySend] from failing under normal load; if it
-         * does fill up (e.g. tests hammering it) we log and drop rather than crash.
-         */
         private val tasks = Channel<GameProcessTask>(capacity = 32)
 
-        /**
-         * Guards [requestTermination] so only the first call enqueues the poison-pill.
-         * Subsequent calls (double back-press, onDestroy racing with the finish path) are no-ops.
-         */
         private val terminationRequested = AtomicBoolean(false)
 
         fun startService(context: Context, gameActivityIntent: Intent) {
@@ -97,10 +88,6 @@ class GameService : DaggerService() {
             )
         }
 
-        /**
-         * Enqueues a background task (e.g. auto-save) to be executed on the service's IO scope.
-         * Safe to call from any thread; does not block.
-         */
         fun schedule(task: suspend () -> Unit) {
             val result = tasks.trySend(GameProcessTask(task = task))
             if (!result.isSuccess) {
@@ -110,10 +97,6 @@ class GameService : DaggerService() {
             }
         }
 
-        /**
-         * Signals the service to drain pending tasks and then terminate the process.
-         * Idempotent — safe to call multiple times; only the first enqueues the termination signal.
-         */
         fun requestTermination() {
             if (!terminationRequested.compareAndSet(false, true)) {
                 Timber.d("GameService.requestTermination: already requested, ignoring")
@@ -123,24 +106,17 @@ class GameService : DaggerService() {
             Timber.i("GameService.requestTermination: sent=%s", result.isSuccess)
         }
 
-        /** Resets static state so a new session can be started after process restart. */
         private fun resetState() {
             terminationRequested.set(false)
         }
 
-        /**
-         * Drains the task channel sequentially.  Stops as soon as a termination-flagged task
-         * is consumed, regardless of how many tasks remain in the buffer.
-         *
-         * Each task is wrapped in [runCatching] so a failing save cannot prevent termination.
-         */
         private suspend fun awaitTermination() {
             for (task in tasks) {
                 if (!task.terminate) {
                     runCatching { task.task() }
                         .onFailure { Timber.e(it, "GameService: background task failed") }
                 } else {
-                    // Termination sentinel reached — exit the drain loop.
+
                     Timber.i("GameService: termination task received, stopping drain")
                     return
                 }

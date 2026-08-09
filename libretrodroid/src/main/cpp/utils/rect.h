@@ -36,6 +36,6 @@ public:
     [[nodiscard]] float getHeight() const { return height; }
 };
 
-} // libretrodroid
+}
 
-#endif //LIBRETRODROID_RECT_H
+#endif

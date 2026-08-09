@@ -71,7 +71,7 @@ size_t LibretroDroid::callback_set_audio_sample_batch(const int16_t *data, size_
 }
 
 void LibretroDroid::callback_retro_set_input_poll() {
-    // Do nothing in here...
+
 }
 
 int16_t LibretroDroid::callback_set_input_state(
@@ -89,7 +89,6 @@ void LibretroDroid::updateAudioSampleRateMultiplier() {
     }
 }
 
-// TODO... Do we really need this?
 void LibretroDroid::resetGlobalVariables() {
     core = nullptr;
     audio = nullptr;
@@ -193,9 +192,6 @@ void LibretroDroid::onSurfaceCreated() {
     struct retro_system_av_info system_av_info {};
     core->retro_get_system_av_info(&system_av_info);
 
-    // FIX: Call context_destroy BEFORE destroying the old video/FBO.
-    // Without this, the core (e.g. PPSSPP) holds a dangling reference to the
-    // old FBO handle and will crash when it tries to use it after context_reset.
     if (Environment::getInstance().isUseHwAcceleration() &&
         Environment::getInstance().getHwContextDestroy() != nullptr) {
         LOGD("onSurfaceCreated: calling hw_context_destroy before destroying Video");
@@ -204,11 +200,6 @@ void LibretroDroid::onSurfaceCreated() {
 
     video = nullptr;
 
-    // FIX: Use max(base_geometry, previously-reported geometry) for the FBO.
-    // PPSSPP reports base_width=480 (PSP native) even when rendering at 3×
-    // (1440×816). The actual render resolution is stored in gameGeometryWidth/
-    // Height from the last SET_SYSTEM_AV_INFO. Taking the max ensures the FBO
-    // is always large enough for whatever the core expects to render into.
     unsigned fboWidth  = std::max(system_av_info.geometry.base_width,
                                    Environment::getInstance().getGameGeometryWidth());
     unsigned fboHeight = std::max(system_av_info.geometry.base_height,
@@ -303,29 +294,18 @@ void LibretroDroid::create(
     Environment::getInstance().setEnableVirtualFileSystem(enableVirtualFileSystem);
     Environment::getInstance().setEnableMicrophone(enableMicrophone);
 
-    // Register the immediate-resize callback for RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO.
-    // This callback is invoked from INSIDE retro_run() (on the GL thread) before the
-    // environment handler returns to the core. It rebuilds the FBO to the new size and
-    // calls hw_context_reset so that the core's next get_current_framebuffer() call sees
-    // the correctly-sized FBO — preventing a GL size-mismatch crash (e.g. PPSSPP resolution
-    // change → SIGABRT).
     Environment::getInstance().setAVInfoChangedCallback([this](unsigned w, unsigned h) {
         if (!video) {
             LOGW("AVInfoChangedCallback: video not ready yet, skipping immediate resize");
             return;
         }
         if (!Environment::getInstance().isUseHwAcceleration()) {
-            // Software-rendered cores do not use FBOs, so no resize or context_reset needed.
+
             return;
         }
 
         LOGD("AVInfoChangedCallback: immediate FBO resize to %dx%d", w, h);
 
-        // FIX: Call context_destroy BEFORE deleting and recreating the FBO.
-        // recreateRenderer() calls initializeBuffers() which deletes the old GL
-        // framebuffer object. If hw_context_destroy is not called first, the core
-        // (e.g. PPSSPP) still holds the old FBO handle as a dangling reference.
-        // It then crashes in the next retro_run() when it tries to render into it.
         if (Environment::getInstance().getHwContextDestroy() != nullptr) {
             LOGD("AVInfoChangedCallback: calling hw_context_destroy before FBO rebuild");
             Environment::getInstance().getHwContextDestroy()();
@@ -365,7 +345,6 @@ void LibretroDroid::create(
 
     preferLowLatencyAudio = lowLatencyAudio;
 
-    // HW accelerated cores are only supported on opengles 3.
     if (Environment::getInstance().isUseHwAcceleration() && openglESVersion < 3) {
         throw LibretroDroidError("OpenGL ES 3 is required for this Core", ERROR_GL_NOT_COMPATIBLE);
     }
@@ -497,13 +476,6 @@ void LibretroDroid::resume() {
 
     input = std::make_unique<Input>();
 
-    // fpsSync/audio are constructed in afterGameLoad(), well after video is (see the
-    // matching guard already in refreshAspectRatio() below). resume() can still be
-    // queued ahead of that point for heavier cores — so both
-    // need the same null-guard as video, not just an assumption the race can't reach
-    // them. Skipping is correct here: afterGameLoad()'s make_unique construction
-    // already leaves fpsSync/audio in a valid started state, so there is nothing to
-    // reset/start yet when this fires early.
     if (fpsSync != nullptr) {
         fpsSync->reset();
     }
@@ -525,19 +497,8 @@ void LibretroDroid::step() {
 
     LOGD("Stepping into retro_run()");
 
-    // FPSSync::advanceFrames() already returns a bounded, non-discarding catch-up
-    // count: it keeps retro_run() (and therefore audio production) tracking real
-    // elapsed time even when this step() is itself being called late (slow/dropped
-    // render frames), instead of silently running fewer frames than real time owes.
     unsigned frames = fpsSync ? fpsSync->advanceFrames() : 1;
 
-    // frames * frameSpeed is loop-invariant: neither operand can change once the
-    // loop starts (core->retro_run() cannot reach back into this stack frame), so
-    // it's resolved once instead of being recomputed on every iteration check.
-    // core is guarded the same way every other member below already is (video,
-    // fpsSync, rumble): step() runs under coreLock, but a defensive check here
-    // costs nothing and prevents a null-deref if step() is ever reached between
-    // a completed destroy() and the next resume()/create().
     if (core) {
         const size_t totalFrames = static_cast<size_t>(frames) * frameSpeed;
         for (size_t i = 0; i < totalFrames; i++)
@@ -556,7 +517,6 @@ void LibretroDroid::step() {
         rumble->fetchFromEnvironment();
     }
 
-    // Some games override the core geometry at runtime. These fields get updated in retro_run().
     if (video && Environment::getInstance().isGameGeometryUpdated()) {
         Environment::getInstance().clearGameGeometryUpdated();
 
@@ -564,14 +524,10 @@ void LibretroDroid::step() {
         Environment::getInstance().clearAVInfoFullUpdate();
 
         if (wasFullAVUpdate) {
-            // SET_SYSTEM_AV_INFO: FBO resize + hw_context_reset were already performed
-            // immediately inside the environment callback (while still in retro_run()).
-            // Nothing left to do here except mark the video as dirty so the aspect ratio
-            // and layout are refreshed on the next Java-side requestAspectRatioUpdate.
+
             LOGD("step: SET_SYSTEM_AV_INFO already handled immediately, marking dirty");
         } else {
-            // SET_GEOMETRY: only geometry/aspect-ratio changed, no GL context reset needed.
-            // Update the renderer layout so the new aspect ratio is applied.
+
             auto newWidth  = Environment::getInstance().getGameGeometryWidth();
             auto newHeight = Environment::getInstance().getGameGeometryHeight();
             LOGD("step: SET_GEOMETRY update %dx%d", newWidth, newHeight);
@@ -597,10 +553,7 @@ float LibretroDroid::getAspectRatio() {
 }
 
 void LibretroDroid::refreshAspectRatio() {
-    // video can legitimately be null here (e.g. resume() fires before onSurfaceCreated()
-    // has run, or after destroy()). Match the null-guard already used by every other
-    // caller of video->... in this class (see setViewport) instead
-    // of assuming the caller always checked.
+
     if (video != nullptr) {
         video->updateAspectRatio(getAspectRatio());
     }
@@ -704,10 +657,6 @@ void LibretroDroid::resetCheat() {
 void LibretroDroid::setCheat(unsigned index, bool enabled, const std::string& code) {
     std::lock_guard<std::mutex> lock(coreLock);
 
-    // retro_cheat_set() is synchronous and takes a plain `const char*`: cores that need to
-    // retain the code copy it internally before returning, so the clone only needs to stay
-    // alive for the duration of this call. Freeing it here (instead of never) closes a
-    // per-call heap leak that otherwise accumulates on every patch-code apply/re-apply.
     const char* clonedCode = Utils::cloneToCString(code);
     core->retro_cheat_set(index, enabled, clonedCode);
     delete[] clonedCode;
@@ -743,11 +692,6 @@ void LibretroDroid::afterGameLoad() {
 float LibretroDroid::findDefaultAspectRatio(const retro_system_av_info& system_av_info) {
     float result = system_av_info.geometry.aspect_ratio;
 
-    // libretro spec: aspect_ratio <= 0.0 means "derive it from base_width/base_height"
-    // (see retro_game_geometry in libretro.h). The previous strict `< 0` check let a
-    // spec-compliant 0.0 through unchanged, collapsing the rendered view to zero width.
-    // base_height is also guarded here: a core reporting 0 would otherwise turn this
-    // into an Inf/NaN aspect ratio that poisons the whole VideoLayout.
     if (result <= 0.0f) {
         unsigned width = system_av_info.geometry.base_width;
         unsigned height = system_av_info.geometry.base_height;
@@ -770,4 +714,4 @@ void LibretroDroid::setViewport(Rect viewportRect) {
     }
 }
 
-} //namespace libretrodroid
+}

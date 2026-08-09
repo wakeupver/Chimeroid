@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">Auto</string>
     <string name="controller_dos_mouse_left">Mus med vänster spak</string>
     <string name="controller_dos_mouse_right">Mus med höger spak</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">TV-effekt</string>
     <string name="setting_stella_crop_hoverscan">Beskär horisontell överskanning</string>
     <string name="setting_fceumm_overscan_h">Beskär horisontell överskanning</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">Orientering</string>
     <string name="setting_wswan_mono_palette">Färgläggning</string>
     <string name="setting_handy_rot">Skärmrotation</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">Inaktiverad</string>
     <string name="value_gambatte_mix_frames_mix">Enkel</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">LCD spöke (exakt)</string>

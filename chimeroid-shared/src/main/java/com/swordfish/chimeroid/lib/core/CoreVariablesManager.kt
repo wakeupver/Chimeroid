@@ -9,11 +9,6 @@ import kotlinx.coroutines.withContext
 
 class CoreVariablesManager(private val sharedPreferences: Lazy<SharedPreferences>) {
 
-    /**
-     * Build the full list of [CoreVariable]s to push to a core.
-     *
-     * Priority (highest wins): user-saved SharedPreferences > [SystemCoreConfig.defaultSettings].
-     */
     suspend fun getOptionsForCore(
         systemID: SystemID,
         systemCoreConfig: SystemCoreConfig,
@@ -23,11 +18,6 @@ class CoreVariablesManager(private val sharedPreferences: Lazy<SharedPreferences
         (defaults + overrides).map { (k, v) -> CoreVariable(k, v) }
     }
 
-    /**
-     * Read every SharedPreference stored under this system's prefix and convert
-     * them back to [CoreVariable]s.  Covers both manually-declared settings and
-     * auto-detected ones saved via the in-game menu.
-     */
     private fun retrieveCustomCoreVariables(systemID: SystemID): List<CoreVariable> {
         val prefix = computeSharedPreferencesPrefix(systemID.dbname)
         return sharedPreferences.get().all
@@ -37,7 +27,7 @@ class CoreVariablesManager(private val sharedPreferences: Lazy<SharedPreferences
                     is Boolean -> if (value) "enabled" else "disabled"
                     is String  -> value
                     is Int, is Long, is Float -> value.toString()
-                    else -> return@mapNotNull null   // skip unknown / null types
+                    else -> return@mapNotNull null
                 }
                 CoreVariable(computeOriginalKey(key, systemID.dbname), strValue)
             }

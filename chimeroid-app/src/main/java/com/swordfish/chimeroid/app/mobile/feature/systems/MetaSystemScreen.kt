@@ -39,7 +39,6 @@ private fun MetaSystemsScreen(
         return
     }
 
-    // Adaptive(160.dp) → clean 2-col layout on phones, 3-col on large screens/tablets
     LazyVerticalGrid(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(14.dp),

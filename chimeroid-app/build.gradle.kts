@@ -13,12 +13,10 @@ plugins {
 android {
     defaultConfig {
         versionCode = 253
-        versionName = "1.18.0" // Always remember to update Cores Tag!
+        versionName = "1.18.0"
         applicationId = "com.swordfish.chimeroid"
     }
     flavorDimensions += listOf("opensource")
-
-    // Since some dependencies are closed source we make a completely free as in free speech variant.
 
     productFlavors {
         create("free") {
@@ -30,9 +28,7 @@ android {
         ndk {
             abiFilters += setOf("arm64-v8a")
         }
-        // chimeroid-shared / chimeroid-touchinput ship ~30 translated locales; this app's
-        // own strings (res/values, res/values-en-rUS) are only maintained in English, so
-        // drop the rest here to avoid shipping unused translated resources.
+
         resourceConfigurations += setOf("en")
     }
 
@@ -46,7 +42,7 @@ android {
 
     packaging {
         jniLibs {
-            // Stripping created some issues with some libretro cores such as ppsspp
+
             keepDebugSymbols += setOf("*/*/*_libretro_android.so")
             useLegacyPackaging = true
         }
@@ -172,9 +168,6 @@ dependencies {
     implementation(deps.libs.composeSettings.memoryStorage)
 
     implementation(project(":libretrodroid"))
-
-    // Uncomment this when using a local aar file.
-    // implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
 
     kapt(deps.libs.dagger.android.processor)
     kapt(deps.libs.dagger.compiler)

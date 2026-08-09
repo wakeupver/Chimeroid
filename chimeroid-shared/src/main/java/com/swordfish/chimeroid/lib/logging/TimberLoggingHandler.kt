@@ -19,18 +19,16 @@ class TimberLoggingHandler : Handler() {
         Timber.tag(tag).log(level, record.message)
     }
 
-    // https://android.googlesource.com/platform/frameworks/base.git/+/master/core/java/com/android/internal/logging/AndroidHandler.java
     private fun getAndroidLevel(level: Level): Int {
         val value = level.intValue()
         return when {
-            value >= 1000 -> Log.ERROR // SEVERE
-            value >= 900 -> Log.WARN // WARNING
-            value >= 800 -> Log.INFO // INFO
+            value >= 1000 -> Log.ERROR
+            value >= 900 -> Log.WARN
+            value >= 800 -> Log.INFO
             else -> Log.DEBUG
         }
     }
 
-    // https://android.googlesource.com/platform/libcore/+/master/dalvik/src/main/java/dalvik/system/DalvikLogging.java
     private fun loggerNameToTag(loggerName: String?): String {
         if (loggerName == null) {
             return "null"

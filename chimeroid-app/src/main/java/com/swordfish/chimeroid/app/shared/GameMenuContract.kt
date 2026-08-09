@@ -22,19 +22,10 @@ object GameMenuContract {
     const val RESULT_CHANGE_DISK = "RESULT_CHANGE_DISK"
     const val RESULT_EDIT_TOUCH_CONTROLS = "RESULT_EDIT_TOUCH_CONTROLS"
 
-    /**
-     * Returned when the user taps "Position Macros" on the Game Menu's Macros screen.
-     * The host activity should dismiss the menu and enter macro drag-positioning mode
-     * directly on the live game screen (see BaseGameScreenViewModel.enterMacroDragMode).
-     */
     const val RESULT_POSITION_MACROS = "RESULT_POSITION_MACROS"
     const val RESULT_ENABLE_AUDIO = "RESULT_ENABLE_AUDIO"
     const val RESULT_ENABLE_FAST_FORWARD = "RESULT_ENABLE_FAST_FORWARD"
     const val RESULT_CHANGE_TILT_CONFIG = "RESULT_CHANGE_TILT_CONFIG"
 
-    /**
-     * Returned from the TV game menu when the user taps "Patch Codes".
-     * The host activity should open the patch codes management UI.
-     */
     const val RESULT_OPEN_PATCH_CODES = "RESULT_OPEN_PATCH_CODES"
 }

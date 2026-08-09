@@ -76,10 +76,6 @@ public:
     void updateRotation(float rotation);
     void updateShaderType(ShaderManager::Config shaderConfig);
 
-    // Force the renderer to immediately recreate its GL buffers if a resize
-    // is pending. Must be called (and hw_context_reset signalled) whenever a
-    // HW-accelerated core triggers SET_SYSTEM_AV_INFO, so that the next call
-    // to getCurrentFramebuffer() returns a correctly-sized FBO.
     void recreateRenderer();
 
     void renderFrame();
@@ -97,10 +93,6 @@ public:
 private:
     void updateProgram();
 
-    // Compiles GL programs for a resolved shader chain into shadersChain.
-    // Shared by updateProgram() (runtime shader switches) and
-    // initializeRenderer() (startup), so the chain is only ever resolved
-    // once per actual change instead of being fetched twice on startup.
     void compileShaderChain(const ShaderManager::Chain& shaders);
 
     float getScreenDensity();
@@ -109,9 +101,6 @@ private:
 
     void initializeRenderer(RenderingOptions renderingOptions);
 
-    // Inner helper: upload vertices+uvs to quadVbo, set attrib pointers, draw 6
-    // vertices, then disable attribs and unbind the VBO.  Caller owns program
-    // binding, uniform setup, and texture bind/unbind.
     void uploadAndDraw(const std::array<float, 12>& vertices,
                        const std::array<float, 12>& uvs,
                        GLint posHandle,
@@ -134,9 +123,6 @@ private:
 
     std::unique_ptr<Renderer> renderer;
 
-    // VBO used for rendering quads. Prevents GLES 3.0 issues where a raw
-    // float* passed to glVertexAttribPointer is misinterpreted as a VBO
-    // offset when a foreign VBO is still bound from a HW-accelerated core.
     GLuint quadVbo = 0;
     bool useES3    = false;
 
@@ -145,4 +131,4 @@ private:
 
 }
 
-#endif //LIBRETRODROID_VIDEO_H
+#endif

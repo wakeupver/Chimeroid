@@ -29,7 +29,6 @@ fun FavoritesScreen(
         return
     }
 
-    // Adaptive(120.dp) → 3 columns on most phones, more on larger screens
     LazyVerticalGrid(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(14.dp),

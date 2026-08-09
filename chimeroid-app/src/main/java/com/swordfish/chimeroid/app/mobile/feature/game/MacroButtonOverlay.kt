@@ -22,12 +22,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,29 +44,12 @@ import com.swordfish.touchinput.radial.ui.ChimeroidButtonForeground
 import com.swordfish.touchinput.radial.ui.ChimeroidControlBackground
 import kotlin.math.roundToInt
 
-// Matches native action buttons (e.g. A/B on SNES pad) at scale = 1.0
 private val BUTTON_SIZE    = 52.dp
 private val DELETE_BADGE   = 18.dp
 private val RESIZE_HANDLE  = 18.dp
 
-// Cumulative diagonal drag (px) on the resize handle needed to move the scale by a full 1.0
-// unit. Tuned for a comfortable, non-twitchy feel across the MIN_SCALE..MAX_SCALE span.
 private const val RESIZE_SENSITIVITY_PX = 300f
 
-/**
- * Full-screen overlay that renders virtual macro buttons.
- *
- * **MUST be placed OUTSIDE the PadKit composable.**
- * PadKit intercepts all raw pointer events; moving the overlay to a sibling
- * of PadKit lets Compose's own [detectDragGestures] / [detectTapGestures]
- * receive unfiltered input.
- *
- * Normal mode : tap    → fire macro combo
- * Edit mode   : drag body → reposition | drag ↘ handle → resize (shares
- *               [TouchControllerSettingsManager]'s MIN_SCALE/MAX_SCALE, the
- *               same range the main Edit Controls scale slider uses) | red
- *               ✕ badge → delete
- */
 @Composable
 fun MacroButtonOverlay(viewModel: BaseGameScreenViewModel) {
     val macroButtons by viewModel.getMacroButtons().collectAsState(emptyList())
@@ -103,10 +84,6 @@ fun MacroButtonOverlay(viewModel: BaseGameScreenViewModel) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Single button item
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun MacroButtonItem(
     btn: MacroButton,
@@ -121,17 +98,14 @@ private fun MacroButtonItem(
     onScaled: (scale: Float) -> Unit,
     onDelete: () -> Unit,
 ) {
-    // Size multiplier, independent of position. mutableFloatStateOf avoids boxing on every
-    // drag tick while the resize handle is being dragged.
+
     var scale by remember(btn.id) { mutableFloatStateOf(btn.scale) }
     val scaledBtnPx = btnPx * scale
     val half = scaledBtnPx / 2f
 
-    // Top-left pixel offset of the button body
     var px by remember(btn.id) { mutableFloatStateOf(btn.xFraction * screenW - half) }
     var py by remember(btn.id) { mutableFloatStateOf(btn.yFraction * screenH - half) }
 
-    // Sync when stored fraction/scale changes (orientation flip, external update, resize commit)
     LaunchedEffect(btn.xFraction, btn.yFraction, btn.scale, screenW, screenH) {
         scale = btn.scale
         val syncedHalf = (btnPx * btn.scale) / 2f
@@ -139,10 +113,8 @@ private fun MacroButtonItem(
         py = (btn.yFraction * screenH - syncedHalf).coerceIn(0f, (screenH - btnPx * btn.scale).coerceAtLeast(0f))
     }
 
-    // Press state forwarded to the native button layers
     val pressedState = remember { mutableStateOf(false) }
 
-    // Gesture modifier swaps between drag (edit) and tap (normal)
     val gestureModifier = Modifier.pointerInput(editMode, btn.id) {
         if (editMode) {
             detectDragGestures(
@@ -168,12 +140,12 @@ private fun MacroButtonItem(
             detectTapGestures(
                 onPress = { _ ->
                     pressedState.value = true
-                    onPress()           // ACTION_DOWN langsung saat jari menyentuh
+                    onPress()
                     try {
                         tryAwaitRelease()
                     } finally {
                         pressedState.value = false
-                        onRelease()     // ACTION_UP saat jari diangkat
+                        onRelease()
                     }
                 },
             )
@@ -186,7 +158,7 @@ private fun MacroButtonItem(
             .size(BUTTON_SIZE * scale)
             .then(gestureModifier),
     ) {
-        // ── Native-style glass button ─────────────────────────────────
+
         NativeStyleButton(
             label       = btn.label,
             pressedState = pressedState,
@@ -194,7 +166,6 @@ private fun MacroButtonItem(
             modifier    = Modifier.fillMaxSize(),
         )
 
-        // ── Delete badge (top-right, edit mode only) ──────────────────
         AnimatedVisibility(
             visible  = editMode,
             enter    = fadeIn(),
@@ -220,10 +191,6 @@ private fun MacroButtonItem(
             }
         }
 
-        // ── Resize handle (bottom-right, edit mode only) ───────────────
-        // Dragging away from the button (↘) grows it, toward it (↖) shrinks it. Only the
-        // local `scale` updates per-frame for smooth feedback; onScaled (→ persistence)
-        // fires once at drag end/cancel, matching how position drags already behave.
         AnimatedVisibility(
             visible  = editMode,
             enter    = fadeIn(),
@@ -262,11 +229,6 @@ private fun MacroButtonItem(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Native-style glass visual
-// Mirrors ChimeroidCentralButton: background GlassSurface + foreground GlassSurface
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun NativeStyleButton(
     label: String,
@@ -274,9 +236,7 @@ private fun NativeStyleButton(
     editMode: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    // Provide theme so sub-components (ChimeroidControlBackground /
-    // ChimeroidButtonForeground) can read it, even when the parent
-    // composition has no theme (overlay lives outside PadKit's provider).
+
     val theme = remember { ChimeroidPadTheme() }
     CompositionLocalProvider(LocalChimeroidPadTheme provides theme) {
         Box(
@@ -287,10 +247,10 @@ private fun NativeStyleButton(
                     else
                         Modifier,
                 )
-                .padding(theme.padding), // 4 dp — same as native button outer padding
+                .padding(theme.padding),
         ) {
-            ChimeroidControlBackground()              // glass level-1 fill
-            ChimeroidButtonForeground(                // glass level-3 fill + label
+            ChimeroidControlBackground()
+            ChimeroidButtonForeground(
                 pressed = pressedState,
                 label   = label,
             )

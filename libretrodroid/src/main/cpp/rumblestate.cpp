@@ -23,4 +23,4 @@ bool libretrodroid::RumbleState::operator==(const libretrodroid::RumbleState &ot
     return strengthWeak == other.strengthWeak && strengthStrong == other.strengthStrong;
 }
 
-} // namespace libretrodroid
+}

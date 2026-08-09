@@ -5,8 +5,6 @@ import com.swordfish.chimeroid.lib.R
 
 fun GameSystem.metaSystemID() = MetaSystemID.fromSystemID(id)
 
-/** Meta systems represents a collection of systems which appear the same to the user. It's currently
- *  only for Arcade (without separating FBNeo, MAME2000 or MAME2003). */
 enum class MetaSystemID(val titleResId: Int, val imageResId: Int, val systemIDs: List<SystemID>) {
     NES(
         R.string.game_system_title_nes,

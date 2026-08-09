@@ -11,16 +11,6 @@ import kotlinx.coroutines.Dispatchers
 
 object CoverUtils {
 
-    /**
-     * Builds the global Coil [ImageLoader].
-     *
-     * Cover art is handled entirely by [CoverArtFetcher]:
-     *   - local JPEG file → served directly (no network round-trip)
-     *   - missing         → download, compress to 512×512 JPEG, save, serve
-     *
-     * Coil's own DiskCache is disabled because we manage persistence ourselves
-     * (individual .jpg files + a single covers.zip pack).
-     */
     fun buildImageLoader(applicationContext: Context): ImageLoader {
         val coverFetcherFactory = CoverArtFetcher.Factory(applicationContext)
         return ImageLoader.Builder(applicationContext)

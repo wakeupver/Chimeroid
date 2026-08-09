@@ -13,22 +13,6 @@ import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-/**
- * Manages per-game cover JPEG files in [coversDir] and a single-file
- * ZIP pack ([packFile]) that aggregates all of them.
- *
- * Storage layout inside [Context.getFilesDir]:
- *
- *   files/
- *     covers/
- *       1.jpg          ← game id 1
- *       2.jpg          ← game id 2
- *       …
- *       covers.zip     ← packed archive (regenerated after bulk sync)
- *
- * Reads (Coil Fetcher) go directly to the individual .jpg files so they
- * are always fast and never contend with a pack rebuild.
- */
 class CoverArtRepository(private val context: Context) {
 
     companion object {
@@ -39,31 +23,19 @@ class CoverArtRepository(private val context: Context) {
         private const val PREFS_NAME = "cover_art_repository"
         private const val KEY_ASPECT_FIX_VERSION = "aspect_fix_version"
 
-        /** Bump when a change to [CoverArtRepository.saveCover] invalidates previously cached JPEGs. */
         private const val CURRENT_ASPECT_FIX_VERSION = 1
 
-        /**
-         * Matches the last "(Tag)" immediately before ".png" in a thumbnails.libretro.com URL —
-         * on a Named_Boxarts filename this is almost always the release region.
-         */
         private val TRAILING_TAG = Regex("""\(([^()]*)\)\.png$""")
 
-        /**
-         * Regions retried, in order, when the ROM's own region tag has no thumbnail — e.g. a
-         * USA ROM whose only libretro-thumbnails entry is tagged (Europe). Bounded to the 4
-         * most common single-word tags; compound tags ("Japan, Asia") aren't attempted.
-         */
         private val REGION_FALLBACKS = listOf("World", "USA", "Europe", "Japan")
     }
 
     val coversDir: File
         get() = File(context.filesDir, "covers").also { it.mkdirs() }
 
-    /** The single-file ZIP archive that bundles every cover JPEG. */
     val packFile: File
         get() = File(coversDir, PACK_FILE_NAME)
 
-    /** Every persisted cover JPEG currently in [coversDir]. */
     private val coverJpegFiles: List<File>
         get() = coversDir.listFiles { f -> f.extension == "jpg" }?.toList() ?: emptyList()
 
@@ -71,15 +43,6 @@ class CoverArtRepository(private val context: Context) {
 
     fun hasCover(gameId: Int): Boolean = getCoverFile(gameId).exists()
 
-    /**
-     * Cover JPEGs saved before [CURRENT_ASPECT_FIX_VERSION] were forced into an exact
-     * [COVER_MAX_PX]×[COVER_MAX_PX] square, squishing any non-square box art. Wipes the
-     * cache once so the next sync re-downloads every cover through the corrected
-     * [downscaledToFit] path. Idempotent — a no-op on every call after the first.
-     *
-     * Not thread-safe against concurrent [saveCover] writers; call only from
-     * [CoverArtSyncWorker]'s serialized background sync, before any covers are (re)written.
-     */
     internal fun invalidateSquishedCoversIfNeeded() {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         if (prefs.getInt(KEY_ASPECT_FIX_VERSION, 0) >= CURRENT_ASPECT_FIX_VERSION) return
@@ -90,11 +53,6 @@ class CoverArtRepository(private val context: Context) {
         Timber.i("invalidateSquishedCoversIfNeeded: cleared cover cache for pre-fix squished covers")
     }
 
-    /**
-     * Decodes [inputStream] as a bitmap, downscales it — preserving aspect ratio — so its
-     * longer side is at most [COVER_MAX_PX]px, and writes a JPEG to disk. Returns true on
-     * success.
-     */
     fun saveCover(gameId: Int, inputStream: InputStream): Boolean {
         return try {
             val raw = BitmapFactory.decodeStream(inputStream) ?: return false
@@ -119,23 +77,12 @@ class CoverArtRepository(private val context: Context) {
         }
     }
 
-    /**
-     * Downloads [coverUrl] and persists it as this game's cached JPEG. Single entry point
-     * shared by [CoverArtFetcher] (on-demand) and [CoverArtSyncWorker] (background sync).
-     *
-     * @throws Exception on I/O failure — callers decide how to log/report it.
-     */
     fun persistCover(
         gameId: Int,
         coverUrl: String,
         httpClient: OkHttpClient,
     ): Boolean = downloadCover(gameId, coverUrl, httpClient)
 
-    /**
-     * Downloads [url] and, on failure, retries the same title under each of [REGION_FALLBACKS]
-     * before giving up — libretro-thumbnails catalogues only one region per game, which is
-     * often not the one the local ROM's own filename happens to be tagged with.
-     */
     private fun downloadCover(
         gameId: Int,
         url: String,
@@ -166,12 +113,6 @@ class CoverArtRepository(private val context: Context) {
         }
     }
 
-    /**
-     * Packs every *.jpg in [coversDir] into [packFile] using DEFLATE compression.
-     * Uses an atomic temp-file swap so readers never see a partial archive.
-     *
-     * @return the final pack file.
-     */
     fun packCovers(): File {
         val covers = coverJpegFiles
 
@@ -200,9 +141,6 @@ class CoverArtRepository(private val context: Context) {
         return packFile
     }
 
-    /**
-     * Deletes cover files for game IDs that are no longer in [validGameIds].
-     */
     fun pruneCovers(validGameIds: Set<Int>) {
         coverJpegFiles.forEach { file ->
             val id = file.nameWithoutExtension.toIntOrNull() ?: return@forEach

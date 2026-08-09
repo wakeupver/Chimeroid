@@ -54,4 +54,4 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAspectR
 
 }
 
-#endif //LIBRETRODROID_LIBRETRODROIDJNI_H
+#endif

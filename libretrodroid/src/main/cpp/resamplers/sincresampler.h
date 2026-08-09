@@ -36,6 +36,6 @@ private:
     int halfTaps;
 };
 
-} //namespace libretrodroid
+}
 
-#endif //LIBRETRODROID_SINCRESAMPLER_H
+#endif

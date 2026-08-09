@@ -87,10 +87,8 @@ class GameViewModelSaves(
         snapshot.autoSave?.let { statesManager.setAutoSave(game, systemCoreConfig.coreID, it) }
     }
 
-    // On some cores unserialize fails with no reason. So we need to try multiple times.
     suspend fun restoreAutoSaveAsync(saveState: SaveState) {
-        // PPSSPP and Mupen64 initialize some state while rendering the first frame, so we have to wait before restoring
-        // the autosave. Do not change thread here. Stick to the GL one to avoid issues with PPSSPP.
+
         if (!isAutoSaveEnabled()) return
 
         try {
@@ -129,7 +127,6 @@ class GameViewModelSaves(
         }
     }
 
-    // Now that we wait for the first rendered frame this is probably no longer needed, but we'll keep it just to be sure
     private suspend fun restoreQuickSave(saveState: SaveState) {
         var times = 10
 

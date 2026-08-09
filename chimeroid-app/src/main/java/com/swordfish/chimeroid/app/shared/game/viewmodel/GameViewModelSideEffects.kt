@@ -32,10 +32,6 @@ class GameViewModelSideEffects(private val scope: CoroutineScope) {
 
     fun getUiEffects(): Flow<UiEffect> = uiEffects
 
-    // MutableSharedFlow.emit is a coroutine-safe suspend function that does not require
-    // the Android main thread. Collectors handle their own thread dispatch. Removing the
-    // previous withContext(Dispatchers.Main) wrapper eliminates one context-switch per event.
-
     fun showToast(message: String) {
         scope.launch { uiEffects.emit(UiEffect.ShowToast(message)) }
     }

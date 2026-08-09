@@ -50,10 +50,6 @@ fun AdvancedSettingsScreen(
     }
 }
 
-// ---------------------------------------------------------------------------
-// Input
-// ---------------------------------------------------------------------------
-
 @Composable
 private fun InputSettings() {
     ChimeroidCardSettingsGroup(
@@ -83,10 +79,6 @@ private fun InputSettings() {
         )
     }
 }
-
-// ---------------------------------------------------------------------------
-// General
-// ---------------------------------------------------------------------------
 
 @Composable
 private fun GeneralSettings(
@@ -130,16 +122,11 @@ private fun GeneralSettings(
     }
 }
 
-// ---------------------------------------------------------------------------
-// Storage
-// ---------------------------------------------------------------------------
-
 @Composable
 private fun StorageSettings(directoriesManager: DirectoriesManager) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Refresh display every time the screen is resumed (i.e. after returning from picker)
     val displayPath = remember { mutableStateOf(directoriesManager.getBaseDirDisplay()) }
 
     DisposableEffect(lifecycleOwner) {
@@ -162,10 +149,6 @@ private fun StorageSettings(directoriesManager: DirectoriesManager) {
         )
     }
 }
-
-// ---------------------------------------------------------------------------
-// Factory reset dialog
-// ---------------------------------------------------------------------------
 
 @Composable
 private fun FactoryResetDialog(

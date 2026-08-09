@@ -69,11 +69,6 @@ abstract class BaseGameActivity : ImmersiveActivity() {
 
     private val startGameTime = System.currentTimeMillis()
 
-    /**
-     * Guards [finishAndExitProcess] so the sequence runs exactly once per session.
-     * Both the normal finish path (successful or error) and the uncaught-exception handler
-     * may race to call finish; only the first one proceeds.
-     */
     private val finishGuard = AtomicBoolean(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -113,8 +108,6 @@ abstract class BaseGameActivity : ImmersiveActivity() {
             }
         }
 
-        // Launch the game load on the lifecycle scope so it is cancelled if the Activity
-        // is destroyed before loading completes (e.g. the user backs out immediately).
         lifecycleScope.launch {
             baseGameScreenViewModel.loadGame(
                 applicationContext,
@@ -144,7 +137,7 @@ abstract class BaseGameActivity : ImmersiveActivity() {
         launchOnState(Lifecycle.State.CREATED) {
             initializeViewModelsEffectsFlow()
         }
-        // Apply patch codes once the emulator view is ready.
+
         launchOnState(Lifecycle.State.CREATED) {
             baseGameScreenViewModel.getGameState()
                 .collect { state ->
@@ -158,10 +151,6 @@ abstract class BaseGameActivity : ImmersiveActivity() {
         }
     }
 
-    /**
-     * Redirect uncaught JVM exceptions to our structured error-finish path instead of crashing.
-     * Only the first call to [finishAndExitProcess] actually runs (see [finishGuard]).
-     */
     private fun setUpExceptionsHandler() {
         Thread.setDefaultUncaughtExceptionHandler { _, exception ->
             performUnexpectedErrorFinish(exception)
@@ -183,9 +172,7 @@ abstract class BaseGameActivity : ImmersiveActivity() {
         if (baseGameScreenViewModel.loadingState.value) return
 
         val coreOptions = getCoreOptions()
-        // Built once and reused for every registered lookup below, turning what was an
-        // O(registeredSettings * coreOptions) scan (noticeable on option-heavy cores like
-        // snes9x, ~40+ variables) into a single O(coreOptions) pass plus O(1) lookups.
+
         val coreOptionsByKey = coreOptions.associateBy { it.variable.key }
 
         val options =
@@ -309,16 +296,6 @@ abstract class BaseGameActivity : ImmersiveActivity() {
         finishAndExitProcess()
     }
 
-    /**
-     * Terminates the game session cleanly.
-     *
-     * - [finishGuard] ensures this runs at most once, preventing double-finish races between
-     *   the success path, error path, and uncaught-exception handler.
-     * - [GameService.requestTermination] is sent via a lifecycle-scoped coroutine so it respects
-     *   the animation delay without leaking a [GlobalScope] coroutine into the process.
-     * - [finish] is called synchronously so the Activity stack unwinds immediately; the service
-     *   will stop itself after the delay independently.
-     */
     private fun finishAndExitProcess() {
         if (!finishGuard.compareAndSet(false, true)) {
             Timber.d("finishAndExitProcess: already triggered, ignoring duplicate")
@@ -337,16 +314,14 @@ abstract class BaseGameActivity : ImmersiveActivity() {
 
     override fun onStop() {
         super.onStop()
-        // Only save in background if the Activity is paused without a deliberate close
-        // and without a configuration change (e.g. rotation).
+
         if (!finishGuard.get() && !isFinishing && !isChangingConfigurations) {
             baseGameScreenViewModel.requestBackgroundSave()
         }
     }
 
     override fun onDestroy() {
-        // Request termination only if the finish sequence wasn't already started (which
-        // already schedules termination) to avoid a duplicate exitProcess race.
+
         if (!isChangingConfigurations && !finishGuard.get()) {
             GameService.requestTermination()
         }
@@ -360,10 +335,6 @@ abstract class BaseGameActivity : ImmersiveActivity() {
 
         Timber.i("Game menu dialog response: ${data?.extras.dump()}")
 
-        // The Macros screen owns its own in-memory list and can close via several different
-        // result paths (or none at all, e.g. tapping "X"). Always resync the live copy rather
-        // than only reacting to RESULT_POSITION_MACROS, otherwise newly added/edited macros
-        // persist correctly but never appear on the live game overlay.
         baseGameScreenViewModel.reloadMacros()
 
         if (data?.getBooleanExtra(GameMenuContract.RESULT_RESET, false) == true) {
@@ -408,7 +379,6 @@ abstract class BaseGameActivity : ImmersiveActivity() {
             baseGameScreenViewModel.changeTiltConfiguration(tiltConfig!!)
         }
 
-        // Always re-apply patch codes when the menu closes — the user may have toggled codes.
         val retroView = baseGameScreenViewModel.retroGameView.retroGameView
         if (retroView != null) {
             lifecycleScope.launch {

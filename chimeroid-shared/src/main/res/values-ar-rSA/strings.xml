@@ -13,7 +13,6 @@
     <string name="controller_dos_auto">التلقائي</string>
     <string name="controller_dos_mouse_left">الفأرة مع العصا اليسرى</string>
     <string name="controller_dos_mouse_right">الفأرة مع العصا اليمنى</string>
-    <!-- Core settings titles -->
     <string name="setting_stella_filter">تأثير التلفاز</string>
     <string name="setting_stella_crop_hoverscan">قص المسح الضوئي الأفقي</string>
     <string name="setting_fceumm_overscan_h">قص المسح الضوئي الأفقي</string>
@@ -51,7 +50,6 @@
     <string name="setting_wswan_rotate_display">الاتجاه</string>
     <string name="setting_wswan_mono_palette">تلوين</string>
     <string name="setting_handy_rot">دِقَّة الشاشة</string>
-    <!-- Core settings values. Duplicated here to ease the translation process. -->
     <string name="value_gambatte_mix_frames_disabled">معطل</string>
     <string name="value_gambatte_mix_frames_mix">بسيطة</string>
     <string name="value_gambatte_mix_frames_lcd_ghosting">LCD Ghost (دقيقة)</string>

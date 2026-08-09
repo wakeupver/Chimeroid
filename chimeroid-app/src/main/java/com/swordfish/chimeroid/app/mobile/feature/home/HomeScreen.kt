@@ -45,7 +45,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -74,9 +73,6 @@ import com.swordfish.chimeroid.app.utils.games.GameUtils
 import com.swordfish.chimeroid.common.displayDetailsSettingsScreen
 import com.swordfish.chimeroid.lib.library.db.entity.Game
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Public entry-point
-// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -128,9 +124,6 @@ fun HomeScreen(
     )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Internal stateless layout
-// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -160,7 +153,7 @@ private fun HomeScreen(
     val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Box(modifier = modifier.fillMaxSize()) {
-        // ── Scrollable body ──────────────────────────────────────────────────
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -172,7 +165,7 @@ private fun HomeScreen(
                     bottom = 32.dp,
                 ),
         ) {
-            // ── Notification banners ─────────────────────────────────────────
+
             AnimatedVisibility(state.showNoNotificationPermissionCard) {
                 HomeNotificationBanner(
                     message = stringResource(R.string.home_notification_title),
@@ -196,7 +189,6 @@ private fun HomeScreen(
                 )
             }
 
-            // ── Bento grid ───────────────────────────────────────────────────
             val lastGame = state.recentGames.firstOrNull()
 
             Row(
@@ -236,7 +228,6 @@ private fun HomeScreen(
 
             Spacer(Modifier.height(30.dp))
 
-            // ── Recent ───────────────────────────────────────────────────────
             if (state.recentGames.isNotEmpty()) {
                 HomeSectionHeader(title = stringResource(R.string.recent))
                 Spacer(Modifier.height(12.dp))
@@ -255,7 +246,6 @@ private fun HomeScreen(
                 Spacer(Modifier.height(28.dp))
             }
 
-            // ── Favorites ────────────────────────────────────────────────────
             if (state.favoritesGames.isNotEmpty()) {
                 HomeSectionHeader(title = stringResource(R.string.favorites))
                 Spacer(Modifier.height(12.dp))
@@ -274,7 +264,6 @@ private fun HomeScreen(
                 Spacer(Modifier.height(28.dp))
             }
 
-            // ── Discover ─────────────────────────────────────────────────────
             if (state.discoveryGames.isNotEmpty()) {
                 HomeSectionHeader(title = stringResource(R.string.discover))
                 Spacer(Modifier.height(12.dp))
@@ -293,7 +282,6 @@ private fun HomeScreen(
             }
         }
 
-        // ── Pinned collapsing header ─────────────────────────────────────────
         HomeCollapsingHeader(
             modifier = Modifier.fillMaxWidth(),
             fraction = fraction,
@@ -308,11 +296,6 @@ private fun HomeScreen(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Collapsing header
-//   fraction = 0 → expanded  : big greeting visible, actions at top-right
-//   fraction = 1 → collapsed : app name visible, same actions at top-right
-// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun HomeCollapsingHeader(
     modifier: Modifier = Modifier,
@@ -328,9 +311,8 @@ private fun HomeCollapsingHeader(
     val headerHeight = lerp(expandedHeight, collapsedHeight, fraction)
     val appName = stringResource(R.string.chimeroid_name)
 
-    // Expanded content fades out in first 60% of scroll
     val expandedAlpha = (1f - fraction / 0.6f).coerceIn(0f, 1f)
-    // Collapsed content fades in after 40% of scroll
+
     val collapsedAlpha = ((fraction - 0.4f) / 0.6f).coerceIn(0f, 1f)
 
     Surface(
@@ -345,9 +327,7 @@ private fun HomeCollapsingHeader(
                     .fillMaxWidth()
                     .height(headerHeight),
             ) {
-                // ── Pinned chrome — identical component to every other route's top
-                // bar, so the two can never visually drift apart again. Actions stay
-                // fully opaque; only the title crossfades with the collapsed state.
+
                 ChimeroidTopBarChrome(
                     title = {
                         Text(
@@ -370,7 +350,6 @@ private fun HomeCollapsingHeader(
                     },
                 )
 
-                // ── Expanded greeting — at the bottom of the header ──────────────
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -393,9 +372,6 @@ private fun HomeCollapsingHeader(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Bento — left tall card
-// ─────────────────────────────────────────────────────────────────────────────
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BentoContinuePlayingCard(
@@ -480,9 +456,6 @@ private fun BentoContinuePlayingCard(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Bento — right action cards
-// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun BentoActionCard(
     icon: ImageVector,
@@ -526,9 +499,6 @@ private fun BentoActionCard(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Section header
-// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun HomeSectionHeader(title: String) {
     Row(
@@ -549,9 +519,6 @@ private fun HomeSectionHeader(title: String) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Game list row (pill)
-// ─────────────────────────────────────────────────────────────────────────────
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomeGameListItem(
@@ -620,9 +587,6 @@ private fun HomeGameListItem(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Compact notification banner
-// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun HomeNotificationBanner(
     message: String,

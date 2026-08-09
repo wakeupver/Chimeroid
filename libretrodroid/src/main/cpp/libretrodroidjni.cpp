@@ -97,8 +97,6 @@ JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_ge
         return nullptr;
     }
 
-    // Reflection lookups are loop-invariant. Hoisting them turns O(n) redundant
-    // FindClass/GetMethodID/GetFieldID calls into a single O(1) setup.
     jmethodID variableCtor = env->GetMethodID(variableClass, "<init>", "()V");
     jfieldID keyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
     jfieldID valueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
@@ -125,9 +123,6 @@ JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_ge
         env->SetObjectField(jVariable, descriptionField, jDescription);
         env->SetObjectArrayElement(result, i, jVariable);
 
-        // Cores with large option sets (e.g. snes9x, ~40+ variables) used to leak
-        // 4 local refs/iteration with no bound, risking JNI local reference table
-        // exhaustion — which silently truncates or corrupts the tail of the list.
         env->DeleteLocalRef(jDescription);
         env->DeleteLocalRef(jValue);
         env->DeleteLocalRef(jKey);
@@ -150,8 +145,6 @@ JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_ge
         return nullptr;
     }
 
-    // Loop-invariant reflection lookups, hoisted once instead of once per
-    // player (ctor) and once per controller type (field ids).
     jmethodID controllerCtor = env->GetMethodID(controllerClass, "<init>", "()V");
     jfieldID idField = env->GetFieldID(controllerClass, "id", "I");
     jfieldID descriptionField = env->GetFieldID(controllerClass, "description", "Ljava/lang/String;");
@@ -583,16 +576,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
     jclass obj,
     jobject glRetroView
 ) {
-    // CRITICAL: step() calls core->retro_run() which may throw C++ exceptions (e.g. PPSSPP
-    // internally calling std::terminate on unhandled errors). Without a try-catch here the
-    // exception escapes the JNI boundary, the ART runtime calls std::terminate(), which calls
-    // abort() → SIGABRT. Wrap the entire function body so any core exception is converted into
-    // a Java RetroException that GLRetroView.catchExceptions() can handle gracefully.
-    // Method IDs are stable for as long as the class stays loaded (the process
-    // lifetime here), so they're resolved via reflection once on first use and
-    // reused on every subsequent call instead of doing GetObjectClass +
-    // GetMethodID on every single step() — sendRumbleEvent in particular can
-    // fire every frame while a game drives a continuous rumble effect.
+
     static jmethodID refreshAspectRatioMethod = nullptr;
     static jmethodID sendRumbleEventMethod = nullptr;
 

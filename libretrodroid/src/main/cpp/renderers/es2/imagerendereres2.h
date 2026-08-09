@@ -54,15 +54,9 @@ private:
     unsigned int glFormat = 0;
 
     bool linear = false;
-    // Set whenever `linear` changes (or on first use) so onNewFrame() only
-    // reissues glTexParameteri for the min/max filter when it actually needs
-    // to, instead of every single frame. Wrap mode never changes after
-    // construction so it isn't tracked here at all.
+
     bool filterDirty = true;
 
-    // Set whenever bytesPerPixel changes (setPixelFormat) so onNewFrame()
-    // only reissues glPixelStorei(GL_UNPACK_ALIGNMENT, ...) when it actually
-    // needs to, instead of every single frame.
     bool alignmentDirty = true;
 
     unsigned int currentTexture = 0;
@@ -70,4 +64,4 @@ private:
 
 }
 
-#endif //LIBRETRODROID_IMAGERENDERERES2_H
+#endif

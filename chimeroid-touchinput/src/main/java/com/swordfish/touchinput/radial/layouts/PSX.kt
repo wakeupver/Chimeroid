@@ -1,9 +1,7 @@
 package com.swordfish.touchinput.radial.layouts
 
-import android.view.KeyEvent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.swordfish.touchinput.controller.R
 import com.swordfish.touchinput.radial.controls.ChimeroidControlCross
 import com.swordfish.touchinput.radial.layouts.shared.ComposeTouchLayouts
 import com.swordfish.touchinput.radial.layouts.shared.SecondaryButtonL1

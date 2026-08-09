@@ -206,8 +206,6 @@ object SerialScanner {
 
         val groups = SEGA_CD_REGEX.find(rawSerial)?.groupValues
 
-        // The following rules come from here: https://github.com/libretro/RetroArch/pull/11719/files
-        // and some guess work. They are by no means complete.
         val prefix = groups?.get(1)
         val num = groups?.get(2)
         var postfix = groups?.get(3)

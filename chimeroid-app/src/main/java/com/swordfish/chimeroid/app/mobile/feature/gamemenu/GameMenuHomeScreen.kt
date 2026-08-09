@@ -47,7 +47,7 @@ fun GameMenuHomeScreen(
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // ── SAVE STATES ──────────────────────────────────────────────────────
+
         if (gameMenuRequest.coreConfig.statesSupported) {
             MenuSection(stringResource(R.string.game_menu_section_states)) {
                 ChimeroidSettingsMenuLink(
@@ -74,7 +74,6 @@ fun GameMenuHomeScreen(
             }
         }
 
-        // ── PLAYBACK ─────────────────────────────────────────────────────────
         MenuSection(stringResource(R.string.game_menu_section_playback)) {
             ChimeroidSettingsSwitch(
                 title = { Text(text = stringResource(id = R.string.game_menu_mute_audio)) },
@@ -153,9 +152,8 @@ fun GameMenuHomeScreen(
             }
         }
 
-        // ── OPTIONS ──────────────────────────────────────────────────────────
         MenuSection(stringResource(R.string.game_menu_section_options)) {
-            // Edit Controls — kembali ke dalam card OPTIONS
+
             ChimeroidSettingsMenuLink(
                 title = { Text(text = stringResource(id = R.string.game_menu_edit_touch_controls)) },
                 icon = {
@@ -202,7 +200,6 @@ fun GameMenuHomeScreen(
             )
         }
 
-        // ── ACTIONS (destructive) ─────────────────────────────────────────────
         MenuSection(stringResource(R.string.game_menu_section_actions)) {
             ChimeroidSettingsMenuLink(
                 title = { Text(text = stringResource(id = R.string.game_menu_restart)) },
@@ -241,8 +238,6 @@ fun GameMenuHomeScreen(
         Spacer(modifier = Modifier.height(8.dp))
     }
 }
-
-// ── MENU SECTION ──────────────────────────────────────────────────────────────
 
 @Composable
 private fun MenuSection(
