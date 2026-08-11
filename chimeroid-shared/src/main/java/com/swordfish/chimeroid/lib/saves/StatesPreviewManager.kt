@@ -21,8 +21,8 @@ class StatesPreviewManager(private val directoriesManager: DirectoriesManager) {
         withContext(Dispatchers.IO) {
             val screenshotName = getSlotScreenshotName(game, index)
             val file = getPreviewFile(screenshotName, coreID.coreName)
-            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-            ThumbnailUtils.extractThumbnail(bitmap, size, size)
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: return@withContext null
+            ThumbnailUtils.extractThumbnail(bitmap, size, size).also { bitmap.recycle() }
         }
 
     suspend fun setPreviewForSlot(

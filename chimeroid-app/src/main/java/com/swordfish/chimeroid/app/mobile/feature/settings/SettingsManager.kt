@@ -9,6 +9,7 @@ import com.swordfish.chimeroid.common.math.Fraction
 import com.swordfish.chimeroid.lib.storage.cache.CacheCleaner
 import dagger.Lazy
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -61,52 +62,36 @@ class SettingsManager(private val context: Context, sharedPreferences: Lazy<Shar
     private suspend fun booleanPreference(
         keyId: Int,
         default: Boolean,
-    ): Boolean =
-        withContext(Dispatchers.IO) {
-            sharedPreferences.getBoolean(getString(keyId), default)
-                .asFlow()
-                .first()
-        }
+    ): Boolean = ioFirst(sharedPreferences.getBoolean(getString(keyId), default).asFlow())
 
     private suspend fun stringPreference(
         keyId: Int,
         default: String,
-    ): String =
-        withContext(Dispatchers.IO) {
-            sharedPreferences.getString(getString(keyId), default)
-                .asFlow()
-                .first()
-        }
+    ): String = ioFirst(sharedPreferences.getString(getString(keyId), default).asFlow())
 
     private suspend fun stringSetPreference(
         keyId: Int,
         default: Set<String>,
-    ): Set<String> =
-        withContext(Dispatchers.IO) {
-            sharedPreferences.getStringSet(getString(keyId), default)
-                .asFlow()
-                .first()
-        }
+    ): Set<String> = ioFirst(sharedPreferences.getStringSet(getString(keyId), default).asFlow())
 
     private suspend fun floatPreference(
         keyId: Int,
         denominator: Int,
         defaultNumerator: Int,
     ): Float =
-        withContext(Dispatchers.IO) {
+        ioFirst(
             sharedPreferences.getInt(getString(keyId), defaultNumerator)
                 .asFlow()
-                .map { Fraction(it, denominator).floatValue }
-                .first()
-        }
+                .map { Fraction(it, denominator).floatValue },
+        )
 
     private suspend fun intPreference(
         keyId: Int,
         default: Int,
-    ): Int =
+    ): Int = ioFirst(sharedPreferences.getInt(getString(keyId), default).asFlow())
+
+    private suspend fun <T> ioFirst(flow: Flow<T>): T =
         withContext(Dispatchers.IO) {
-            sharedPreferences.getInt(getString(keyId), default)
-                .asFlow()
-                .first()
+            flow.first()
         }
 }

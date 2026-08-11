@@ -13,6 +13,11 @@ import dagger.Binds
 import dagger.android.AndroidInjector
 import dagger.multibindings.IntoMap
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
@@ -44,21 +49,28 @@ class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
         val validIds = games.map { it.id }.toSet()
         repository.pruneCovers(validIds)
 
-        var downloaded = 0
-        var failed = 0
-        games.forEach { game ->
-            if (repository.hasCover(game.id)) return@forEach
-            val url = game.coverFrontUrl ?: return@forEach
+        val downloadCandidates = games.filter { !repository.hasCover(it.id) && it.coverFrontUrl != null }
+        val downloadSemaphore = Semaphore(DOWNLOAD_CONCURRENCY)
 
-            val ok = try {
-                repository.persistCover(game.id, url, httpClient)
-            } catch (e: Exception) {
-                Timber.w(e, "CoverArtSyncWorker: cover fetch failed for '${game.title}'")
-                false
-            }
-
-            if (ok) downloaded++ else failed++
+        val results = coroutineScope {
+            downloadCandidates
+                .map { game ->
+                    async(Dispatchers.IO) {
+                        downloadSemaphore.withPermit {
+                            try {
+                                repository.persistCover(game.id, game.coverFrontUrl!!, httpClient)
+                            } catch (e: Exception) {
+                                Timber.w(e, "CoverArtSyncWorker: cover fetch failed for '${game.title}'")
+                                false
+                            }
+                        }
+                    }
+                }
+                .awaitAll()
         }
+
+        val downloaded = results.count { it }
+        val failed = results.size - downloaded
 
         Timber.i("CoverArtSyncWorker: downloaded=$downloaded failed=$failed total=${games.size}")
 
@@ -75,6 +87,8 @@ class CoverArtSyncWorker(context: Context, params: WorkerParameters) :
 
     companion object {
         val WORK_ID: String = CoverArtSyncWorker::class.java.simpleName
+
+        private const val DOWNLOAD_CONCURRENCY = 6
 
         fun schedule(context: Context) {
             WorkManager.getInstance(context)

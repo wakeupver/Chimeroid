@@ -31,6 +31,8 @@ import com.swordfish.libretrodroid.Variable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,6 +75,18 @@ class GameViewModelRetroGameView(
         data class Error(val message: String) : GameState
     }
 
+    private data class InitialGameSettings(
+        val autoSaveEnabled: Boolean,
+        val filter: String,
+        val hdMode: Boolean,
+        val hdModeQuality: HDModeQuality,
+        val lowLatencyAudio: Boolean,
+        val enableRumble: Boolean,
+        val directLoad: Boolean,
+        val enableImmersiveMode: Boolean,
+        val aspectRatioMode: String,
+    )
+
     private val gameState: MutableStateFlow<GameState> = MutableStateFlow(GameState.Uninitialized)
 
     private val initMutex = Mutex()
@@ -102,15 +116,39 @@ class GameViewModelRetroGameView(
         initMutex.withLock {
             if (gameState.value != GameState.Uninitialized) return
 
-            val autoSaveEnabled = settingsManager.autoSave()
-            val filter = settingsManager.screenFilter()
-            val hdMode = settingsManager.hdMode()
-            val hdModeQuality = settingsManager.hdModeQuality()
-            val lowLatencyAudio = settingsManager.lowLatencyAudio()
-            val enableRumble = settingsManager.enableRumble()
-            val directLoad = settingsManager.allowDirectGameLoad()
-            val enableImmersiveMode = settingsManager.enableImmersiveMode()
-            val aspectRatioMode = settingsManager.aspectRatioMode()
+            val (
+                autoSaveEnabled,
+                filter,
+                hdMode,
+                hdModeQuality,
+                lowLatencyAudio,
+                enableRumble,
+                directLoad,
+                enableImmersiveMode,
+                aspectRatioMode,
+            ) = coroutineScope {
+                val autoSaveEnabledAsync = async { settingsManager.autoSave() }
+                val filterAsync = async { settingsManager.screenFilter() }
+                val hdModeAsync = async { settingsManager.hdMode() }
+                val hdModeQualityAsync = async { settingsManager.hdModeQuality() }
+                val lowLatencyAudioAsync = async { settingsManager.lowLatencyAudio() }
+                val enableRumbleAsync = async { settingsManager.enableRumble() }
+                val directLoadAsync = async { settingsManager.allowDirectGameLoad() }
+                val enableImmersiveModeAsync = async { settingsManager.enableImmersiveMode() }
+                val aspectRatioModeAsync = async { settingsManager.aspectRatioMode() }
+
+                InitialGameSettings(
+                    autoSaveEnabled = autoSaveEnabledAsync.await(),
+                    filter = filterAsync.await(),
+                    hdMode = hdModeAsync.await(),
+                    hdModeQuality = hdModeQualityAsync.await(),
+                    lowLatencyAudio = lowLatencyAudioAsync.await(),
+                    enableRumble = enableRumbleAsync.await(),
+                    directLoad = directLoadAsync.await(),
+                    enableImmersiveMode = enableImmersiveModeAsync.await(),
+                    aspectRatioMode = aspectRatioModeAsync.await(),
+                )
+            }
 
             val hasMicrophonePermission =
                 ContextCompat.checkSelfPermission(
