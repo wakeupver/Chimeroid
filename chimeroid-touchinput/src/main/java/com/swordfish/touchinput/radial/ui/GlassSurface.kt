@@ -1,6 +1,7 @@
 package com.swordfish.touchinput.radial.ui
 
 import android.graphics.BlurMaskFilter
+import android.util.LruCache
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.runtime.Composable
@@ -20,7 +21,8 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.ceil
 
 private object ShadowCache {
-    private val bitmapCache = mutableMapOf<String, ImageBitmap>()
+    private const val MAX_CACHED_SHADOWS = 32
+    private val bitmapCache = LruCache<String, ImageBitmap>(MAX_CACHED_SHADOWS)
 
     fun getOrCreate(
         width: Int,
@@ -31,31 +33,33 @@ private object ShadowCache {
         padding: Int,
     ): ImageBitmap {
         val key = "$width-$height-$cornerRadius-${shadowColor.toArgb()}-$blurRadius-$padding"
-        return bitmapCache.getOrPut(key) {
-            val bitmapWidth = width + padding * 2
-            val bitmapHeight = height + padding * 2
-            val bitmap = ImageBitmap(bitmapWidth, bitmapHeight)
-            val canvas = Canvas(bitmap)
 
-            val frameworkPaint =
-                android.graphics.Paint().apply {
-                    isAntiAlias = true
-                    color = shadowColor.toArgb()
-                    maskFilter = BlurMaskFilter(blurRadius, BlurMaskFilter.Blur.NORMAL)
-                }
+        bitmapCache.get(key)?.let { return it }
 
-            canvas.nativeCanvas.drawRoundRect(
-                padding.toFloat(),
-                padding.toFloat(),
-                padding.toFloat() + width.toFloat(),
-                padding.toFloat() + height.toFloat(),
-                cornerRadius,
-                cornerRadius,
-                frameworkPaint,
-            )
+        val bitmapWidth = width + padding * 2
+        val bitmapHeight = height + padding * 2
+        val bitmap = ImageBitmap(bitmapWidth, bitmapHeight)
+        val canvas = Canvas(bitmap)
 
-            bitmap
-        }
+        val frameworkPaint =
+            android.graphics.Paint().apply {
+                isAntiAlias = true
+                color = shadowColor.toArgb()
+                maskFilter = BlurMaskFilter(blurRadius, BlurMaskFilter.Blur.NORMAL)
+            }
+
+        canvas.nativeCanvas.drawRoundRect(
+            padding.toFloat(),
+            padding.toFloat(),
+            padding.toFloat() + width.toFloat(),
+            padding.toFloat() + height.toFloat(),
+            cornerRadius,
+            cornerRadius,
+            frameworkPaint,
+        )
+
+        bitmapCache.put(key, bitmap)
+        return bitmap
     }
 }
 

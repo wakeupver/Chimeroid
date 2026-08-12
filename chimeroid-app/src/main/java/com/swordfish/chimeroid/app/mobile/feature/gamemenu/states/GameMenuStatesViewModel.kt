@@ -10,6 +10,9 @@ import com.swordfish.chimeroid.app.shared.gamemenu.GameMenuHelper
 import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import com.swordfish.chimeroid.lib.saves.StatesManager
 import com.swordfish.chimeroid.lib.saves.StatesPreviewManager
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.flow
 
 class GameMenuStatesViewModel(
@@ -49,25 +52,29 @@ class GameMenuStatesViewModel(
             val slotsInfo = statesManager.getSavedSlotsInfo(gameMenuRequest.game, gameMenuRequest.coreConfig.coreID)
 
             val entries =
-                slotsInfo.mapIndexed { index, slotInfo ->
-                    val title =
-                        application.applicationContext.getString(
-                            R.string.game_menu_state,
-                            (index + 1).toString(),
-                        )
-                    val description = GameMenuHelper.getSaveStateDescription(slotInfo)
-                    val isEnabled = !disableMissingEntries || slotInfo.exists
-                    val preview =
-                        GameMenuHelper.getSaveStateBitmap(
-                            application.applicationContext,
-                            statesPreviewManager,
-                            slotInfo,
-                            gameMenuRequest.game,
-                            gameMenuRequest.coreConfig.coreID,
-                            index,
-                        )
+                coroutineScope {
+                    slotsInfo.mapIndexed { index, slotInfo ->
+                        async {
+                            val title =
+                                application.applicationContext.getString(
+                                    R.string.game_menu_state,
+                                    (index + 1).toString(),
+                                )
+                            val description = GameMenuHelper.getSaveStateDescription(slotInfo)
+                            val isEnabled = !disableMissingEntries || slotInfo.exists
+                            val preview =
+                                GameMenuHelper.getSaveStateBitmap(
+                                    application.applicationContext,
+                                    statesPreviewManager,
+                                    slotInfo,
+                                    gameMenuRequest.game,
+                                    gameMenuRequest.coreConfig.coreID,
+                                    index,
+                                )
 
-                    StateEntry(title, description, isEnabled, preview)
+                            StateEntry(title, description, isEnabled, preview)
+                        }
+                    }.awaitAll()
                 }
 
             emit(State(entries))

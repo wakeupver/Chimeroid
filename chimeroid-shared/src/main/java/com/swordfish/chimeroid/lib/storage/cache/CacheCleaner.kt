@@ -66,7 +66,7 @@ object CacheCleaner {
                 cacheFoldersSequence.flatten()
                     .filter { it.isFile }
                     .sortedBy { retrieveLastAccess(it) }
-                    .toMutableList()
+                    .toCollection(ArrayDeque())
 
             val cacheSize =
                 cacheFiles
@@ -80,7 +80,7 @@ object CacheCleaner {
             Timber.i("Freeing cache space: ${printSize(appContext, spaceToBeDeleted)}")
 
             while (spaceToBeDeleted > 0) {
-                val deletedFile = cacheFiles.removeAt(0)
+                val deletedFile = cacheFiles.removeFirst()
                 val size = deletedFile.length()
 
                 if (deletedFile.delete()) {

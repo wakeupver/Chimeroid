@@ -11,20 +11,23 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.runBlocking
 
 @OptIn(DelicateCoroutinesApi::class)
-class ShortcutBindingUpdater(private val inputDeviceManager: InputDeviceManager, intent: Intent) {
+class ShortcutBindingUpdater(
+    private val inputDeviceManager: InputDeviceManager,
+    intent: Intent,
+) : KeyBindingUpdater {
     val extras = parseExtras(intent)
 
     private var firstKeyCodeInCombo: Int? = null
 
-    fun getTitle(context: Context): String {
+    override fun getTitle(context: Context): String {
         return context.getString(R.string.shortcut_binding_update_title, extras.shortcutType.displayName())
     }
 
-    fun getMessage(context: Context): String {
+    override fun getMessage(context: Context): String {
         return context.getString(R.string.shortcut_binding_update_description, extras.device.name)
     }
 
-    fun handleKeyEvent(event: KeyEvent): Boolean {
+    override fun handleKeyEvent(event: KeyEvent): Boolean {
         return when (event.action) {
             KeyEvent.ACTION_DOWN -> onKeyDown(event)
             KeyEvent.ACTION_UP -> onKeyUp(event)

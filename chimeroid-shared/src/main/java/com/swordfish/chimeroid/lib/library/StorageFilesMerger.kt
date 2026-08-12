@@ -55,6 +55,7 @@ object StorageFilesMerger {
         storageProvider: StorageProvider,
     ) {
         val toBeRemoved = mutableListOf<BaseStorageFile>()
+        val filesByName = allFiles.keys.groupBy { it.name }
 
         allFiles.keys
             .asSequence()
@@ -65,7 +66,10 @@ object StorageFilesMerger {
                         storageProvider.getInputStream(m3uFile.uri)?.readLines()
                     }.getOrNull() ?: listOf()
 
-                val dataFiles = allFiles.filter { it.key.name in m3uFiles }
+                val dataFiles =
+                    m3uFiles.toSet()
+                        .flatMap { name -> filesByName[name].orEmpty() }
+                        .associateWith { allFiles.getValue(it) }
 
                 allFiles[m3uFile] = allFiles[m3uFile]!! +
                     dataFiles.flatMap {
@@ -101,16 +105,18 @@ object StorageFilesMerger {
         storageProvider: StorageProvider,
     ) {
         val toBeRemoved = mutableListOf<BaseStorageFile>()
+        val filesByName = allFiles.keys.groupBy { it.name }
 
         allFiles.keys
             .asSequence()
             .filter { it.extension == "cue" }
             .forEach { cueFile ->
-                val requestedBinFiles = extractBinFiles(storageProvider, cueFile.uri)
+                val requestedBinFiles = extractBinFiles(storageProvider, cueFile.uri).toSet()
 
                 val binFiles =
-                    allFiles
-                        .filter { it.key.name in requestedBinFiles }
+                    requestedBinFiles
+                        .flatMap { name -> filesByName[name].orEmpty() }
+                        .associateWith { allFiles.getValue(it) }
 
                 allFiles[cueFile] = (allFiles[cueFile] ?: listOf()) +
                     binFiles.flatMap {

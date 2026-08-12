@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.swordfish.chimeroid.app.shared.game.macro.MacroButton
+import com.swordfish.chimeroid.app.shared.game.macro.MacroButtonListEditor
 import com.swordfish.chimeroid.app.shared.game.macro.MacroButtonsManager
 import com.swordfish.chimeroid.app.utils.android.viewmodel.viewModelFactory
 import kotlinx.coroutines.Dispatchers
@@ -35,14 +36,11 @@ class GameMenuMacrosViewModel(
     }
 
     fun addOrUpdateMacro(macro: MacroButton) {
-        val current = _macroButtons.value.toMutableList()
-        val idx = current.indexOfFirst { it.id == macro.id }
-        if (idx >= 0) current[idx] = macro else current.add(macro)
-        persist(current)
+        persist(MacroButtonListEditor.addOrUpdate(_macroButtons.value, macro))
     }
 
     fun deleteMacro(macroId: String) {
-        persist(_macroButtons.value.filter { it.id != macroId })
+        persist(MacroButtonListEditor.delete(_macroButtons.value, macroId))
     }
 
     private fun persist(buttons: List<MacroButton>) {

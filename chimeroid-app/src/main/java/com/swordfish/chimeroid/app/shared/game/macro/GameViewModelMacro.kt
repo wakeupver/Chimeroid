@@ -41,15 +41,11 @@ class GameViewModelMacro(
     }
 
     fun addOrUpdateMacro(macro: MacroButton) {
-        val current = _macroButtons.value.toMutableList()
-        val idx = current.indexOfFirst { it.id == macro.id }
-        if (idx >= 0) current[idx] = macro else current.add(macro)
-        persist(current)
+        persist(MacroButtonListEditor.addOrUpdate(_macroButtons.value, macro))
     }
 
     fun deleteMacro(macroId: String) {
-        val updated = _macroButtons.value.filter { it.id != macroId }
-        persist(updated)
+        persist(MacroButtonListEditor.delete(_macroButtons.value, macroId))
     }
 
     fun updateMacroPosition(macroId: String, xFraction: Float, yFraction: Float) {

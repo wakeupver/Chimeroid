@@ -13,19 +13,22 @@ import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
 @OptIn(DelicateCoroutinesApi::class)
-class InputBindingUpdater(private val inputDeviceManager: InputDeviceManager, intent: Intent) {
+class InputBindingUpdater(
+    private val inputDeviceManager: InputDeviceManager,
+    intent: Intent,
+) : KeyBindingUpdater {
     val extras = parseExtras(intent)
 
-    fun getTitle(context: Context): String {
+    override fun getTitle(context: Context): String {
         val keyName = InputKey(extras.retroKey).displayName()
         return context.getString(R.string.gamepad_binding_update_title, keyName)
     }
 
-    fun getMessage(context: Context): String {
+    override fun getMessage(context: Context): String {
         return context.getString(R.string.gamepad_binding_update_description, extras.device.name)
     }
 
-    fun handleKeyEvent(event: KeyEvent): Boolean {
+    override fun handleKeyEvent(event: KeyEvent): Boolean {
         Timber.d("Received input binding event: $event ${event.device}")
         return when (event.action) {
             KeyEvent.ACTION_DOWN -> onKeyDown(event)
