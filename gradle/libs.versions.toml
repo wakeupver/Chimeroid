@@ -1,0 +1,113 @@
+[versions]
+dagger = "2.19"
+gms = "17.0.0"
+kotlin = "2.0.21"
+okHttp = "4.9.1"
+retrofit = "2.9.0"
+work = "2.9.0"
+navigation = "2.5.2"
+lifecycle = "2.6.1"
+googleApiClient = "1.32.1"
+paging = "3.2.1"
+room = "2.6.1"
+serialization = "1.2.2"
+fragment = "1.5.1"
+activity = "1.7.2"
+libretrodroid = "0.13.2"
+composeBom = "2025.12.00"
+kotlinExtension = "1.4.6"
+padkit = "1.0.0-beta1"
+accompanist = "0.34.0"
+
+[libraries]
+androidx-appcompat-appcompat = "androidx.appcompat:appcompat:1.4.2"
+androidx-appcompat-recyclerView = "androidx.recyclerview:recyclerview:1.2.1"
+androidx-appcompat-constraintLayout = "androidx.constraintlayout:constraintlayout:2.1.4"
+androidx-ktx-core = "androidx.core:core-ktx:1.8.0"
+androidx-ktx-coreKtx = "androidx.core:core-ktx:1.8.0"
+androidx-ktx-collection = "androidx.collection:collection-ktx:1.1.0"
+androidx-lifecycle-commonJava8 = { module = "androidx.lifecycle:lifecycle-common-java8", version.ref = "lifecycle" }
+androidx-lifecycle-processor = { module = "androidx.lifecycle:lifecycle-compiler", version.ref = "lifecycle" }
+androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-runtimeCompose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-reactiveStreams = "android.arch.lifecycle:reactivestreams:1.1.1"
+androidx-lifecycle-viewModelCompose = "androidx.lifecycle:lifecycle-viewmodel-compose:2.5.1"
+androidx-preferences-preferencesKtx = "androidx.preference:preference-ktx:1.1.1"
+androidx-paging-common = { module = "androidx.paging:paging-common", version.ref = "paging" }
+androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging" }
+androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "paging" }
+androidx-navigation-navigationFragment = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigation" }
+androidx-navigation-navigationUi = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigation" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
+androidx-room-common = { module = "androidx.room:room-common", version.ref = "room" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+androidx-room-paging = { module = "androidx.room:room-paging", version.ref = "room" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+androidx-fragment-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
+androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment" }
+androidx-documentfile = "androidx.documentfile:documentfile:1.0.1"
+androidx-activity-activity = { module = "androidx.activity:activity", version.ref = "activity" }
+androidx-activity-activityKtx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
+androidx-compose-composeBom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-material3 = "androidx.compose.material3:material3"
+androidx-compose-coreIcons = "androidx.compose.material:material-icons-core"
+androidx-compose-extendedIcons = "androidx.compose.material:material-icons-extended"
+androidx-compose-tooling = "androidx.compose.ui:ui-tooling"
+androidx-compose-toolingPreview = "androidx.compose.ui:ui-tooling-preview"
+androidx-compose-geometry = "androidx.compose.ui:ui-geometry"
+androidx-compose-runtime = "androidx.compose.runtime:runtime"
+androidx-compose-constraintLayout = "androidx.constraintlayout:constraintlayout-compose:1.1.0"
+androidx-compose-unit = "androidx.compose.ui:ui-unit-android"
+androidx-compose-ui = "androidx.compose.ui:ui"
+androidx-compose-accompanist-systemUiController = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }
+androidx-compose-accompanist-navigationMaterial = { module = "com.google.accompanist:accompanist-navigation-material", version.ref = "accompanist" }
+androidx-compose-accompanist-drawablePainter = { module = "com.google.accompanist:accompanist-drawablepainter", version.ref = "accompanist" }
+androidx-profileInstaller = "androidx.profileinstaller:profileinstaller:1.3.1"
+arch-work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
+arch-work-runtimeKtx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+dagger-core = { module = "com.google.dagger:dagger", version.ref = "dagger" }
+dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
+dagger-android-core = { module = "com.google.dagger:dagger-android", version.ref = "dagger" }
+dagger-android-processor = { module = "com.google.dagger:dagger-android-processor", version.ref = "dagger" }
+dagger-android-support = { module = "com.google.dagger:dagger-android-support", version.ref = "dagger" }
+kotlin-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
+kotlin-serializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+play-review = "com.google.android.play:review:2.0.0"
+play-reviewKtx = "com.google.android.play:review-ktx:2.0.0"
+play-featureDelivery = "com.google.android.play:feature-delivery:2.1.0"
+play-featureDeliveryKtx = "com.google.android.play:feature-delivery-ktx:2.1.0"
+play-playServices = "com.google.android.gms:play-services-auth:17.0.0"
+play-coroutine = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4"
+gdrive-apiClient = { module = "com.google.api-client:google-api-client", version.ref = "googleApiClient" }
+gdrive-apiClientAndroid = { module = "com.google.api-client:google-api-client-android", version.ref = "googleApiClient" }
+gdrive-apiServicesDrive = { module = "com.google.apis:google-api-services-drive", version = "v3-rev20210725-1.32.1" }
+coil-coil = "io.coil-kt:coil:2.6.0"
+coil-coilCompose = "io.coil-kt:coil-compose:2.6.0"
+composeSettings-uiTiles = "com.github.alorma.compose-settings:ui-tiles:2.1.0"
+composeSettings-uiTilesExtended = "com.github.alorma.compose-settings:ui-tiles-extended:2.1.0"
+composeSettings-diskStorage = "com.github.alorma:compose-settings-storage-disk:2.0.0"
+composeSettings-memoryStorage = "com.github.alorma:compose-settings-storage-memory:2.0.0"
+kotlinxCoroutinesAndroid = "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
+okio = "com.squareup.okio:okio:2.10.0"
+okHttp3 = { module = "com.squareup.okhttp3:okhttp", version.ref = "okHttp" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+flowPreferences = "com.fredporciuncula:flow-preferences:1.8.0"
+timber = "com.jakewharton.timber:timber:5.0.1"
+material = "com.google.android.material:material:1.12.0"
+harmony = "com.frybits.harmony:harmony:1.1.9"
+startup = "androidx.startup:startup-runtime:1.1.1"
+composeHtmlText = "de.charlex.compose.material3:material3-html-text:2.0.0-beta01"
+collectionsImmutable = "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8"
+padkit = { module = "io.github.swordfish90:padkit", version.ref = "padkit" }
+libretrodroid = { module = "com.github.Swordfish90:LibretroDroid", version.ref = "libretrodroid" }
+
+[plugins]
+android-application = { id = "com.android.application", version = "8.7.2" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version = "1.4.0" }
+benmanes-versions = { id = "com.github.ben-manes.versions", version = "0.51.0" }
+ktlint-gradle = { id = "org.jlleitschuh.gradle.ktlint", version = "12.1.0" }

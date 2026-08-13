@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    android:installLocation="auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="MissingLeanbackLauncher,ImpliedTouchscreenHardware,MissingLeanbackSupport">
+
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.gamepad"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
+    <application
+        android:name="com.swordfish.chimeroid.app.ChimeroidApplication"
+        android:allowBackup="true"
+        android:banner="@mipmap/ic_banner"
+        android:icon="@mipmap/chimeroid_launcher"
+        android:isGame="true"
+        android:label="@string/chimeroid_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:requestLegacyExternalStorage="true"
+        android:roundIcon="@mipmap/chimeroid_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/ChimeroidMaterialTheme">
+        <activity
+            android:name="com.swordfish.chimeroid.app.mobile.feature.main.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.swordfish.chimeroid.app.shared.game.ExternalGameLauncherActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
+            android:exported="true"
+            android:theme="@style/ChimeroidMaterialTheme.Game">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data
+                    android:host="${applicationId}"
+                    android:pathPattern="/play-game/id/.*"
+                    android:scheme="chimeroid" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.swordfish.chimeroid.app.mobile.feature.game.GameActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
+            android:process=":game"
+            android:theme="@style/ChimeroidMaterialTheme.Game" />
+
+        <service
+            android:name=".app.mobile.feature.game.GameService"
+            android:foregroundServiceType="dataSync"
+            android:process=":game" />
+
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+
+        <activity
+            android:name="com.swordfish.chimeroid.app.mobile.feature.gamemenu.GameMenuActivity"
+            android:process=":game"
+            android:theme="@style/ChimeroidMaterialTheme.Menu" />
+
+        <activity
+            android:name="com.swordfish.chimeroid.app.mobile.feature.input.GamePadBindingActivity"
+            android:theme="@style/ChimeroidMaterialTheme.Invisible" />
+
+        <activity
+            android:name="com.swordfish.chimeroid.app.mobile.feature.input.GamePadShortcutBindingActivity"
+            android:theme="@style/ChimeroidMaterialTheme.Invisible" />
+
+        <activity
+            android:name="com.swordfish.chimeroid.app.shared.settings.StorageFrameworkPickerLauncher"
+            android:theme="@style/ChimeroidMaterialTheme.Invisible" />
+        <activity
+            android:name="com.swordfish.chimeroid.app.shared.settings.StorageBaseDirPicker"
+            android:theme="@style/ChimeroidMaterialTheme.Invisible" />
+
+        
+
+        <receiver android:name=".app.shared.library.LibraryIndexBroadcastReceiver" />
+        <receiver android:name=".app.shared.library.CoreUpdateBroadcastReceiver" />
+
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            tools:node="remove" />
+
+    </application>
+
+</manifest>

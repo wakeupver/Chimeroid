@@ -1,25 +1,30 @@
 import com.android.build.gradle.BaseExtension
 
+val projectCompileSdkVersion = 35
+val projectBuildToolsVersion = "34.0.0"
+val projectMinSdkVersion = 23
+val projectTargetSdkVersion = 35
+
 buildscript {
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath(deps.plugins.android)
-        classpath(deps.plugins.navigationSafeArgs)
-        classpath(deps.plugins.kotlinGradlePlugin)
+        classpath("com.android.tools.build:gradle:8.7.2")
+        classpath("androidx.navigation:navigation-safe-args-gradle-plugin:2.5.2")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21")
     }
 }
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version deps.versions.kotlin
-    id("com.github.ben-manes.versions") version "0.51.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.4.0"
-    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
-    id("org.jetbrains.kotlin.android") version deps.versions.kotlin apply false
-    id("com.android.application") version "8.7.2" apply false
-    id("org.jetbrains.kotlin.plugin.compose") version deps.versions.kotlin apply false
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.benmanes.versions)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ktlint.gradle)
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.kotlin.compose) apply false
 }
 
 allprojects {
@@ -33,14 +38,14 @@ allprojects {
     configurations.all {
         resolutionStrategy.eachDependency {
             when (requested.group) {
-                "com.google.android.gms" -> useVersion(deps.versions.gms)
+                "com.google.android.gms" -> useVersion(libs.versions.gms.get())
                 "org.jetbrains.kotlin" -> {
                     if (requested.name.startsWith("kotlin-stdlib-jre")) {
                         with(requested) {
                             useTarget("$group:${name.replace("jre", "jdk")}:$version")
                         }
                     }
-                    useVersion(deps.versions.kotlin)
+                    useVersion(libs.versions.kotlin.get())
                 }
             }
         }
@@ -54,11 +59,11 @@ subprojects {
             apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
             extensions.configure(BaseExtension::class.java) {
-                compileSdkVersion(deps.android.compileSdkVersion)
-                buildToolsVersion(deps.android.buildToolsVersion)
+                compileSdkVersion(projectCompileSdkVersion)
+                buildToolsVersion(projectBuildToolsVersion)
                 defaultConfig {
-                    minSdk = deps.android.minSdkVersion
-                    targetSdk = deps.android.targetSdkVersion
+                    minSdk = projectMinSdkVersion
+                    targetSdk = projectTargetSdkVersion
                     multiDexEnabled = true
                 }
                 lintOptions {

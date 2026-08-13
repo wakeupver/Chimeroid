@@ -9,10 +9,5 @@ pluginManagement {
 
 include(
     ":libretrodroid",
-    ":chimeroid-util",
-    ":chimeroid-shared",
-    ":chimeroid-touchinput",
-    ":chimeroid-app",
-    ":chimeroid-metadata-libretro-db",
-    ":chimeroid-app-ext-free",
+    ":app",
 )

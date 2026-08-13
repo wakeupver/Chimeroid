@@ -50,19 +50,19 @@ jobs:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
-        run: ./gradlew :chimeroid-app:assembleFreeRelease
+        run: ./gradlew :app:assembleFreeRelease
 
       - name: Rename APK
         run: |
           TAG=${{ github.event.inputs.tag || github.ref_name }}
-          mv chimeroid-app/build/outputs/apk/free/release/chimeroid-app-free-release.apk \
-             chimeroid-app/build/outputs/apk/free/release/Chimeroid-${TAG}.apk
+          mv app/build/outputs/apk/free/release/app-free-release.apk \
+             app/build/outputs/apk/free/release/Chimeroid-${TAG}.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: Chimeroid-APK
-          path: chimeroid-app/build/outputs/apk/free/release/Chimeroid-*.apk
+          path: app/build/outputs/apk/free/release/Chimeroid-*.apk
           if-no-files-found: error
 
   release:

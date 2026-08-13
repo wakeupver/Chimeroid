@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources><string name="local_storage">Lưu trữ trên máy</string>
+    <string name="controller_arcade_4">Mặc định (4 nút)</string>
+    <string name="controller_arcade_6">Mặc định (6 nút)</string>
+    <string name="controller_genesis_3">Mặc định (3 nút)</string>
+    <string name="controller_genesis_6">Mặc định (46nút)</string>
+    <string name="controller_default">Mặc định</string>
+    <string name="controller_standard">Tiêu chuẩn</string>
+<string name="touch_customize_button_done">Xong</string>
+    <string name="touch_customize_button_reset">Đặt lại</string>
+    <string name="touch_customize_info">Kéo và phóng bằng hai ngón tay mục điều khiển để thay đổi vị trí và kích thước</string>
+</resources>
